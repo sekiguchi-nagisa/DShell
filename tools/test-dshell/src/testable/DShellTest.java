@@ -22,7 +22,7 @@ public class DShellTest extends DShell {
 	}
 
 	@Override
-	protected void parseArguments(String[] args) {
+	protected void resolveOption(String[] args) {
 		this.autoImportCommand = false;
 		this.mode = ExecutionMode.scriptingMode;
 		for(int i = 0; i < args.length; i++) {

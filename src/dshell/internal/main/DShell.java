@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.HashMap;
 
 import dshell.internal.console.AbstractConsole;
 import dshell.internal.console.DShellConsole;
@@ -14,6 +13,8 @@ import dshell.internal.exe.ExecutionEngine.EngineConfig;
 import dshell.internal.exe.DShellEngineFactory;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
+import dshell.internal.main.ArgsParser.CommandLine;
+import dshell.internal.main.ArgsParser.OptionListener;
 //import dshell.internal.remote.RequestReceiver;
 import static dshell.internal.lib.RuntimeContext.AppenderType;
 
@@ -49,104 +50,106 @@ public class DShell {
 	public DShell(String[] args, boolean enablePseudoTerminal) {
 		this.enablePseudoTerminal = enablePseudoTerminal;
 		this.config = new EngineConfig();
-		this.parseArguments(args);
+		this.resolveOption(args);
 	}
 
-	protected void parseArguments(String[] args) {
-		boolean foundScript = false;
-		HashMap<String, Integer> foundArgMap = new HashMap<String, Integer>();
-		for(int i = 0; i < args.length; i++) {
-			String optionSymbol = args[i];
-			this.checkDuplicatedArg(foundArgMap, optionSymbol, i);
-			if(optionSymbol.startsWith("--")) {
-				if(optionSymbol.equals("--version")) {
-					showVersionInfo();
-					System.exit(0);
-				}
-				else if(optionSymbol.equals("--debug")) {
-					RuntimeContext.getInstance().setDebugMode(true);
-				}
-				else if(optionSymbol.equals("--disable-auto-import")) {
-					this.autoImportCommand = false;
-				}
-				else if(optionSymbol.equals("--inspect-parser")) {
-					this.config.enableParserInspect();
-				}
-				else if(optionSymbol.equals("--trace-parser")) {
-					this.config.enableParserTrace();
-				}
-				else if(optionSymbol.equals("--dump-bytecode")) {
-					this.config.enableByteCodeDump();
-				}
-				else if(optionSymbol.equals("--help")) {
-					showHelpAndExit(0, System.out);
-				}
-				else if(optionSymbol.equals("--logging:file") && i + 1 < args.length) {
-					RuntimeContext.getInstance().changeAppender(AppenderType.file, args[++i]);
-				}
-				else if(optionSymbol.equals("--logging:stdout")) {
-					RuntimeContext.getInstance().changeAppender(AppenderType.stdout);
-				}
-				else if(optionSymbol.equals("--logging:stderr")) {
-					RuntimeContext.getInstance().changeAppender(AppenderType.stderr);
-				}
-				else if(optionSymbol.equals("--logging:syslog")) {
-					int nextIndex = i + 1;
-					if(nextIndex < args.length && !args[nextIndex].startsWith("--")) {
-						RuntimeContext.getInstance().changeAppender(AppenderType.syslog, args[nextIndex]);
-						i++;
-					}
-					else {
-						RuntimeContext.getInstance().changeAppender(AppenderType.syslog);
-					}
-				}
-				else if(optionSymbol.equals("--receive") && i + 1 < args.length && args.length == 2) {	// never return
-					this.mode = ExecutionMode.receiverMode;
-					this.specificArg = args[++i];
-					return;
-				}
-				else {
-					System.err.println("dshell: " + optionSymbol + ": invalid option");
-					this.showHelpAndExit(1, System.err);
-				}
+	protected void resolveOption(String[] args) {
+		this.mode = ExecutionMode.scriptingMode;
+
+		final ArgsParser parser = new ArgsParser();
+
+		// set option rule
+		parser.addOption("--version", new OptionListener() {
+			@Override public void invoke(String arg) {
+				showVersionInfo();
+				System.exit(0);
 			}
-			else if(optionSymbol.startsWith("-")) {
-				if(optionSymbol.equals("-c") && i + 1 == args.length - 1) {
-					this.mode = ExecutionMode.inputEvalMode;
-					this.specificArg = args[++i];
-					return;
-				}
-				else {
-					System.err.println("dshell: " + optionSymbol + ": invalid option");
-					this.showHelpAndExit(1, System.err);
-				}
+		});
+
+		parser.addOption("--help", new OptionListener() {
+			@Override public void invoke(String arg) {
+				showHelpAndExit(0, System.out, parser);
 			}
-			else {
-				foundScript = true;
-				int size = args.length - i;
-				this.scriptArgs = new String[size];
-				System.arraycopy(args, i, this.scriptArgs, 0, size);
-				break;
+		});
+
+		parser.addOption("--debug", new OptionListener() {
+			@Override public void invoke(String arg) {
+				RuntimeContext.getInstance().setDebugMode(true);
 			}
-		}
-		if(foundScript) {
-			this.mode = ExecutionMode.scriptingMode;
-		}
-		else if(!this.enablePseudoTerminal && System.console() == null) {
-			this.mode = ExecutionMode.inputEvalMode;
-		}
-		else {
-			this.mode = ExecutionMode.interactiveMode;
+		});
+
+		parser.addOption("--disable-auto-import", new OptionListener() {
+			@Override public void invoke(String arg) {
+				autoImportCommand = false;
+			}
+		});
+
+		parser.addOption("--inspect-parser", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.enableParserInspect();
+			}
+		});
+
+		parser.addOption("--trace-parser", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.enableParserTrace();
+			}
+		});
+
+		parser.addOption("--dump-bytecode", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.enableByteCodeDump();
+			}
+		});
+
+		parser.addOption("--logging:file", true, new OptionListener() {
+			@Override public void invoke(String arg) {
+				RuntimeContext.getInstance().changeAppender(AppenderType.file, arg);
+			}
+		});
+
+		parser.addOption("--logging:stdout", new OptionListener() {
+			@Override public void invoke(String arg) {
+				RuntimeContext.getInstance().changeAppender(AppenderType.stdout);
+			}
+		});
+
+		parser.addOption("--logging:stderr", new OptionListener() {
+			@Override public void invoke(String arg) {
+				RuntimeContext.getInstance().changeAppender(AppenderType.stderr);
+			}
+		});
+
+		parser.addOption("--logging:syslog", true, new OptionListener() {
+			@Override public void invoke(String arg) {
+				RuntimeContext.getInstance().changeAppender(AppenderType.syslog, arg);
+			}
+		});
+
+		parser.addOption("-c", true, new OptionListener() {
+			@Override public void invoke(String arg) {
+				mode = ExecutionMode.inputEvalMode;
+				specificArg = arg;
+			}
+		});
+
+		try {
+			CommandLine cl = parser.parse(args);
+			cl.notifiyListeners();
+			this.scriptArgs = cl.getRestArgs();
+
+			if(!this.enablePseudoTerminal && System.console() == null) {
+				this.mode = ExecutionMode.inputEvalMode;
+			}
+			if(this.mode == ExecutionMode.scriptingMode && this.scriptArgs == null) {
+				this.mode = ExecutionMode.interactiveMode;
+			}
+		} catch(IllegalArgumentException e) {
+			System.err.println("dshell: " + e.getMessage());
+			this.showHelpAndExit(1, System.err, parser);
 		}
 	}
 
-	private void checkDuplicatedArg(HashMap<String, Integer> foundArgMap, String arg, int index) {
-		if(foundArgMap.containsKey(arg)) {
-			System.err.println("dshell: " + arg + ": duplicated option");
-			showHelpAndExit(1, System.err);
-		}
-		foundArgMap.put(arg, index);
-	}
 
 	public void execute() {
 		RuntimeContext.getInstance();
@@ -222,22 +225,23 @@ public class DShell {
 		System.out.println(copyright);
 	}
 
-	protected void showHelpAndExit(int status, PrintStream stream) {
+	protected void showHelpAndExit(int status, PrintStream stream, ArgsParser parser) {
 		stream.println(shellInfo);
-		stream.println("Usage: dshell [<options>] [<script-file> <argument> ...]");
-		stream.println("Usage: dshell [<options>] -c [<command>]");
-		stream.println("Options:");
-		stream.println("    --debug");
-		stream.println("    --disable-auto-import");
-		stream.println("    --help");
-		stream.println("    --inspect-parser");
-		stream.println("    --trace-parser");
-		stream.println("    --dump-bytecode");
-		stream.println("    --logging:file [file path (appendable)]");
-		stream.println("    --logging:stdout");
-		stream.println("    --logging:stderr");
-		stream.println("    --logging:syslog [host address]");
-		stream.println("    --version");
+		stream.println("Usage: dshell [option] ...[-c cmd | file] [arg] ...");
+		parser.printHelp(stream);
+//		stream.println("Options:");
+//		stream.println("    --debug");
+//		stream.println("    -c cmd");
+//		stream.println("    --disable-auto-import");
+//		stream.println("    --help");
+//		stream.println("    --inspect-parser");
+//		stream.println("    --trace-parser");
+//		stream.println("    --dump-bytecode");
+//		stream.println("    --logging:file [file path (appendable)]");
+//		stream.println("    --logging:stdout");
+//		stream.println("    --logging:stderr");
+//		stream.println("    --logging:syslog [host address]");
+//		stream.println("    --version");
 		System.exit(status);
 	}
 
