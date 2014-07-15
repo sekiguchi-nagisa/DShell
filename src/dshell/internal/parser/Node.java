@@ -1505,7 +1505,7 @@ public abstract class Node {
 			return this.blockNode;
 		}
 
-		public TypeSymbol getRetunrTypeSymbol() {
+		public TypeSymbol getReturnTypeSymbol() {
 			return this.returnTypeSymbol;
 		}
 

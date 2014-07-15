@@ -14,8 +14,8 @@ import dshell.lang.GenericPair;
 public class ArgsParser {
 	protected final Map<String, Option> optionMap = new LinkedHashMap<>();
 
-	public void addOption(String option, OptionListener listener) {
-		this.addOption(option, false, listener);
+	public ArgsParser addOption(String option, OptionListener listener) {
+		return this.addOption(option, false, listener);
 	}
 
 	/**
@@ -27,12 +27,15 @@ public class ArgsParser {
 	 * - if true, has additional argument.
 	 * @param listener
 	 * - call back for option handling
+	 * @return
+	 * - this.
 	 */
-	public void addOption(String option, boolean hasArg, OptionListener listener) {
+	public ArgsParser addOption(String option, boolean hasArg, OptionListener listener) {
 		if(this.optionMap.containsKey(option)) {
 			throw new RuntimeException("already defined option: " + option);
 		}
 		this.optionMap.put(option, new Option(option, hasArg, listener));
+		return this;
 	}
 
 	/**

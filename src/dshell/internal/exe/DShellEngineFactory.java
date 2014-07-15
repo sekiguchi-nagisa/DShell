@@ -95,7 +95,9 @@ public class DShellEngineFactory implements EngineFactory {
 
 		@Override
 		public boolean eval(String scriptName, String source) {
-			throw new RuntimeException("unimplemented");
+			ANTLRInputStream input = new ANTLRInputStream(source);
+			input.name = scriptName;
+			return this.eval(input, 1, false);
 		}
 
 		@Override

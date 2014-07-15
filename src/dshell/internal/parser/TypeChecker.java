@@ -277,6 +277,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 	 */
 	public void reset() {
 		this.symbolTable.popAllLocal();
+		this.symbolTable.removeCachedEntries();
 	}
 
 	public void setErrorListener(DShellErrorListener listener) {
@@ -830,7 +831,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 			paramTypeList.add(typeSymbol.toType(this.typePool));
 		}
 		String funcName = node.getFuncName();
-		DSType returnType = node.getRetunrTypeSymbol().toType(this.typePool);
+		DSType returnType = node.getReturnTypeSymbol().toType(this.typePool);
 		FunctionType funcType = this.typePool.createAndGetFuncTypeIfUndefined(returnType, paramTypeList);
 		FuncHolderType holderType = this.typePool.createFuncHolderType(funcType, funcName);
 		this.addEntryAndThrowIfDefined(node, funcName, holderType, true);
@@ -889,6 +890,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 	}
 
 	public RootNode checkTypeRootNode(RootNode node) {
+		this.symbolTable.clearEntryCache();
 		for(Node targetNode : node.getNodeList()) {
 			this.checkType(targetNode);
 		}

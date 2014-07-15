@@ -1,6 +1,8 @@
 package dshell.internal.parser;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -98,6 +100,16 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 		return this.returnTypetaStack.peek();
 	}
 
+	public void clearEntryCache() {
+		assert this.tableStack.size() == 1;
+		((RootTable) this.tableStack.peek()).clearEntryCache();
+	}
+
+	public void removeCachedEntries() {
+		assert this.tableStack.size() == 1;
+		((RootTable) this.tableStack.peek()).removeCachedEntries();
+	}
+
 	private static class ChildTable implements SymbolTableOp {
 		/**
 		 * parent symbol table reference.
@@ -151,8 +163,11 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 		 */
 		private final Map<String, SymbolEntry> entryMap;
 
+		private final List<String> entryCache;
+
 		private RootTable() {
 			this.entryMap = new HashMap<>();
+			this.entryCache = new LinkedList<>();
 		}
 
 		@Override
@@ -167,10 +182,20 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 			}
 			SymbolEntry entry = new SymbolEntry(type, isReadOnly, true);
 			this.entryMap.put(symbolName, entry);
+			this.entryCache.add(symbolName);
 			return true;
 		}
+
+		public void clearEntryCache() {
+			this.entryCache.clear();
+		}
+
+		public void removeCachedEntries() {
+			for(String entryName : this.entryCache) {
+				this.entryMap.remove(entryName);
+			}
+		}
 	}
-	
 	
 	public static class SymbolEntry {
 		/**

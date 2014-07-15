@@ -59,74 +59,64 @@ public class DShell {
 		final ArgsParser parser = new ArgsParser();
 
 		// set option rule
-		parser.addOption("--version", new OptionListener() {
+		parser
+		.addOption("--version", new OptionListener() {
 			@Override public void invoke(String arg) {
 				showVersionInfo();
 				System.exit(0);
 			}
-		});
-
-		parser.addOption("--help", new OptionListener() {
+		})
+		.addOption("--help", new OptionListener() {
 			@Override public void invoke(String arg) {
 				showHelpAndExit(0, System.out, parser);
 			}
-		});
-
-		parser.addOption("--debug", new OptionListener() {
+		})
+		.addOption("--debug", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().setDebugMode(true);
 			}
-		});
-
-		parser.addOption("--disable-auto-import", new OptionListener() {
+		})
+		.addOption("--disable-auto-import", new OptionListener() {
 			@Override public void invoke(String arg) {
 				autoImportCommand = false;
 			}
-		});
-
-		parser.addOption("--inspect-parser", new OptionListener() {
+		})
+		.addOption("--inspect-parser", new OptionListener() {
 			@Override public void invoke(String arg) {
 				config.enableParserInspect();
 			}
-		});
-
-		parser.addOption("--trace-parser", new OptionListener() {
+		})
+		.addOption("--trace-parser", new OptionListener() {
 			@Override public void invoke(String arg) {
 				config.enableParserTrace();
 			}
-		});
-
-		parser.addOption("--dump-bytecode", new OptionListener() {
+		})
+		.addOption("--dump-bytecode", new OptionListener() {
 			@Override public void invoke(String arg) {
 				config.enableByteCodeDump();
 			}
-		});
-
-		parser.addOption("--logging:file", true, new OptionListener() {
+		})
+		.addOption("--logging:file", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.file, arg);
 			}
-		});
-
-		parser.addOption("--logging:stdout", new OptionListener() {
+		})
+		.addOption("--logging:stdout", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.stdout);
 			}
-		});
-
-		parser.addOption("--logging:stderr", new OptionListener() {
+		})
+		.addOption("--logging:stderr", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.stderr);
 			}
-		});
-
-		parser.addOption("--logging:syslog", true, new OptionListener() {
+		})
+		.addOption("--logging:syslog", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.syslog, arg);
 			}
-		});
-
-		parser.addOption("-c", true, new OptionListener() {
+		})
+		.addOption("-c", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				mode = ExecutionMode.inputEvalMode;
 				specificArg = arg;
@@ -193,11 +183,18 @@ public class DShell {
 	}
 
 	protected void runInputEvalMode(ExecutionEngine engine) {
+		if(this.scriptArgs == null) {
+			this.scriptArgs = new String[0];
+		}
+		String[] actualArgs = new String[this.scriptArgs.length + 1];
+		actualArgs[0] = this.specificArg == null ? "(stdin)" : "(command line)";
+		System.arraycopy(this.scriptArgs, 0, actualArgs, 1, this.scriptArgs.length);
+		engine.setArg(actualArgs);
 		if(this.specificArg != null) {
-			engine.eval("(command line)", this.specificArg);
+			engine.eval(actualArgs[0], this.specificArg);
 		}
 		else {
-			engine.eval("(stdin)", this.readFromInput());
+			engine.eval(actualArgs[0], this.readFromInput());
 		}
 	}
 
@@ -229,19 +226,6 @@ public class DShell {
 		stream.println(shellInfo);
 		stream.println("Usage: dshell [option] ...[-c cmd | file] [arg] ...");
 		parser.printHelp(stream);
-//		stream.println("Options:");
-//		stream.println("    --debug");
-//		stream.println("    -c cmd");
-//		stream.println("    --disable-auto-import");
-//		stream.println("    --help");
-//		stream.println("    --inspect-parser");
-//		stream.println("    --trace-parser");
-//		stream.println("    --dump-bytecode");
-//		stream.println("    --logging:file [file path (appendable)]");
-//		stream.println("    --logging:stdout");
-//		stream.println("    --logging:stderr");
-//		stream.println("    --logging:syslog [host address]");
-//		stream.println("    --version");
 		System.exit(status);
 	}
 
