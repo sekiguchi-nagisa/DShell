@@ -19,6 +19,7 @@ import dshell.internal.lib.Utils;
 import dshell.internal.parser.CalleeHandle.MethodHandle;
 import dshell.internal.parser.CalleeHandle.StaticFunctionHandle;
 import dshell.internal.parser.TypeUtils;
+import dshell.internal.type.TypePool;
 import dshell.internal.type.UserDefinedClassType;
 import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.FunctionType;
@@ -30,7 +31,9 @@ import dshell.internal.type.DSType;
  *
  */
 public class ClassBuilder extends ClassWriter implements Opcodes {
-	private static int topLevelClassPrefix = -1;
+	private final static String genClassPrefix = TypePool.genClassPrefix + "/toplevel";
+
+	private static int topLevelClassSuffix = -1;
 
 	private final String internalClassName;
 
@@ -53,7 +56,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	 */
 	public ClassBuilder(String sourceName) {
 		super(ClassWriter.COMPUTE_FRAMES);
-		this.internalClassName = "dshell/defined/toplevel" + ++topLevelClassPrefix;
+		this.internalClassName = genClassPrefix + ++topLevelClassSuffix;
 		this.visit(V1_7, ACC_PUBLIC | ACC_FINAL, this.internalClassName, null, "java/lang/Object", null);
 		this.visitSource(sourceName, null);
 	}

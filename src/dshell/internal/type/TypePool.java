@@ -3,6 +3,7 @@ package dshell.internal.type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
@@ -25,14 +26,19 @@ import dshell.internal.type.ParametricType.ParametricGenericType;
  */
 public class TypePool {
 	/**
+	 * prefix of generated class.
+	 */
+	public final static String genClassPrefix = "dshell/defined" + new Random().nextInt(999);
+
+	/**
 	 * package name for generated class.
 	 */
-	private final static String generatedClassNamePrefix = "dshell/defined/class/";
+	private final static String generatedClassNamePrefix = genClassPrefix + "/class/";
 
 	/**
 	 * package name for generated func interface.
 	 */
-	private final static String generatedFuncNamePrefix = "dshell/defined/func/";
+	private final static String generatedFuncNamePrefix = genClassPrefix + "/func/";
 
 	private static int funcNameSuffix = -1;
 
