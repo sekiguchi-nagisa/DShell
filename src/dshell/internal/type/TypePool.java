@@ -3,7 +3,6 @@ package dshell.internal.type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
@@ -28,17 +27,17 @@ public class TypePool {
 	/**
 	 * prefix of generated class.
 	 */
-	public final static String genClassPrefix = "dshell/defined" + new Random().nextInt(999);
+	public final static String genClassPrefix = "dshell/defined/";
 
 	/**
 	 * package name for generated class.
 	 */
-	private final static String generatedClassNamePrefix = genClassPrefix + "/class/";
+	private final static String generatedClassPackage = genClassPrefix + "class/";
 
 	/**
 	 * package name for generated func interface.
 	 */
-	private final static String generatedFuncNamePrefix = genClassPrefix + "/func/";
+	private final static String generatedFuncPackage = genClassPrefix + "func/";
 
 	private static int funcNameSuffix = -1;
 
@@ -261,7 +260,8 @@ public class TypePool {
 		if(!(this.getType(className) instanceof UnresolvedType)) {
 			throw new TypeLookupException(className + " is already defined.");
 		}
-		ClassType classType = new UserDefinedClassType(className, generatedClassNamePrefix + className, superType, true);
+		ClassType classType = new UserDefinedClassType(className, 
+				Utils.genUniqueClassName(generatedClassPackage, className, 0), superType, true);
 		this.typeMap.put(className, classType);
 		return classType;
 	}
@@ -288,7 +288,7 @@ public class TypePool {
 		String typeName = toFuncTypeName(returnType, paramTypeList);
 		DSType funcType = this.getType(typeName);
 		if(funcType instanceof UnresolvedType) {
-			String internalName = generatedFuncNamePrefix + "FuncType" + ++funcNameSuffix;
+			String internalName = Utils.genUniqueClassName(generatedFuncPackage, "FuncType", ++funcNameSuffix);
 			funcType = new FunctionType(typeName, internalName, returnType, paramTypeList);
 			this.typeMap.put(typeName, funcType);
 			this.classLoader.definedAndLoadClass(internalName, JavaByteCodeGen.generateFuncTypeInterface((FunctionType) funcType));
@@ -298,7 +298,7 @@ public class TypePool {
 
 	public FuncHolderType createFuncHolderType(FunctionType funcType, String funcName) {
 		String typeName = "FuncHolder" + ++funcNameSuffix + "of" + funcType.getTypeName();
-		String internalName = generatedFuncNamePrefix + "FuncHolder" + funcNameSuffix + "_" + funcName;
+		String internalName = Utils.genUniqueClassName(generatedFuncPackage, "FuncHolder_" + funcName, funcNameSuffix);
 		return new FuncHolderType(typeName, internalName, funcType);
 	}
 

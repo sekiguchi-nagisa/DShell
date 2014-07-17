@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Random;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -225,5 +226,16 @@ public class Utils {
 			}
 		}
 		return null;
+	}
+
+	private final static Random rnd = new Random(System.currentTimeMillis());
+
+	public static String genUniqueClassName(String packageName, String name, int suffix) {
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append(packageName);
+		sBuilder.append(name);
+		sBuilder.append('_');
+		sBuilder.append(rnd.nextInt());
+		return sBuilder.toString();
 	}
 }

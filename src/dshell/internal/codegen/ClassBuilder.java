@@ -31,9 +31,12 @@ import dshell.internal.type.DSType;
  *
  */
 public class ClassBuilder extends ClassWriter implements Opcodes {
-	private final static String genClassPrefix = TypePool.genClassPrefix + "/toplevel";
+	/**
+	 * name prefix for top level class.
+	 */
+	private final static String className = "toplevel";
 
-	private static int topLevelClassSuffix = -1;
+	private static int topLevelClassPrefix = -1;
 
 	private final String internalClassName;
 
@@ -56,7 +59,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	 */
 	public ClassBuilder(String sourceName) {
 		super(ClassWriter.COMPUTE_FRAMES);
-		this.internalClassName = genClassPrefix + ++topLevelClassSuffix;
+		this.internalClassName = Utils.genUniqueClassName(TypePool.genClassPrefix, className, ++topLevelClassPrefix);
 		this.visit(V1_7, ACC_PUBLIC | ACC_FINAL, this.internalClassName, null, "java/lang/Object", null);
 		this.visitSource(sourceName, null);
 	}
