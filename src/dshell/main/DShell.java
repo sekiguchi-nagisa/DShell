@@ -1,4 +1,4 @@
-package dshell.internal.main;
+package dshell.main;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,8 +13,8 @@ import dshell.internal.exe.ExecutionEngine.EngineConfig;
 import dshell.internal.exe.DShellEngineFactory;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
-import dshell.internal.main.ArgsParser.CommandLine;
-import dshell.internal.main.ArgsParser.OptionListener;
+import dshell.main.ArgsParser.CommandLine;
+import dshell.main.ArgsParser.OptionListener;
 //import dshell.internal.remote.RequestReceiver;
 import static dshell.internal.lib.RuntimeContext.AppenderType;
 

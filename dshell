@@ -5,5 +5,5 @@ if test ! -f ${jar}
 then
     jar=dshell.jar
 fi
-java -Xbootclasspath/a:${jar} -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.internal.main.DShell $@
+java -Xbootclasspath/a:${jar} -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.main.DShell $@
 exit $?

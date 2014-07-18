@@ -1,4 +1,4 @@
-package dshell.internal.main;
+package dshell.main;
 
 
 public class DebugMain {

@@ -1,4 +1,4 @@
-package dshell.internal.main;
+package dshell.main;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

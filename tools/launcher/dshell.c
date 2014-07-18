@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	newargv[1] = BOOT_CLASSPATH;
 	newargv[2] = "-XX:+TieredCompilation";
 	newargv[3] = "-XX:TieredStopAtLevel=1";
-	newargv[4] = "dshell.internal.main.DShell";
+	newargv[4] = "dshell.main.DShell";
 	for(i = 1; i < argc; i++) {
 		newargv[i + 4] = argv[i];
 	}

@@ -84,3 +84,5 @@ tools/rec/bin
 gensrc
 generated-array
 /.apt_generated
+annotation/*.jar
+tools/test-dshell/*.jar
