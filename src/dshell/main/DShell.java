@@ -91,6 +91,11 @@ public class DShell {
 				config.enableParserTrace();
 			}
 		})
+		.addOption("--dump-ast", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.enableASTDump();
+			}
+		})
 		.addOption("--dump-bytecode", new OptionListener() {
 			@Override public void invoke(String arg) {
 				config.enableByteCodeDump();

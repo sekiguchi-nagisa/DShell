@@ -28,6 +28,11 @@ public abstract class TypeSymbol {
 		return this.token;
 	}
 
+	@Override
+	public String toString() {
+		return this.token.getText();
+	}
+
 	/**
 	 * TypeSymbol to Type.
 	 * called from TypeChecker
@@ -86,6 +91,11 @@ public abstract class TypeSymbol {
 		public DSType toType(TypePool pool) {
 			return TypePool.voidType;
 		}
+
+		@Override
+		public String toString() {
+			return "void";
+		}
 	}
 
 	public static class ClassTypeSymbol extends TypeSymbol {
@@ -128,6 +138,26 @@ public abstract class TypeSymbol {
 			}
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			StringBuilder sBuilder = new StringBuilder();
+			sBuilder.append(this.token.toString());
+			sBuilder.append('<');
+			sBuilder.append(returnTypeSymbol.toString());
+			if(this.paramtypeSymbols.length > 0) {
+				sBuilder.append(",[");
+				for(int i = 0; i < this.paramtypeSymbols.length; i++) {
+					if(i > 0) {
+						sBuilder.append(',');
+					}
+					sBuilder.append(this.paramtypeSymbols[i].toString());
+				}
+				sBuilder.append(']');
+			}
+			sBuilder.append('>');
+			return sBuilder.toString();
+		}
 	}
 
 	public static class GenericTypeSymbol extends TypeSymbol {
@@ -150,6 +180,21 @@ public abstract class TypeSymbol {
 				TypeLookupException.formateAndPropagateException(e, this.token);
 			}
 			return null;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sBuilder = new StringBuilder();
+			sBuilder.append(this.token.toString());
+			sBuilder.append('<');
+			for(int i = 0; i < this.typeSymbols.length; i++) {
+				if(i > 0) {
+					sBuilder.append(',');
+				}
+				sBuilder.append(this.typeSymbols[i].toString());
+			}
+			sBuilder.append('>');
+			return sBuilder.toString();
 		}
 	}
 }

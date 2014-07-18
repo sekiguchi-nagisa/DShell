@@ -14,6 +14,7 @@ import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
+import dshell.internal.parser.ASTDumper;
 import dshell.internal.parser.CommandScope;
 import dshell.internal.parser.Node;
 import dshell.internal.parser.TypeChecker;
@@ -174,6 +175,11 @@ public class DShellEngineFactory implements EngineFactory {
 				System.err.println(e.getMessage());
 				return false;
 			}
+
+			if(this.config.is(EngineConfigRule.astDump)) {
+				ASTDumper.getInstance().convertToJson(checkedNode);
+			}
+
 			/**
 			 * code generation
 			 */

@@ -1,7 +1,5 @@
 package dshell.internal.lib;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -105,14 +103,10 @@ public class DShellClassLoader extends ClassLoader {
 		int index = this.className.lastIndexOf('.');
 		String classFileName = this.className.substring(index + 1) + ".class";
 		System.err.println("@@@@ Dump ByteCode: " + classFileName + " @@@@");
-		FileOutputStream fileOutputStream;
-		try {
-			fileOutputStream = new FileOutputStream(new File(classFileName));
-			fileOutputStream.write(this.byteCode);
-			fileOutputStream.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+		try(FileOutputStream stream = new FileOutputStream(classFileName)) {
+			stream.write(this.byteCode);
+			stream.close();
+		} catch(IOException e) {
 			e.printStackTrace();
 		}
 	}

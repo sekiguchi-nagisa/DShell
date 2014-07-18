@@ -70,6 +70,10 @@ public interface ExecutionEngine {
 			this.ruleSet.add(EngineConfigRule.parserTrace);
 		}
 
+		public void enableASTDump() {
+			this.ruleSet.add(EngineConfigRule.astDump);
+		}
+
 		public void enableByteCodeDump() {
 			this.ruleSet.add(EngineConfigRule.bytecodeDump);
 		}
@@ -82,6 +86,7 @@ public interface ExecutionEngine {
 	public static enum EngineConfigRule {
 		parserInspect,
 		parserTrace,
+		astDump,
 		bytecodeDump;
 	}
 }

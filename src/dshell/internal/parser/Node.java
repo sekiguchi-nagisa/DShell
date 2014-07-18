@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
+import dshell.annotation.ObjectReference;
 import dshell.internal.parser.CalleeHandle.ConstructorHandle;
 import dshell.internal.parser.CalleeHandle.FieldHandle;
 import dshell.internal.parser.CalleeHandle.MethodHandle;
@@ -34,6 +35,7 @@ public abstract class Node {
 	 */
 	protected final Token token;
 
+	@ObjectReference
 	protected Node parentNode;
 
 	protected Node(Token token) {
