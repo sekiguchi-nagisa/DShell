@@ -666,8 +666,25 @@ public class TypeChecker implements NodeVisitor<Node>{
 	}
 
 	@Override
-	public Node visit(ForInNode node) {	//TODO: check iterator support, add entry to symbolTable
-		this.error.reportTypeError(node, TypeErrorKind.Unimplemented, node.getClass().getSimpleName());
+	public Node visit(ForInNode node) {
+		// look up iterator op.
+		DSType exprType = ((ExprNode)this.checkType(node.getExprNode())).getType();
+		if(!exprType.getTypeName().startsWith("Array<")) {
+			this.error.reportTypeError(node.getExprNode(), TypeErrorKind.Required, "Array type");
+		}
+		MethodHandle reset = exprType.lookupMethodHandle("$iter$Reset");
+		MethodHandle next = exprType.lookupMethodHandle("$iter$Next");
+		MethodHandle hasNext = exprType.lookupMethodHandle("$iter$HasNext");
+		if(reset == null || next == null || hasNext == null) {
+			Utils.fatal(1, "iterator op is not found.");
+		}
+		node.setIteratorHandles(reset, next, hasNext);
+
+		// add symbol entry
+		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.addEntry(node.getInitName(), next.getReturnType(), false);
+		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
+		this.symbolTable.popCurrentTable();
 		return node;
 	}
 
@@ -767,7 +784,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 		DSType recvType = getterNode.getRecvNode().getType();
 		String recvTypeName = recvType.getTypeName();
 		if(!recvTypeName.startsWith("Array<") && !recvTypeName.startsWith("Map<")) {
-			this.error.reportTypeError(getterNode, TypeErrorKind.Required, "require Array or Map type", recvType);
+			this.error.reportTypeError(getterNode, TypeErrorKind.Required, "Array or Map type", recvType);
 		}
 		MethodHandle handle = recvType.lookupMethodHandle("set");
 		if(handle == null || handle.getParamTypeList().size() != 2) {

@@ -31,6 +31,11 @@ public class GenericArray implements Cloneable {
 	 */
 	private int size;
 
+	/**
+	 * used for iterator op.
+	 */
+	private int iterCurrentIndex = 0;
+
 	public GenericArray(Object[] values) {
 		this.size = values.length;
 		this.values = new Object[this.size < defaultArraySize ? defaultArraySize : this.size];
@@ -184,5 +189,25 @@ public class GenericArray implements Cloneable {
 		}
 		sBuilder.append("]");
 		return sBuilder.toString();
+	}
+
+	@Shared
+	public void $iter$Reset() {
+		this.iterCurrentIndex = -1;
+	}
+
+	@Shared
+	@TypeAlias("@T")
+	public Object $iter$Next() {
+		return this.get(++this.iterCurrentIndex);
+	}
+
+	@Shared
+	public boolean $iter$HasNext() {
+		int nextIndex = this.iterCurrentIndex + 1;
+		if(nextIndex < this.size) {
+			return true;
+		}
+		return false;
 	}
 }

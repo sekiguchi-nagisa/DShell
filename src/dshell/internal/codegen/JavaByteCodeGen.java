@@ -107,13 +107,13 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		node.accept(this);
 	}
 
-	private void visitBlockWithCurrentScope(BlockNode blockNode) {
+	private void generateBlockWithCurrentScope(BlockNode blockNode) {
 		this.generateCode(blockNode);
 	}
 
-	private void visitBlockWithNewScope(BlockNode blockNode) {
+	private void generateBlockWithNewScope(BlockNode blockNode) {
 		this.getCurrentMethodBuilder().createNewLocalScope();
-		this.visitBlockWithCurrentScope(blockNode);
+		this.generateBlockWithCurrentScope(blockNode);
 		this.getCurrentMethodBuilder().removeCurrentLocalScope();
 	}
 
@@ -541,7 +541,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		this.generateCode(node.getCondNode());
 		mBuilder.ifCmp(Type.BOOLEAN_TYPE, GeneratorAdapter.NE, breakLabel);
 		// block
-		this.visitBlockWithCurrentScope(node.getBlockNode());
+		this.generateBlockWithCurrentScope(node.getBlockNode());
 		// iter
 		this.generateCode(node.getIterNode());
 		this.createPopInsIfExprNode(node.getIterNode());
@@ -556,8 +556,40 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(ForInNode node) {	//TODO:
-		Utils.fatal(1, "unimplemented: " + node);
+	public Void visit(ForInNode node) {
+		// init label
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Label continueLabel = mBuilder.newLabel();
+		Label breakLabel = mBuilder.newLabel();
+		mBuilder.continueLabels.push(continueLabel);
+		mBuilder.breakLabels.push(breakLabel);
+
+		mBuilder.createNewLocalScope();
+		// init
+		this.generateCode(node.getExprNode());
+		mBuilder.dup();
+		node.getResetHandle().call(mBuilder);
+		// cond
+		mBuilder.mark(continueLabel);
+		mBuilder.dup();
+		node.getHasNextHandle().call(mBuilder);
+		mBuilder.push(true);
+		mBuilder.ifCmp(Type.BOOLEAN_TYPE, GeneratorAdapter.NE, breakLabel);
+		// block
+		mBuilder.dup();
+		node.getNextHandle().call(mBuilder);
+		DSType varType = node.getNextHandle().getReturnType();
+		mBuilder.createNewVarAndStoreValue(node.getInitName(), varType);
+		this.generateBlockWithCurrentScope(node.getBlockNode());
+		// iter
+		mBuilder.goTo(continueLabel);
+		mBuilder.mark(breakLabel);
+
+		mBuilder.removeCurrentLocalScope();
+		mBuilder.pop();
+		// remove label
+		mBuilder.continueLabels.pop();
+		mBuilder.breakLabels.pop();
 		return null;
 	}
 
@@ -574,7 +606,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.push(true);
 		this.generateCode(node.getCondNode());
 		mBuilder.ifCmp(Type.BOOLEAN_TYPE, GeneratorAdapter.NE, breakLabel);
-		this.visitBlockWithNewScope(node.getBlockNode());
+		this.generateBlockWithNewScope(node.getBlockNode());
 		mBuilder.goTo(continueLabel);
 		mBuilder.mark(breakLabel);
 
@@ -594,11 +626,11 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		adapter.push(true);
 		adapter.ifCmp(Type.BOOLEAN_TYPE, GeneratorAdapter.NE, elseLabel);
 		// then block
-		this.visitBlockWithNewScope(node.getThenBlockNode());
+		this.generateBlockWithNewScope(node.getThenBlockNode());
 		adapter.goTo(mergeLabel);
 		// else block
 		adapter.mark(elseLabel);
-		this.visitBlockWithNewScope(node.getElseBlockNode());
+		this.generateBlockWithNewScope(node.getElseBlockNode());
 		adapter.mark(mergeLabel);
 		return null;
 	}
@@ -625,7 +657,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.getTryLabels().push(labels);
 		// try block
 		mBuilder.mark(labels.startLabel);
-		this.visitBlockWithNewScope(node.getTryBlockNode());
+		this.generateBlockWithNewScope(node.getTryBlockNode());
 		mBuilder.mark(labels.endLabel);
 		mBuilder.goTo(labels.finallyLabel);
 		// catch block
@@ -634,7 +666,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		}
 		// finally block
 		mBuilder.mark(labels.finallyLabel);
-		this.visitBlockWithNewScope(node.getFinallyBlockNode());
+		this.generateBlockWithNewScope(node.getFinallyBlockNode());
 		mBuilder.getTryLabels().pop();
 		return null;
 	}
@@ -647,7 +679,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		DSType exceptionType = node.getExceptionType();
 		mBuilder.catchException(labels.startLabel, labels.endLabel, TypeUtils.toTypeDescriptor(exceptionType));
 		mBuilder.createNewVarAndStoreValue(node.getExceptionVarName(), exceptionType);
-		this.visitBlockWithCurrentScope(node.getCatchBlockNode());
+		this.generateBlockWithCurrentScope(node.getCatchBlockNode());
 		mBuilder.goTo(labels.finallyLabel);
 		mBuilder.removeCurrentLocalScope();
 		return null;
@@ -746,7 +778,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 			DSType argType = node.getHolderType().getFuncHandle().getParamTypeList().get(i);
 			mBuilder.defineArgument(argNode.getSymbolName(), argType);
 		}
-		this.visitBlockWithCurrentScope(node.getBlockNode());
+		this.generateBlockWithCurrentScope(node.getBlockNode());
 		mBuilder.removeCurrentLocalScope();
 		this.methodBuilders.pop().endMethod();
 

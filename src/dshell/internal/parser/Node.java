@@ -1106,6 +1106,11 @@ public abstract class Node {
 		private final ExprNode exprNode;
 		private final BlockNode blockNode;
 
+		// for iterator op.
+		private MethodHandle resetHandle;
+		private MethodHandle nextHandle;
+		private MethodHandle hasNextHandle;
+
 		public ForInNode(Token token, Token nameToken, ExprNode exprNode, Node blockNode) {
 			super(token);
 			this.initName = nameToken.getText();
@@ -1123,6 +1128,24 @@ public abstract class Node {
 
 		public BlockNode getBlockNode() {
 			return this.blockNode;
+		}
+
+		public void setIteratorHandles(MethodHandle reset, MethodHandle next, MethodHandle hasNext) {
+			this.resetHandle = reset;
+			this.nextHandle = next;
+			this.hasNextHandle = hasNext;
+		}
+
+		public MethodHandle getResetHandle() {
+			return this.resetHandle;
+		}
+
+		public MethodHandle getNextHandle() {
+			return this.nextHandle;
+		}
+
+		public MethodHandle getHasNextHandle() {
+			return this.hasNextHandle;
 		}
 
 		@Override
