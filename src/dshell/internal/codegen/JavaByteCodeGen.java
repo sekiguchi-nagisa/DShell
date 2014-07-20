@@ -595,6 +595,10 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	@Override
 	public Void visit(WhileNode node) {
+		if(node.isAsDoWhile()) {
+			this.generateDoWhile(node);
+			return null;
+		}
 		// init label
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Label continueLabel = mBuilder.newLabel();
@@ -614,6 +618,29 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.continueLabels.pop();
 		mBuilder.breakLabels.pop();
 		return null;
+	}
+
+	private void generateDoWhile(WhileNode node) {
+		// init label
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Label continueLabel = mBuilder.newLabel();
+		Label breakLabel = mBuilder.newLabel();
+		Label enterLabel = mBuilder.newLabel();
+		mBuilder.continueLabels.push(continueLabel);
+		mBuilder.breakLabels.push(breakLabel);
+
+		mBuilder.mark(enterLabel);
+		this.generateBlockWithNewScope(node.getBlockNode());
+		mBuilder.mark(continueLabel);
+		mBuilder.push(true);
+		this.generateCode(node.getCondNode());
+		mBuilder.ifCmp(Type.BOOLEAN_TYPE, GeneratorAdapter.NE, breakLabel);
+		mBuilder.goTo(enterLabel);
+		mBuilder.mark(breakLabel);
+
+		// remove label
+		mBuilder.continueLabels.pop();
+		mBuilder.breakLabels.pop();
 	}
 
 	@Override

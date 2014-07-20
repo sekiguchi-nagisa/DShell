@@ -1163,10 +1163,17 @@ public abstract class Node {
 		private final ExprNode condNode;
 		private final BlockNode blockNode;
 
+		private final boolean asDoWhile;
+
 		public WhileNode(Token token, ExprNode condNode, Node blockNode) {
+			this(token, condNode, blockNode, false);
+		}
+
+		public WhileNode(Token token, ExprNode condNode, Node blockNode, boolean asDoWhile) {
 			super(token);
 			this.condNode = this.setExprNodeAsChild(condNode);
 			this.blockNode = (BlockNode) this.setNodeAsChild(blockNode);
+			this.asDoWhile = asDoWhile;
 		}
 
 		public ExprNode getCondNode() {
@@ -1175,6 +1182,10 @@ public abstract class Node {
 
 		public BlockNode getBlockNode() {
 			return this.blockNode;
+		}
+
+		public boolean isAsDoWhile() {
+			return this.asDoWhile;
 		}
 
 		@Override

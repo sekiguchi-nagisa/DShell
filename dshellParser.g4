@@ -301,6 +301,7 @@ statement returns [Node node]
 	| returnStatement statementEnd {$node = $returnStatement.node;}
 	| throwStatement statementEnd {$node = $throwStatement.node;}
 	| whileStatement {$node = $whileStatement.node;}
+	| doWhileStatement { $node = $doWhileStatement.node;}
 	| tryCatchStatement {$node = $tryCatchStatement.node;}
 	| variableDeclaration statementEnd {$node = $variableDeclaration.node;}
 	| assignStatement statementEnd {$node = $assignStatement.node;}
@@ -408,6 +409,10 @@ throwStatement returns [Node node]
 
 whileStatement returns [Node node]
 	: While lParenthese expression rParenthese block {$node = new Node.WhileNode($While, $expression.node, $block.node);}
+	;
+
+doWhileStatement returns [Node node]
+	: Do block While lParenthese expression rParenthese {$node = new Node.WhileNode($Do, $expression.node, $block.node, true);}
 	;
 
 tryCatchStatement returns [Node node] locals [Node.TryNode tryNode]
