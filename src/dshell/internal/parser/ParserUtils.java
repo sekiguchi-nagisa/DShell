@@ -3,7 +3,9 @@ package dshell.internal.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Pair;
 
 import dshell.internal.parser.Node.BlockNode;
 import dshell.internal.parser.Node.ExprNode;
@@ -191,6 +193,18 @@ public class ParserUtils {
 				symbols[i] = this.symbolList.get(i);
 			}
 			return symbols;
+		}
+	}
+
+	public static class JoinedToken extends CommonToken {
+		private static final long serialVersionUID = 1L;
+
+		public JoinedToken(Token startToken, Token stopToken) {
+			super(new Pair<>(startToken.getTokenSource(), startToken.getInputStream()), 
+					0, 
+					startToken.getChannel(), 
+					startToken.getStartIndex(), 
+					stopToken.getStopIndex());
 		}
 	}
 }

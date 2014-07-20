@@ -123,7 +123,7 @@ public class DShellEngineFactory implements EngineFactory {
 		@Override
 		public void importCommandsFromPath() {
 			TreeSet<String> commandSet = Utils.getCommandSetFromPath();
-			CommandScope scope = this.lexer.getScope();
+			CommandScope scope = this.parser.getCmdScope();
 			for(String command : commandSet) {
 				if(scope.setCommandPath(command) && RuntimeContext.getInstance().isDebugMode()) {
 					System.err.println("duplicated command: " + command);

@@ -9,8 +9,6 @@ import dshell.internal.parser.error.ParserErrorHandler;
 }
 
 @members {
-private final CommandScope cmdScope = new CommandScope();
-
 private boolean trace = false;
 
 @Override
@@ -30,25 +28,6 @@ public void recover(LexerNoViableAltException e) {
 @Override
 public void recover(RecognitionException e) {
 	ParserErrorHandler.reportError(e);
-}
-
-private boolean requireCommand = false;
-private boolean requireCommand() {
-	return this.requireCommand;
-}
-
-public void enterCmd() {
-	if(this.trace) System.err.println("enter command");
-	this.requireCommand = true;
-}
-
-public void exitCmd() {
-	if(this.trace) System.err.println("exit command");
-	this.requireCommand = false;
-}
-
-public CommandScope getScope() {
-	return this.cmdScope;
 }
 
 public void setTrace(boolean trace) {
@@ -191,13 +170,13 @@ EscapeSequence	// TODO: unicode escape
 	;
 
 // symbol , class and command name
-CommandName	//FIXME:
-	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {cmdScope.isCommand(getText())}? -> mode(CMD_ARG)
-	;
-
-CommandSymbol
-	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {requireCommand()}?
-	;
+//CommandName	//FIXME:
+//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {cmdScope.isCommand(getText())}? -> mode(CMD_ARG)
+//	;
+//
+//CommandSymbol
+//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {requireCommand()}?
+//	;
 
 Identifier
 	: [_a-zA-Z] [_0-9a-zA-Z]*
@@ -209,30 +188,30 @@ Comment
 	: '#' ~[\r\n\u2028\u2029]* -> skip
 	;
 WhiteSpace
-	: [\t\u000B\u000C\u0020\u00A0]+ -> skip
+	: [\t\u000B\u000C\u0020\u00A0]+
 	;
 
-LineEndInCmd
-	: {requireCommand()}? [\r\n\u2028\u2029]
-	;
+//LineEndInCmd
+//	: {requireCommand()}? [\r\n\u2028\u2029]
+//	;
 LineEnd
-	: [\r\n\u2028\u2029] -> channel(HIDDEN)
+	: [\r\n\u2028\u2029]+
 	;
 
-// command arg mode
-mode CMD_ARG;
-CommandArg
-	: ~[\n\t\r\u0020|#&$'"\\;<>()]+
-	;
-
-InnerComment
-	: '#' ~[\r\n\u2028\u2029]* -> skip
-	;
-InnerWhiteSpace
-	: [\t\u000B\u000C\u0020\u00A0]+ -> skip
-	;
-
-CommandEnd
-	: ([\n\r&;] | '||' | '&&' ) -> mode(DEFAULT_MODE)
-	;
+//// command arg mode
+//mode CMD_ARG;
+//CommandArg
+//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+
+//	;
+//
+//InnerComment
+//	: '#' ~[\r\n\u2028\u2029]* -> skip
+//	;
+//InnerWhiteSpace
+//	: [\t\u000B\u000C\u0020\u00A0]+ -> skip
+//	;
+//
+//CommandEnd
+//	: ([\n\r&;] | '||' | '&&' ) -> mode(DEFAULT_MODE)
+//	;
 
