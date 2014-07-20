@@ -10,8 +10,6 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import dshell.lang.NativeException;
-
 /**
  * some utilities.
  * @author skgchxngsxyz-opensuse
@@ -194,7 +192,7 @@ public class Utils {
 	}
 
 	public static void printException(InvocationTargetException e) {
-		NativeException.wrapException(e.getCause()).printStackTrace();
+		dshell.lang.Exception.wrapException(e.getCause()).printStackTrace();
 	}
 
 	public static void appendStringifiedValue(StringBuilder sb, Object value) {

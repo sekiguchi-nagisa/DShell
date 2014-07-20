@@ -682,7 +682,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 
 		// add symbol entry
 		this.symbolTable.createAndPushNewTable();
-		this.symbolTable.addEntry(node.getInitName(), next.getReturnType(), false);
+		this.addEntryAndThrowIfDefined(node, node.getInitName(), next.getReturnType(), false);
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
 		this.symbolTable.popCurrentTable();
 		return node;
@@ -731,6 +731,19 @@ public class TypeChecker implements NodeVisitor<Node>{
 			this.checkType(catchNode);
 		}
 		this.checkTypeWithNewBlockScope(node.getFinallyBlockNode());
+
+		/**
+		 * verify catch block order.
+		 */
+		final int size = node.getCatchNodeList().size();
+		for(int i = 0; i < size - 1; i++) {
+			DSType curType = node.getCatchNodeList().get(i).getExceptionType();
+			CatchNode nextNode = node.getCatchNodeList().get(i + 1);
+			DSType nextType = nextNode.getExceptionType();
+			if(curType.isAssignableFrom(nextType)) {
+				this.error.reportTypeError(nextNode, TypeErrorKind.Unreachable);
+			}
+		}
 		return node;
 	}
 

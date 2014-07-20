@@ -10,21 +10,6 @@ import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
 
 public class TypeUtils {
-	public static boolean matchParamsType(final DSType[] paramTypes, final DSType[] givenTypes) {
-		assert paramTypes != null;
-		assert givenTypes != null;
-		if(paramTypes.length != givenTypes.length) {
-			return false;
-		}
-		int size = paramTypes.length;
-		for(int i = 0; i < size; i++) {
-			if(!paramTypes[i].isAssignableFrom(givenTypes[i])) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	/**
 	 * create type descriptor from type.
 	 * @param type
@@ -55,13 +40,25 @@ public class TypeUtils {
 	}
 
 	/**
+	 * used for JavaByteCodeGen#visitCatchNode.
+	 * @param exceptionType
+	 * @return
+	 */
+	public static Type toExceptionTypeDescriptor(DSType exceptionType) {
+		if(exceptionType.getTypeName().equals("Exception")) {
+			return Type.getType(Throwable.class);
+		}
+		return toTypeDescriptor(exceptionType);
+	}
+
+	/**
 	 * create mrthod descriptor from types.
 	 * @param returnType
 	 * @param methodName
 	 * @param paramTypeList
 	 * @return
 	 */
-	public static Method toMehtodDescriptor(DSType returnType, String methodName, List<DSType> paramTypeList) {
+	public static Method toMethodDescriptor(DSType returnType, String methodName, List<DSType> paramTypeList) {
 		int size = paramTypeList.size();
 		Type[] paramtypeDecs = new Type[size];
 		for(int i = 0; i < size; i++) {
@@ -72,7 +69,7 @@ public class TypeUtils {
 	}
 
 	public static Method toConstructorDescriptor(List<DSType> paramTypeList) {
-		return toMehtodDescriptor(TypePool.voidType, "<init>", paramTypeList);
+		return toMethodDescriptor(TypePool.voidType, "<init>", paramTypeList);
 	}
 
 	public static Method toArrayConstructorDescriptor(DSType elementType) {
@@ -88,16 +85,22 @@ public class TypeUtils {
 
 	public static Method toMapConstructorDescriptor() {
 		Type returnTypeDesc = Type.VOID_TYPE;
-		Type keysTypeDesc = Type.getType("[Ljava/lang/String;");
-		Type valuesTypeDesc = Type.getType("[Ljava/lang/Object;");
+		Type keysTypeDesc = Type.getType(String[].class);
+		Type valuesTypeDesc = Type.getType(Object[].class);
 		Type[] paramTypeDescs = new Type[] {keysTypeDesc, valuesTypeDesc};
 		return new Method("<init>", returnTypeDesc, paramTypeDescs);
 	}
 
 	public static Method toPairConstructorDescriptor() {
 		Type returnTypeDesc = Type.VOID_TYPE;
-		Type paramTypeDesc = Type.getType("Ljava/lang/Object;");
+		Type paramTypeDesc = Type.getType(Object.class);
 		Type[] paramTypeDescs = new Type[] {paramTypeDesc, paramTypeDesc};
 		return new Method("<init>", returnTypeDesc, paramTypeDescs);
+	}
+
+	public static Method toExceptionWrapperDescriptor() {
+		Type returnTypeDesc = Type.getType(dshell.lang.Exception.class);
+		Type paramTypeDesc = Type.getType(Throwable.class);
+		return new Method("wrapException", returnTypeDesc, new Type[]{paramTypeDesc});
 	}
 }

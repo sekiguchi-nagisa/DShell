@@ -204,7 +204,7 @@ public abstract class CalleeHandle {
 		protected void initMethodDesc() {
 			if(this.ownerTypeDesc == null || this.methodDesc == null) {
 				this.ownerTypeDesc = TypeUtils.toTypeDescriptor(this.ownerType);
-				this.methodDesc = TypeUtils.toMehtodDescriptor(this.returnType, this.calleeName, this.paramTypeList);
+				this.methodDesc = TypeUtils.toMethodDescriptor(this.returnType, this.calleeName, this.paramTypeList);
 			}
 		}
 
@@ -327,7 +327,7 @@ public abstract class CalleeHandle {
 		protected void initMethodDesc() {
 			if(this.ownerTypeDesc == null || this.methodDesc == null) {
 				this.ownerTypeDesc = TypeUtils.toTypeDescriptor(this.ownerName);
-				this.methodDesc = TypeUtils.toMehtodDescriptor(this.returnType, this.calleeName, this.paramTypeList);
+				this.methodDesc = TypeUtils.toMethodDescriptor(this.returnType, this.calleeName, this.paramTypeList);
 			}
 		}
 

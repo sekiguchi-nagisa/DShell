@@ -234,7 +234,7 @@ class WrapperMethodHandle extends MethodHandle {
 			for(DSType paramType : this.paramTypeList) {
 				actualParamTypeList.add(paramType);
 			}
-			this.methodDesc = TypeUtils.toMehtodDescriptor(this.returnType, this.calleeName, actualParamTypeList);
+			this.methodDesc = TypeUtils.toMethodDescriptor(this.returnType, this.calleeName, actualParamTypeList);
 		}
 	}
 

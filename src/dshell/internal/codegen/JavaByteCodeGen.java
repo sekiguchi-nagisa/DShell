@@ -321,7 +321,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		case CastNode.TO_STRING:
 			mBuilder.box(TypeUtils.toTypeDescriptor(node.getExprNode().getType()));
 			mBuilder.invokeVirtual(Type.getType(Object.class), 
-					TypeUtils.toMehtodDescriptor(node.getTargetType(), "toString", new ArrayList<DSType>(0)));
+					TypeUtils.toMethodDescriptor(node.getTargetType(), "toString", new ArrayList<DSType>(0)));
 			break;
 		case CastNode.CHECK_CAST:
 			mBuilder.checkCast(targetTypeDesc);
@@ -704,7 +704,12 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		TryBlockLabels labels = mBuilder.getTryLabels().peek();
 		mBuilder.createNewLocalScope();
 		DSType exceptionType = node.getExceptionType();
-		mBuilder.catchException(labels.startLabel, labels.endLabel, TypeUtils.toTypeDescriptor(exceptionType));
+		Type exceptionTypeDesc = TypeUtils.toExceptionTypeDescriptor(exceptionType);
+		mBuilder.catchException(labels.startLabel, labels.endLabel, exceptionTypeDesc);
+		if(exceptionType.getTypeName().equals("Exception")) {
+			Method methodDesc = TypeUtils.toExceptionWrapperDescriptor();
+			mBuilder.invokeStatic(TypeUtils.toTypeDescriptor(exceptionType), methodDesc);
+		}
 		mBuilder.createNewVarAndStoreValue(node.getExceptionVarName(), exceptionType);
 		this.generateBlockWithCurrentScope(node.getCatchBlockNode());
 		mBuilder.goTo(labels.finallyLabel);

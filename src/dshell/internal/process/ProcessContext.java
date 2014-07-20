@@ -7,7 +7,6 @@ import java.util.Calendar;
 import java.util.LinkedList;
 
 import dshell.internal.lib.Utils;
-import dshell.lang.NativeException;
 
 public class ProcessContext extends AbstractProcessContext {
 	public final static int traceBackend_ltrace = 0;
@@ -78,7 +77,7 @@ public class ProcessContext extends AbstractProcessContext {
 			this.stderr = this.proc.getErrorStream();
 		}
 		catch(IOException e) {
-			throw NativeException.wrapException(e);
+			throw dshell.lang.Exception.wrapException(e);
 		}
 		return this;
 	}

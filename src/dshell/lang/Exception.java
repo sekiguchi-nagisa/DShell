@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 import dshell.annotation.Shared;
 import dshell.annotation.SharedClass;
+import dshell.internal.lib.RuntimeContext;
 
 /**
  * D-shell basis exception class
@@ -14,6 +15,16 @@ import dshell.annotation.SharedClass;
 public class Exception extends RuntimeException {
 	private static final long serialVersionUID = -8494693504521057747L;
 
+	public static Exception wrapException(Throwable t) {
+		if(t instanceof Exception) {
+			return (Exception) t;
+		}
+		if(t instanceof ClassCastException) {
+			return new TypeCastException((ClassCastException) t);
+		}
+		return new NativeException(t);
+	}
+
 	@Shared
 	public Exception() {
 		super("");
@@ -22,6 +33,14 @@ public class Exception extends RuntimeException {
 	@Shared
 	public Exception(String message) {
 		super(message);
+	}
+
+	/**
+	 * used for native exception.
+	 * @param cause
+	 */
+	protected Exception(Throwable cause) {
+		super(cause);
 	}
 
 	@Shared
@@ -100,5 +119,45 @@ public class Exception extends RuntimeException {
 			return className.substring(prefixIndex + 1) + "()";
 		}
 		return "unknown";
+	}
+
+	/**
+	 * wrapper class for java native exception.
+	 * @author skgchxngsxyz-opensuse
+	 *
+	 */
+	private static final class NativeException extends Exception {
+		private static final long serialVersionUID = 7696635521352542680L;
+
+		private NativeException(Throwable cause) {
+			super(cause);
+			this.setStackTrace(this.recreateStackTrace(this.getCause().getStackTrace()));
+		}
+
+		@Override
+		public String toString() {
+			return this.getClass().getSimpleName() + " -> " + this.getCause().getClass().getCanonicalName();
+		}
+
+		@Override
+		protected void createHeader(StringBuilder sBuilder) {
+			String message = this.getCause().getMessage();
+			message = (message == null ? "" : message);
+			sBuilder.append(this.toString() +  ": " + message + "\n");
+		}
+
+		@Override
+		public void printStackTrace() {
+			super.printStackTrace();
+			if(RuntimeContext.getInstance().isDebugMode()) {
+				this.getCause().printStackTrace();
+			}
+		}
+
+		@Override
+		public String getMessage() {
+			String message = this.getCause().getMessage();
+			return message == null ? "" : message;
+		}
 	}
 }

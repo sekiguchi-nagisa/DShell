@@ -18,22 +18,6 @@ public ToplevelContext startParser() {
 	return this.toplevel();
 }
 
-private boolean isLineEnd() {
-	int lineEndIndex = this.getCurrentToken().getTokenIndex() - 1;
-	Token lineEndToken = _input.get(lineEndIndex);
-	if(lineEndToken.getChannel() != Lexer.HIDDEN) {
-		return false;
-	}
-	int type = lineEndToken.getType();
-	return type == LineEnd;
-}
-
-private boolean here(final int type) {
-	int index = this.getCurrentToken().getTokenIndex() - 1;
-	Token ahead = _input.get(index);
-	return (ahead.getChannel() == Lexer.HIDDEN) && (ahead.getType() == type);
-}
-
 private final CommandScope cmdScope = new CommandScope();
 
 public CommandScope getCmdScope() {
@@ -43,19 +27,19 @@ public CommandScope getCmdScope() {
 // ';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | WhiteSpace | LineEnd | Comment)+
 private boolean matchCmdEnd(Token token) {
 	switch(token.getType()) {
-	case Semicolon:
-	case OR:
-	case AND:
-	case GT:
-	case LT:
+	case EOF:
 	case LeftParenthese:
 	case RightParenthese:
 	case LeftBrace:
 	case RightBrace:
+	case Semicolon:
+	case LT:
+	case GT:
+	case AND:
+	case OR:
+	case Comment:
 	case WhiteSpace:
 	case LineEnd:
-	case Comment:
-	case EOF:
 		return true;
 	}
 	return false;
@@ -297,7 +281,7 @@ statement returns [Node node]
 	| foreachStatement {$node = $foreachStatement.node;}
 	| ifStatement {$node = $ifStatement.node;}
 	| importEnvStatement statementEnd {$node = $importEnvStatement.node;}
-	| importCommandStatement importCommandEnd {$node = $importCommandStatement.node;}
+	| importCommandStatement statementEnd {$node = $importCommandStatement.node;}
 	| returnStatement statementEnd {$node = $returnStatement.node;}
 	| throwStatement statementEnd {$node = $throwStatement.node;}
 	| whileStatement {$node = $whileStatement.node;}
@@ -306,9 +290,8 @@ statement returns [Node node]
 	| variableDeclaration statementEnd {$node = $variableDeclaration.node;}
 	| assignStatement statementEnd {$node = $assignStatement.node;}
 	| suffixStatement statementEnd {$node = $suffixStatement.node;}
-//	| commandExpression statementEnd {$node = $commandExpression.node;}
-//	| expression statementEnd {$node = $expression.node;}
-	| extendedExpression {$node = $extendedExpression.node;}
+	| commandExpression statementEnd {$node = $commandExpression.node;}
+	| expression statementEnd {$node = $expression.node;}
 	;
 
 assertStatement returns [Node node]
@@ -384,12 +367,6 @@ importCommandStatement returns [Node node]	//FIXME:
 				cmdScope.setCommandPath($a.get(i).getText());
 			}
 		}
-	;
-
-importCommandEnd
-	: EOF
-	| ';'
-//	| LineEndInCmd
 	;
 
 returnStatement returns [Node node] locals [ParserUtils.ReturnExpr returnExpr]
@@ -472,11 +449,6 @@ suffixStatement returns [Node node]
 
 // expression definition.
 // command expression
-extendedExpression returns [Node.ExprNode node]
-	: commandExpression {$node = $commandExpression.node;}
-	| expression {$node = $expression.node;}
-	;
-
 commandName returns [Token token]
 	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | WhiteSpace | LineEnd | Comment)+
 		{

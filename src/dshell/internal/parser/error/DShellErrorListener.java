@@ -5,7 +5,7 @@ import dshell.internal.parser.Node;
 public class DShellErrorListener {
 	public static enum TypeErrorKind {
 		Unresolved     ("having unresolved type"),
-		Required        ("require %s, but is %s"),
+		Required       ("require %s, but is %s"),
 		DefinedSymbol  ("already defined symbol: %s"),
 		InsideLoop     ("only available inside loop statement"),
 		UnfoundReturn  ("not found return statement"),
@@ -22,7 +22,7 @@ public class DShellErrorListener {
 		NotNeedExpr    ("not need expression"),
 		Assignable     ("require assignable node"),
 		ReadOnly       ("read only value"),
-		
+
 		Unimplemented  ("unimplemented type checker api: %s");
 
 		private final String template;
