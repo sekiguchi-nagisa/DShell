@@ -16,7 +16,6 @@ import org.antlr.v4.runtime.Token;
 
 import dshell.annotation.ObjectReference;
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.RootNode;
 
 /**
@@ -36,18 +35,18 @@ public class ASTDumper {
 
 	private final Map<Class<?>, ObjectHandler> handlerMap;
 
-	private final ObjectHandler primitiveHandler = new PrimitiveHandler();
-	private final ObjectHandler defaultHandler = new DefaultObjectHandler();
-	private final ObjectHandler referenceHandler = new ReferenceHandler();
+	private final ObjectHandler primitiveHandler;
+	private final ObjectHandler defaultHandler;
+	private final ObjectHandler referenceHandler;
 
 	private ASTDumper() {
+		this.primitiveHandler = new PrimitiveHandler();
+		this.defaultHandler = new DefaultObjectHandler();
+		this.referenceHandler = new ReferenceHandler();
 		this.handlerMap = new HashMap<>();
 
 		// set handler
-		NodeHandler nodeHandler = new NodeHandler();
-		this.handlerMap.put(Node.class, nodeHandler);
-		this.handlerMap.put(ExprNode.class, nodeHandler);
-		this.handlerMap.put(String.class, new StringHandler());
+		this.handlerMap.put(Node.class, new NodeHandler());
 		this.handlerMap.put(List.class, new ListHandler());
 		this.handlerMap.put(Token.class, new TokenHandler());
 	}
@@ -104,10 +103,26 @@ public class ASTDumper {
 		}
 	}
 
-	private String quote(Object value) {
+	private String stringify(Object value) {	//FIXME: unicode escape
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append('"');
-		sBuilder.append(value);
+		String str = value.toString();
+		final int size = str.length();
+		for(int i = 0; i < size; i++) {
+			char ch = str.charAt(i);
+			switch(ch) {
+			case '"':
+			case '\\':
+			case '/':
+			case '\b':
+			case '\f':
+			case '\n':
+			case '\r':
+			case '\t':
+				sBuilder.append('\\');
+			}
+			sBuilder.append(ch);
+		}
 		sBuilder.append('"');
 		return sBuilder.toString();
 	}
@@ -122,7 +137,7 @@ public class ASTDumper {
 	}
 
 	private void appendField(Object owner, Field field) {
-		sBuilder.append(quote(field.getName() + "@" + field.getType().getCanonicalName()));
+		sBuilder.append(stringify(field.getName() + "@" + field.getType().getCanonicalName()));
 		sBuilder.append(" : ");
 		try {
 			field.setAccessible(true);
@@ -174,18 +189,6 @@ public class ASTDumper {
 	}
 
 	/**
-	 * encode string value
-	 * @author skgchxngsxyz-osx
-	 *
-	 */
-	class StringHandler extends ObjectHandler {
-		@Override
-		protected void encodeImpl(Object value) {
-			sBuilder.append(quote(value));
-		}
-	}
-
-	/**
 	 * encode object
 	 * @author skgchxngsxyz-osx
 	 *
@@ -193,7 +196,7 @@ public class ASTDumper {
 	class DefaultObjectHandler extends ObjectHandler {
 		@Override
 		protected void encodeImpl(Object value) {
-			sBuilder.append(quote(value));
+			sBuilder.append(stringify(value));
 		}
 	}
 
@@ -211,16 +214,16 @@ public class ASTDumper {
 
 			// add node type
 			appendIndent();
-			sBuilder.append(quote("@NodeType"));
+			sBuilder.append(stringify("@NodeType"));
 			sBuilder.append(" : ");
-			sBuilder.append(quote(value.getClass().getSimpleName()));
+			sBuilder.append(stringify(value.getClass().getSimpleName()));
 			sBuilder.append(",\n");
 
 			// add hash code
 			appendIndent();
-			sBuilder.append(quote("@HashCode"));
+			sBuilder.append(stringify("@HashCode"));
 			sBuilder.append(" : ");
-			sBuilder.append(quote(value.hashCode()));
+			sBuilder.append(stringify(value.hashCode()));
 			sBuilder.append(",\n");
 
 			// encode fields
@@ -291,14 +294,14 @@ public class ASTDumper {
 	class ReferenceHandler extends ObjectHandler {
 		@Override
 		protected void encodeImpl(Object value) {
-			sBuilder.append(quote("ref->" + value.hashCode()));
+			sBuilder.append(stringify("ref->" + value.hashCode()));
 		}
 	}
 
 	class TokenHandler extends ObjectHandler {
 		@Override
 		protected void encodeImpl(Object value) {
-			sBuilder.append(quote(((Token)value).getText()));
+			sBuilder.append(stringify(((Token)value).getText()));
 		}
 	}
 }
