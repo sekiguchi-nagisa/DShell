@@ -1,7 +1,8 @@
 package dshell.internal.process;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import dshell.internal.lib.CommandContext;
 import dshell.internal.lib.CommandRunner;
@@ -14,10 +15,10 @@ import dshell.internal.lib.RuntimeContext;
  *
  */
 public class BuiltinCommandHolder {
-	private final HashMap<BuiltinSymbol, ExecutableAsCommand> builtinCommandMap;
+	private final Map<BuiltinSymbol, ExecutableAsCommand> builtinCommandMap;
 
 	public BuiltinCommandHolder() {
-		this.builtinCommandMap = new HashMap<BuiltinSymbol, ExecutableAsCommand>();
+		this.builtinCommandMap = new EnumMap<>(BuiltinSymbol.class);
 		this.builtinCommandMap.put(BuiltinSymbol.cd, new Command_cd());
 		this.builtinCommandMap.put(BuiltinSymbol.exit, new Command_exit());
 		this.builtinCommandMap.put(BuiltinSymbol.help, new Command_help());

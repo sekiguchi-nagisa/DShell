@@ -12,7 +12,16 @@ import java.util.Set;
 import dshell.lang.GenericPair;
 
 public class ArgsParser {
+	protected final OptionListener nullListener = new NullListener();
 	protected final Map<String, Option> optionMap = new LinkedHashMap<>();
+
+	public ArgsParser addOption(String option) {
+		return this.addOption(option, false);
+	}
+
+	public ArgsParser addOption(String option, boolean hasArg) {
+		return this.addOption(option, hasArg, this.nullListener);
+	}
 
 	public ArgsParser addOption(String option, OptionListener listener) {
 		return this.addOption(option, false, listener);
@@ -76,7 +85,7 @@ public class ArgsParser {
 			}
 			listenerPairs.add(new GenericPair<ArgsParser.OptionListener, String>(option.getListener(), arg));
 		}
-		return new CommandLine(restArgs, listenerPairs);
+		return new CommandLine(restArgs, listenerPairs).notifyListeners();
 	}
 
 	public void printHelp(PrintStream stream) {
@@ -86,7 +95,7 @@ public class ArgsParser {
 			sBuilder.append("    ");
 			sBuilder.append(entry.getKey());
 			if(entry.getValue().hasArg) {
-				sBuilder.append(" arg");
+				sBuilder.append(" [arg]");
 			}
 			sBuilder.append('\n');
 		}
@@ -123,27 +132,33 @@ public class ArgsParser {
 	 *
 	 */
 	public static class CommandLine {
+		/**
+		 * not null
+		 */
 		private final String[] restArgs;
 		private final List<GenericPair<OptionListener, String>> listenerPairs;
 
 		protected CommandLine(String[] restArgs, List<GenericPair<OptionListener, String>> listenerPairs) {
-			this.restArgs = restArgs;
+			this.restArgs = restArgs == null ? new String[0] : restArgs;
 			this.listenerPairs = listenerPairs;
 		}
 
 		/**
 		 * call OptionListener#invoke
+		 * @return
+		 * - this
 		 */
-		public void notifiyListeners() {
+		private CommandLine notifyListeners() {
 			for(GenericPair<OptionListener, String> pair : this.listenerPairs) {
 				pair.getLeft().invoke(pair.getRight());
 			}
+			return this;
 		}
 
 		/**
 		 * 
 		 * @return
-		 * - return null if has no rest arguments
+		 * - return empty array if has no rest arguments
 		 */
 		public String[] getRestArgs() {
 			return this.restArgs;
@@ -157,5 +172,10 @@ public class ArgsParser {
 		 * - if has no argument, is null.
 		 */
 		public void invoke(String arg);
+	}
+
+	private final static class NullListener implements OptionListener {
+		@Override public void invoke(String arg) {	// do nothing
+		}
 	}
 }

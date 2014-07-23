@@ -275,7 +275,7 @@ public class TypePool {
 	 */
 	public DSType createAndGetReifiedTypeIfUndefined(String baseTypeName, List<DSType> typeList) {
 		GenericBaseType baseType = this.getGenericBaseType(baseTypeName, typeList.size());
-		String typeName = toGenericTypeName(baseType, typeList);
+		String typeName = toReifiedTypeName(baseType, typeList);
 		DSType genericType = this.getType(typeName);
 		if(genericType instanceof UnresolvedType) {
 			genericType = new ReifiedType(this, typeName, baseType, typeList);
@@ -304,12 +304,14 @@ public class TypePool {
 
 	// type name creator api.
 	/**
-	 * crate generic type name except for generic array.
+	 * create generic type name.
 	 * @param baseType
+	 * - may be Array, Map or Pair.
 	 * @param typeList
+	 * - not null
 	 * @return
 	 */
-	public static String toGenericTypeName(GenericBaseType baseType, List<DSType> typeList) {
+	public static String toReifiedTypeName(GenericBaseType baseType, List<DSType> typeList) {
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append(baseType.getTypeName());
 		sBuilder.append("<");
@@ -324,6 +326,14 @@ public class TypePool {
 		return sBuilder.toString();
 	}
 
+	/**
+	 * create func type name from return type and param types
+	 * @param returnType
+	 * - not null
+	 * @param paramTypeList
+	 * - if has no parameters, it is empty list
+	 * @return
+	 */
 	public static String toFuncTypeName(DSType returnType, List<DSType> paramTypeList) {
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append("Func<");
@@ -344,6 +354,12 @@ public class TypePool {
 		return sBuilder.toString();
 	}
 
+	/**
+	 * parse type name and get type.
+	 * @param typeName
+	 * @return
+	 * - if has no type, throw exception.
+	 */
 	public DSType parseTypeName(String typeName) {	//FIXME: only support generic type,
 		if(typeName.indexOf('<') == -1) {
 			if(typeName.startsWith("@")) {
@@ -386,7 +402,7 @@ public class TypePool {
 						this.consumeSeparator();
 						typeList.add(this.parse());
 					}
-					return this.createGenericType(baseTypeName, typeList);
+					return this.createReifiedType(baseTypeName, typeList);
 				case '>':
 				case ',': {
 					String typeName = this.source.substring(startIndex, this.index);
@@ -410,6 +426,9 @@ public class TypePool {
 			throw new RuntimeException("illeagal type name: " + this.source);
 		}
 
+		/**
+		 * consume space and increment index.
+		 */
 		private void consumeSpace() {
 			for(; this.index < this.size; this.index++) {
 				if(this.source.charAt(this.index) != ' ') {
@@ -418,6 +437,9 @@ public class TypePool {
 			}
 		}
 
+		/**
+		 * consume separator (space or ,) and increment index.
+		 */
 		private void consumeSeparator() {
 			int separatorCount = 0;
 			for(; this.index < this.size; this.index++) {
@@ -437,7 +459,16 @@ public class TypePool {
 			throw new RuntimeException("found problem: " + this.source);
 		}
 
-		private DSType createGenericType(String baseTypeName, List<DSType> elementTypeList) {
+		/**
+		 * create reified type
+		 * @param baseTypeName
+		 * - may be Array, Map or Pair
+		 * @param elementTypeList
+		 * - may contain parametric type.
+		 * @return
+		 * - if elementTypeList has parametric type, return parametric generic type.
+		 */
+		private DSType createReifiedType(String baseTypeName, List<DSType> elementTypeList) {
 			boolean foundParametricType = false;
 			for(DSType elementType : elementTypeList) {
 				if((elementType instanceof ParametricType) || (elementType instanceof ParametricGenericType)) {
@@ -453,6 +484,10 @@ public class TypePool {
 		}
 	}
 
+	/**
+	 * for test
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		TypePool pool = new TypePool(new DShellClassLoader());
 		String source = "Array<Array<@T>>";

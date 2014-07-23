@@ -21,7 +21,7 @@ class BuiltinClassType extends ClassType {
 	 */
 	protected final TypePool pool;
 
-	protected boolean createdConstruor = false;
+	protected boolean createdConstructor = false;
 
 	/**
 	 * contains constructor handle.
@@ -53,7 +53,7 @@ class BuiltinClassType extends ClassType {
 		this.fieldElements = fieldElements;
 		this.methodElements = methodElements;
 
-		this.createdConstruor = constructorElements == null;
+		this.createdConstructor = constructorElements == null;
 		if(this.fieldElements != null) {
 			int size = fieldElements.length;
 			this.fieldEntryMap = new HashMap<>();
@@ -72,8 +72,8 @@ class BuiltinClassType extends ClassType {
 	}
 
 	protected void initConstructors() {
-		if(!this.createdConstruor) {
-			this.createdConstruor = true;
+		if(!this.createdConstructor) {
+			this.createdConstructor = true;
 			this.constructorHandleList = new ArrayList<>(this.constructorElements.length);
 			for(String[] element : this.constructorElements) {
 				this.constructorHandleList.add(this.toConstructorHandle(element));
@@ -184,16 +184,16 @@ class BuiltinClassType extends ClassType {
 		switch(typeKind) {
 		case 0:
 			return new BuiltinClassType(pool, className, internalName, 
-					superType, allowExtends, constructorElements, fieldElements, methodElements);
+				superType, allowExtends, constructorElements, fieldElements, methodElements);
 		case 1:
 			return new StringType(pool, className, internalName, superType, 
-					allowExtends, constructorElements, fieldElements, methodElements);
+				allowExtends, constructorElements, fieldElements, methodElements);
 		case 2:
-			return new PrimitiveArray(pool, className, internalName, superType, 
-					allowExtends, constructorElements, fieldElements, methodElements);
+			return new PrimitiveArrayType(pool, className, internalName, superType, 
+				allowExtends, constructorElements, fieldElements, methodElements);
 		case 3:
 			return new GenericBaseType(pool, className, internalName, superType, 
-					allowExtends, constructorElements, fieldElements, methodElements, optionalArg);
+				allowExtends, constructorElements, fieldElements, methodElements, optionalArg);
 		default:
 			Utils.fatal(1, "unsupported type kind: " + typeKind);
 		}
@@ -270,10 +270,10 @@ class StringType extends BuiltinClassType {
 	}
 }
 
-class PrimitiveArray extends BuiltinClassType implements GenericType {
+class PrimitiveArrayType extends BuiltinClassType implements GenericType {
 	private List<DSType> elementTypeList;
 
-	protected PrimitiveArray(TypePool pool, String className,
+	protected PrimitiveArrayType(TypePool pool, String className,
 			String internalName, DSType superType, boolean allowExtends,
 			String[][] constructorElements, 
 			String[][] fieldElements,

@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,7 +13,7 @@ import dshell.internal.lib.Utils;
 import dshell.lang.Errno;
 
 public interface CauseInferencer {
-	public ArrayList<String> doInference(ProcessContext proc);
+	public List<String> doInference(ProcessContext proc);
 }
 
 class CauseInferencer_ltrace implements CauseInferencer {
@@ -52,9 +53,10 @@ class CauseInferencer_ltrace implements CauseInferencer {
 	private CauseInferencer_ltrace() {	// do nothing
 	}
 
-	public ArrayList<String> doInference(ProcessContext proc) {
+	@Override
+	public List<String> doInference(ProcessContext proc) {
 		String logFilePath = proc.getLogFilePath();
-		ArrayList<String[]> lineList = new ArrayList<String[]>();
+		List<String[]> lineList = new ArrayList<>();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(logFilePath));
 			String line;
@@ -102,7 +104,7 @@ class CauseInferencer_ltrace implements CauseInferencer {
 		return new String[] {pidBuilder.toString(), line.substring(startIndex, size)};
 	}
 
-	private FunctionContext createTopLevelFuncContext(final ArrayList<String[]> lineList) {
+	private FunctionContext createTopLevelFuncContext(final List<String[]> lineList) {
 		if(lineList.size() == 0) {
 			Utils.fatal(1, "empty lineList");
 		}
@@ -116,7 +118,7 @@ class CauseInferencer_ltrace implements CauseInferencer {
 		return context;
 	}
 
-	private int createFuncContext(final ArrayList<String[]> lineList, final FunctionContext parentContext, final int index) {
+	private int createFuncContext(final List<String[]> lineList, final FunctionContext parentContext, final int index) {
 		if(index >= lineList.size()) {
 			Utils.fatal(1, "index = " + index + ", size = " + lineList.size());
 		}
@@ -233,8 +235,8 @@ class CauseInferencer_ltrace implements CauseInferencer {
 		return context;
 	}
 
-	private ArrayList<String> findCauseInfo(FunctionContext context) {
-		ArrayList<String> causeInfo = new ArrayList<String>();
+	private List<String> findCauseInfo(FunctionContext context) {
+		List<String> causeInfo = new ArrayList<>();
 		if(context.getRetValue().equals("0")) {
 			causeInfo.add("empty");
 			causeInfo.add("empty");

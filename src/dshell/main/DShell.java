@@ -130,13 +130,11 @@ public class DShell {
 
 		try {
 			CommandLine cl = parser.parse(args);
-			cl.notifiyListeners();
 			this.scriptArgs = cl.getRestArgs();
-
 			if(!this.enablePseudoTerminal && System.console() == null) {
 				this.mode = ExecutionMode.inputEvalMode;
 			}
-			if(this.mode == ExecutionMode.scriptingMode && this.scriptArgs == null) {
+			if(this.mode == ExecutionMode.scriptingMode && this.scriptArgs.length == 0) {
 				this.mode = ExecutionMode.interactiveMode;
 			}
 		} catch(IllegalArgumentException e) {
@@ -188,9 +186,6 @@ public class DShell {
 	}
 
 	protected void runInputEvalMode(ExecutionEngine engine) {
-		if(this.scriptArgs == null) {
-			this.scriptArgs = new String[0];
-		}
 		String[] actualArgs = new String[this.scriptArgs.length + 1];
 		actualArgs[0] = this.specificArg == null ? "(stdin)" : "(command line)";
 		System.arraycopy(this.scriptArgs, 0, actualArgs, 1, this.scriptArgs.length);
@@ -229,7 +224,7 @@ public class DShell {
 
 	protected void showHelpAndExit(int status, PrintStream stream, ArgsParser parser) {
 		stream.println(shellInfo);
-		stream.println("Usage: dshell [option] ...[-c cmd | file] [arg] ...");
+		stream.println("Usage: dshell [option] ... [-c cmd | file] [arg] ...");
 		parser.printHelp(stream);
 		System.exit(status);
 	}
