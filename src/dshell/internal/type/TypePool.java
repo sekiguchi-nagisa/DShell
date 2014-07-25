@@ -7,7 +7,7 @@ import java.util.List;
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.error.TypeLookupException;
+import dshell.internal.parser.error.TypeCheckException.TypeLookupException;
 import dshell.internal.type.DSType.BoxedPrimitiveType;
 import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.FunctionBaseType;

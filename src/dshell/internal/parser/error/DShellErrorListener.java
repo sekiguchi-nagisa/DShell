@@ -1,6 +1,14 @@
 package dshell.internal.parser.error;
 
+import java.util.List;
+
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
+
+import dshell.internal.lib.Utils;
 import dshell.internal.parser.Node;
+import dshell.internal.parser.ParserUtils;
+import dshell.internal.parser.dshellParser;
 
 public class DShellErrorListener {
 	public static enum TypeErrorKind {
@@ -38,5 +46,86 @@ public class DShellErrorListener {
 
 	public void reportTypeError(Node node, TypeErrorKind kind, Object... args) {
 		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), args));
+	}
+
+	public static String formatTypeError(TypeCheckException e, dshellParser parser) {
+		Token token = e.getErrorToken();
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append(formatLocation(token));
+		sBuilder.append(" [TypeError] ");
+		sBuilder.append(e.getMessage().trim());
+		if(token != null) {
+			sBuilder.append('\n');
+			sBuilder.append(formatLine(parser, token));
+		}
+		return sBuilder.toString();
+	}
+
+	/**
+	 * 
+	 * @param token
+	 * - may be null
+	 * @return
+	 */
+	private static String formatLocation(Token token) {
+		StringBuilder sBuilder = new StringBuilder();
+		if(token == null) {
+			return "???:?:?:";
+		}
+		sBuilder.append(token.getTokenSource().getSourceName());
+		sBuilder.append(':');
+		sBuilder.append(token.getLine());
+		sBuilder.append(':');
+		sBuilder.append(token.getCharPositionInLine());
+		sBuilder.append(':');
+		return sBuilder.toString();
+	}
+
+	/**
+	 * 
+	 * @param token
+	 * - not null
+	 * @return
+	 */
+	private static String formatLine(dshellParser parser, Token token) {
+		StringBuilder sBuilder = new StringBuilder();
+		List<Token> tokenList = ((CommonTokenStream) parser.getTokenStream()).getTokens();
+		final int lineNum = token.getLine();
+		final int tokenIndex = token.getTokenIndex();
+		final int size = tokenList.size();
+		Token lineStartToken = token;
+		Token lineEndToken = token;
+
+		// look up line start token
+		int index = tokenIndex;
+		while(index - 1 > -1) {
+			Token curToken = tokenList.get(--index);
+			if(curToken.getLine() != lineNum) {
+				break;
+			}
+			lineStartToken = curToken;
+		}
+
+		// look up line end token
+		index = tokenIndex;
+		while(index + 1 < size) {
+			Token curToken = tokenList.get(++index);
+			if(curToken.getLine() != lineNum) {
+				break;
+			}
+			lineEndToken = curToken;
+		}
+		sBuilder.append(Utils.removeNewLine(new ParserUtils.JoinedToken(lineStartToken, lineEndToken).getText()));
+		sBuilder.append('\n');
+
+		// create marker
+		for(int i = 0; i < token.getCharPositionInLine(); i++) {
+			sBuilder.append(' ');
+		}
+		final int tokenSize = token.getText().length();
+		for(int i = 0; i < tokenSize; i++) {
+			sBuilder.append('^');
+		}
+		return sBuilder.toString();
 	}
 }

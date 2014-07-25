@@ -21,35 +21,43 @@ public class TypeCheckException extends RuntimeException {
 		this.errorPointToken = errorPointToken;
 	}
 
-	@Override
-	public String getMessage() {
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append("[TypeError] ");
-		sBuilder.append(super.getMessage());
-		if(this.errorPointToken != null) {
-			sBuilder.append("\n\t");
-			StringBuilder subBuilder = new StringBuilder();
-			subBuilder.append(this.errorPointToken.getTokenSource().getSourceName());
-			subBuilder.append(':');
-			subBuilder.append(this.errorPointToken.getLine());
-			subBuilder.append(',');
-			subBuilder.append(this.errorPointToken.getCharPositionInLine());
-			subBuilder.append("   ");
-			String errorLocation = subBuilder.toString();
-			int size = errorLocation.length();
+	public Token getErrorToken() {
+		return this.errorPointToken;
+	}
 
-			String tokenText = this.errorPointToken.getText();
-			sBuilder.append(errorLocation);
-			sBuilder.append(tokenText);
-			sBuilder.append("\n\t");
-			for(int i = 0; i < size; i++) {
-				sBuilder.append(' ');
-			}
-			int tokenSize = tokenText.length();
-			for(int i = 0; i < tokenSize; i++) {
-				sBuilder.append('^');
-			}
+	public static class TypeLookupException extends TypeCheckException {
+		private static final long serialVersionUID = -2757004654976764776L;
+
+		private final String message;
+
+		public TypeLookupException(String message) {
+			super(null, message);
+			this.message = message;
 		}
-		return sBuilder.toString();
+
+		private String getSourceMessage() {
+			return this.message;
+		}
+
+		public static void formatAndPropagateException(TypeLookupException e, Token token) {
+			throw new FormattedTypeLookupException(e, token);
+		}
+	}
+
+	private static class FormattedTypeLookupException extends TypeCheckException {
+		private static final long serialVersionUID = -7553167319361964982L;
+
+		private final TypeLookupException cause;
+
+		private FormattedTypeLookupException(TypeLookupException cause, Token errorPointToken) {
+			super(errorPointToken, cause.getSourceMessage());
+			this.cause = cause;
+		}
+
+		@Override
+		public void printStackTrace() {
+			this.cause.printStackTrace();
+			super.printStackTrace();
+		}
 	}
 }

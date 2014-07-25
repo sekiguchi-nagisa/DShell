@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
-import dshell.internal.parser.error.TypeLookupException;
+import dshell.internal.parser.error.TypeCheckException.TypeLookupException;
 import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
 
@@ -76,7 +76,7 @@ public abstract class TypeSymbol {
 			try {
 				return pool.getPrimitiveType(this.token.getText());
 			} catch(TypeLookupException e) {
-				TypeLookupException.formateAndPropagateException(e, this.token);
+				TypeLookupException.formatAndPropagateException(e, this.token);
 			}
 			return null;
 		}
@@ -108,7 +108,7 @@ public abstract class TypeSymbol {
 			try {
 				return pool.getClassType(this.token.getText());
 			} catch(TypeLookupException e) {
-				TypeLookupException.formateAndPropagateException(e, this.token);
+				TypeLookupException.formatAndPropagateException(e, this.token);
 			}
 			return null;
 		}
@@ -134,7 +134,7 @@ public abstract class TypeSymbol {
 			try {
 				return pool.createAndGetFuncTypeIfUndefined(returnType, paramTypeList);
 			} catch(TypeLookupException e) {
-				TypeLookupException.formateAndPropagateException(e, this.token);
+				TypeLookupException.formatAndPropagateException(e, this.token);
 			}
 			return null;
 		}
@@ -177,7 +177,7 @@ public abstract class TypeSymbol {
 			try {
 				return pool.createAndGetReifiedTypeIfUndefined(this.token.getText(), elementTypeList);
 			} catch(TypeLookupException e) {
-				TypeLookupException.formateAndPropagateException(e, this.token);
+				TypeLookupException.formatAndPropagateException(e, this.token);
 			}
 			return null;
 		}

@@ -22,6 +22,7 @@ import dshell.internal.parser.dshellLexer;
 import dshell.internal.parser.dshellParser;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.dshellParser.ToplevelContext;
+import dshell.internal.parser.error.DShellErrorListener;
 import dshell.internal.parser.error.ParserErrorHandler;
 import dshell.internal.parser.error.TypeCheckException;
 import dshell.internal.parser.error.ParserErrorHandler.ParserException;
@@ -172,7 +173,7 @@ public class DShellEngineFactory implements EngineFactory {
 				checkedNode = this.checker.checkTypeRootNode(tree.node);
 			} catch(TypeCheckException e) {
 				this.checker.reset();
-				System.err.println(e.getMessage());
+				System.err.println(DShellErrorListener.formatTypeError(e, this.parser));
 				return false;
 			}
 
