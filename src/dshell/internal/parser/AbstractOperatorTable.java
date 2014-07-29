@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dshell.internal.parser.CalleeHandle.OperatorHandle;
 import dshell.internal.type.DSType;
+import dshell.internal.type.CalleeHandle.OperatorHandle;
 
 /**
  * contains binary operator handle, unary operator handle. assign operator handle.

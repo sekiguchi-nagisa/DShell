@@ -1,4 +1,4 @@
-package dshell.internal.parser;
+package dshell.internal.type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,14 +9,10 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
-import dshell.internal.type.GenericBaseType;
-import dshell.internal.type.ParametricType;
-import dshell.internal.type.ParametricType.ParametricGenericType;
-import dshell.internal.type.ReifiedType;
-import dshell.internal.type.DSType;
+import dshell.internal.parser.TypeUtils;
 import dshell.internal.type.DSType.FunctionType;
 import dshell.internal.type.DSType.PrimitiveType;
-import dshell.internal.type.TypePool;
+import dshell.internal.type.ParametricType.ParametricGenericType;
 
 
 /**
@@ -231,6 +227,22 @@ public abstract class CalleeHandle {
 		public String toString() {
 			return this.ownerType + "#" + this.calleeName + 
 					" : " + TypePool.toFuncTypeName(this.returnType, this.paramTypeList);
+		}
+	}
+
+	public static class BoxedHandle extends MethodHandle {
+		private final MethodHandle targetHandle;
+
+		public BoxedHandle(MethodHandle targetHandle) {
+			super(targetHandle.getCalleeName(), targetHandle.getOwnerType(), 
+					targetHandle.getReturnType(), targetHandle.getParamTypeList());
+			this.targetHandle = targetHandle;
+		}
+
+		@Override
+		public void call(GeneratorAdapter adapter) {
+			this.targetHandle.call(adapter);
+			adapter.box(TypeUtils.toTypeDescriptor(this.returnType));
 		}
 	}
 

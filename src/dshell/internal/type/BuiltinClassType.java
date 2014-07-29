@@ -9,11 +9,10 @@ import java.util.Map;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.CalleeHandle;
 import dshell.internal.parser.TypeUtils;
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
 
 class BuiltinClassType extends ClassType {
 	/**

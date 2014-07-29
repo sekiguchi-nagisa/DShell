@@ -3,12 +3,12 @@ package dshell.internal.type;
 import java.util.Collections;
 import java.util.List;
 
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.FunctionHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
-import dshell.internal.parser.CalleeHandle.StaticFieldHandle;
-import dshell.internal.parser.CalleeHandle.StaticFunctionHandle;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.FunctionHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.StaticFieldHandle;
+import dshell.internal.type.CalleeHandle.StaticFunctionHandle;
 
 /**
  * Represents dshell type.

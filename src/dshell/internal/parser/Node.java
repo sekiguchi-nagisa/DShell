@@ -6,11 +6,6 @@ import java.util.List;
 import org.antlr.v4.runtime.Token;
 
 import dshell.annotation.ObjectReference;
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
-import dshell.internal.parser.CalleeHandle.OperatorHandle;
-import dshell.internal.parser.CalleeHandle.StaticFieldHandle;
 import dshell.internal.parser.ParserUtils.ArgDecl;
 import dshell.internal.parser.ParserUtils.ArgsDecl;
 import dshell.internal.parser.ParserUtils.Arguments;
@@ -18,6 +13,11 @@ import dshell.internal.parser.ParserUtils.Block;
 import dshell.internal.parser.ParserUtils.IfElseBlock;
 import dshell.internal.parser.SymbolTable.SymbolEntry;
 import dshell.internal.type.ClassType;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.OperatorHandle;
+import dshell.internal.type.CalleeHandle.StaticFieldHandle;
 import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.TypePool;
@@ -1436,7 +1436,7 @@ public abstract class Node {
 		/**
 		 * if assingOp is '=', it is null.
 		 */
-		private OperatorHandle handle;
+		private MethodHandle handle;
 
 		/**
 		 * requires SymbolNode, ElementGetterNode or FieldGetterNode.
@@ -1480,7 +1480,7 @@ public abstract class Node {
 			this.rightNode = rightNode;
 		}
 
-		public void setHandle(OperatorHandle handle) {
+		public void setHandle(MethodHandle handle) {
 			this.handle = handle;
 		}
 
@@ -1489,7 +1489,7 @@ public abstract class Node {
 		 * @return
 		 * return null, if operator is '='.
 		 */
-		public OperatorHandle getHandle() {
+		public MethodHandle getHandle() {
 			return this.handle;
 		}
 

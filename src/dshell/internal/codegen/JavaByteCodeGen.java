@@ -15,10 +15,6 @@ import dshell.internal.codegen.ClassBuilder.MethodBuilder;
 import dshell.internal.codegen.ClassBuilder.TryBlockLabels;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
-import dshell.internal.parser.CalleeHandle.OperatorHandle;
-import dshell.internal.parser.CalleeHandle.StaticFieldHandle;
-import dshell.internal.parser.CalleeHandle.StaticFunctionHandle;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
@@ -67,6 +63,9 @@ import dshell.internal.process.AbstractProcessContext;
 import dshell.internal.process.TaskContext;
 import dshell.internal.type.DSType;
 import dshell.internal.type.GenericType;
+import dshell.internal.type.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.StaticFieldHandle;
+import dshell.internal.type.CalleeHandle.StaticFunctionHandle;
 import dshell.internal.type.DSType.FunctionType;
 import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.DSType.VoidType;
@@ -728,6 +727,9 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(AssignNode node) {
 		ExprNode leftNode = node.getLeftNode();
+		/**
+		 * assign to element
+		 */
 		if(leftNode instanceof ElementGetterNode) {
 			this.generateAssignToElement(node);
 			return null;
@@ -757,8 +759,8 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	private void generateAssignToElement(AssignNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		ElementGetterNode leftNode = (ElementGetterNode) node.getLeftNode();
-		OperatorHandle handle = node.getHandle();
-		if(handle == null) {	
+		MethodHandle handle = node.getHandle();
+		if(handle == null) {
 			this.generateCode(leftNode.getRecvNode());
 			this.generateCode(leftNode.getIndexNode());
 			this.generateCode(node.getRightNode());
@@ -781,7 +783,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	private void generateRightValue(AssignNode node) {
-		OperatorHandle handle = node.getHandle();
+		MethodHandle handle = node.getHandle();
 		if(handle != null) {	// self assgin
 			this.generateCode(node.getLeftNode());
 			this.generateCode(node.getRightNode());

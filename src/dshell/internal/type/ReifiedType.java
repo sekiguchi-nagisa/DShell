@@ -6,12 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
-import dshell.internal.parser.CalleeHandle.ReifiedConstructorHandle;
-import dshell.internal.parser.CalleeHandle.ReifiedFieldHandle;
-import dshell.internal.parser.CalleeHandle.ReifiedMethodHandle;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.ReifiedConstructorHandle;
+import dshell.internal.type.CalleeHandle.ReifiedFieldHandle;
+import dshell.internal.type.CalleeHandle.ReifiedMethodHandle;
 
 /**
  * Represents generic type (array type or map type).

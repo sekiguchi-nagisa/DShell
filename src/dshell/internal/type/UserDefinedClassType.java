@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
 
 public class UserDefinedClassType extends ClassType {
 	protected List<ConstructorHandle> constructorHandleList;

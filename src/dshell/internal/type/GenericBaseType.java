@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
 
 /**
  * Represent base type of generic type.

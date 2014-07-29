@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.CalleeHandle.ConstructorHandle;
-import dshell.internal.parser.CalleeHandle.FieldHandle;
-import dshell.internal.parser.CalleeHandle.MethodHandle;
-import dshell.internal.parser.CalleeHandle.OperatorHandle;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
@@ -55,9 +51,14 @@ import dshell.internal.parser.Node.WhileNode;
 import dshell.internal.parser.SymbolTable.SymbolEntry;
 import dshell.internal.parser.error.DShellErrorListener;
 import dshell.internal.parser.error.DShellErrorListener.TypeErrorKind;
+import dshell.internal.type.CalleeHandle;
 import dshell.internal.type.ClassType;
 import dshell.internal.type.DSType;
 import dshell.internal.type.GenericType;
+import dshell.internal.type.CalleeHandle.ConstructorHandle;
+import dshell.internal.type.CalleeHandle.FieldHandle;
+import dshell.internal.type.CalleeHandle.MethodHandle;
+import dshell.internal.type.CalleeHandle.OperatorHandle;
 import dshell.internal.type.DSType.BoxedPrimitiveType;
 import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.FunctionType;
@@ -811,32 +812,53 @@ public class TypeChecker implements NodeVisitor<Node>{
 		} else {
 			DSType leftType = getterNode.getGetterHandle().getReturnType();
 			String opPrefix = op.substring(0, op.length() - 1);
-			this.checkType(node.getRightNode());
-			DSType rightType = node.getRightNode().getType();
-			OperatorHandle opHandle = this.opTable.getOperatorHandle(opPrefix, leftType, rightType);
+			DSType rightType = ((ExprNode) this.checkType(node.getRightNode())).getType();
+			MethodHandle opHandle = this.opTable.getOperatorHandle(opPrefix, leftType, rightType);
 			if(opHandle == null) {
 				this.error.reportTypeError(node, TypeErrorKind.BinaryOp, leftType, opPrefix, rightType);
 			}
 			if(!leftType.isAssignableFrom(opHandle.getReturnType())) {
 				this.error.reportTypeError(getterNode, TypeErrorKind.Required, leftType, opHandle.getReturnType());
 			}
-			node.setHandle(opHandle);
+			node.setHandle(this.checkMethodHandleReturnType(opHandle, handle.getParamTypeList().get(1)));
 		}
 		return node;
+	}
+
+	private MethodHandle checkMethodHandleReturnType(MethodHandle handle, DSType requiredType) {
+		DSType returnType = handle.getReturnType();
+		if(requiredType.isAssignableFrom(returnType)) {
+			return handle;
+		}
+		if((requiredType instanceof BoxedPrimitiveType) && (returnType instanceof PrimitiveType)) {
+			if(((BoxedPrimitiveType) requiredType).isAcceptableType((PrimitiveType) returnType)) {
+				return new CalleeHandle.BoxedHandle(handle);
+			}
+		}
+		Utils.fatal(1, "require " + requiredType + ", but is " + returnType);
+		return null;
 	}
 
 	@Override
 	public Node visit(AssignNode node) {
 		ExprNode leftNode = node.getLeftNode();
+
+		/**
+		 * assign to element
+		 */
 		if(leftNode instanceof ElementGetterNode) {
 			return this.checkTypeAsAssignToElement(node);
 		}
+
+		/**
+		 * assign to symbol or field
+		 */
 		String op = node.getAssignOp();
 		DSType leftType = ((ExprNode) this.checkType(leftNode)).getType();
 		this.checkIsAssignable(leftNode);
-		if(op.equals("=")) {
+		if(op.equals("=")) {	// left = right
 			node.setRightNode((ExprNode) this.checkType(leftType, node.getRightNode()));
-		} else {
+		} else {	// left = left op right
 			String opPrefix = op.substring(0, op.length() - 1);
 			this.checkType(node.getRightNode());
 			DSType rightType = node.getRightNode().getType();
@@ -865,7 +887,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 		FunctionType funcType = this.typePool.createAndGetFuncTypeIfUndefined(returnType, paramTypeList);
 		FuncHolderType holderType = this.typePool.createFuncHolderType(funcType, funcName);
 		this.addEntryAndThrowIfDefined(node, funcName, holderType, true);
-		
+
 		// check type func body
 		this.symbolTable.pushReturnType(returnType);
 		this.symbolTable.createAndPushNewTable();
