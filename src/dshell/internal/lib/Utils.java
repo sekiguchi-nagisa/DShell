@@ -87,7 +87,7 @@ public class Utils {
 	}
 
 	/**
-	 * print meesage and stack trace before exit.
+	 * print message and stack trace before exit.
 	 * @param status
 	 * @param message
 	 */

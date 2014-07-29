@@ -58,6 +58,9 @@ public class DShellEngineFactory implements EngineFactory {
 			this.initGlobalVar();
 		}
 
+		/**
+		 * initialize global variables (STDIN, STDOUT, STDERR)
+		 */
 		protected void initGlobalVar() {
 			RootNode rootNode = new RootNode(null);
 			rootNode.addNode(new Node.GlobalVarNode("STDIN", "InputStream", InputStream.createStdin()));

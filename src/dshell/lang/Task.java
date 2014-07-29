@@ -40,9 +40,10 @@ public class Task implements Serializable {
 		this.option = option;
 		// start task
 		int size = this.procContexts.size();
-		this.procContexts.get(0).start();
+		this.procContexts.get(0).setStreamBehavior(this.option).start();
 		for(int i = 1; i < size; i++) {
-			this.procContexts.get(i).start().pipe(this.procContexts.get(i - 1));
+			this.procContexts.get(i).setStreamBehavior(this.option)
+									.start().pipe(this.procContexts.get(i - 1));
 		}
 		// start message handler
 		// stdout

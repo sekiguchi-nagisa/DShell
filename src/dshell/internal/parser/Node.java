@@ -22,6 +22,7 @@ import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
+import dshell.lang.GenericPair;
 
 /**
  * Represents dshell grammar element.
@@ -827,14 +828,16 @@ public abstract class Node {
 		}
 	}
 
-	public static class CommandNode extends ExprNode {
+	public static class ProcessNode extends ExprNode {
 		private final String commandPath;
 		private final List<ExprNode> argNodeList;
+		private final List<GenericPair<Integer, ExprNode>> redirOptionList;
 
-		protected CommandNode(Token token, String commandPath) {
+		protected ProcessNode(Token token, String commandPath) {
 			super(token);
 			this.argNodeList = new ArrayList<>();
 			this.commandPath = commandPath;
+			this.redirOptionList = new ArrayList<>(5);
 		}
 
 		public void setArg(ExprNode argNode) {
@@ -849,13 +852,46 @@ public abstract class Node {
 			return this.argNodeList;
 		}
 
+		public void addRedirOption(GenericPair<Integer, ExprNode> optionPair) {
+			this.redirOptionList.add(optionPair);
+		}
+
+		public List<GenericPair<Integer, ExprNode>> getRedirOptionList() {
+			return this.redirOptionList;
+		}
+
 		@Override
 		public <T> T accept(NodeVisitor<T> visitor) {
 			return visitor.visit(this);
 		}
 	}
-	
-	
+
+	public static class TaskNode extends ExprNode {	//TODO: timeout
+		private final List<ProcessNode> procNodeList;
+		private final boolean isBackGround;
+
+		protected TaskNode(List<ProcessNode> procNodeList, boolean isBackGround) {
+			super(procNodeList.get(0).getToken());
+			this.procNodeList = procNodeList;
+			this.isBackGround = isBackGround;
+			for(ProcessNode procNode : this.procNodeList) {
+				this.setExprNodeAsChild(procNode);
+			}
+		}
+
+		public List<ProcessNode> getProcNodeList() {
+			return this.procNodeList;
+		}
+
+		public boolean isBackGround() {
+			return this.isBackGround;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
 	
 	// #################
 	// #   statement   #
@@ -1243,6 +1279,11 @@ public abstract class Node {
 		 * May be EmptyNode.
 		 */
 		private final ExprNode exprNode;
+
+		public ReturnNode(Token token) {
+			this(token, new EmptyNode());
+			this.exprNode.setType(TypePool.voidType);
+		}
 
 		public ReturnNode(Token token, ExprNode exprNode) {
 			super(token);

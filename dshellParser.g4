@@ -106,6 +106,18 @@ private boolean isCommand() {
 	}
 	return this.cmdScope.isCommand(token.getText());
 }
+
+private boolean isNum(int num) {
+	Token curToken = _input.LT(1);
+	if(curToken.getType() == IntLiteral) {
+		try {
+			return Integer.parseInt(curToken.getText()) == num;
+		}
+		catch(Exception e) {
+		}
+	}
+	return false;
+}
 }
 
 // ######################
@@ -369,14 +381,14 @@ importCommandStatement returns [Node node]	//FIXME:
 		}
 	;
 
-returnStatement returns [Node node] locals [ParserUtils.ReturnExpr returnExpr]
+returnStatement returns [Node node]
 	: Return (ws e+=expression)?
 		{
-			$returnExpr = new ParserUtils.ReturnExpr();
 			if($e.size() == 1) {
-				$returnExpr.setNode($e.get(0).node);
+				$node = new Node.ReturnNode($Return, $e.get(0).node);
+			} else {
+				$node = new Node.ReturnNode($Return);
 			}
-			$node = new Node.ReturnNode($Return, $returnExpr.getExprNode());
 		}
 	;
 
@@ -460,22 +472,47 @@ commandName returns [Token token]
 		}
 	;
 
-commandExpression returns [Node.ExprNode node]
-	: singleCommandExpr {$node = $singleCommandExpr.node;}
+commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> procList]
+	: a+=singleCommandExpr (WhiteSpace? '|' WhiteSpace? a+=singleCommandExpr)*  WhiteSpace? b+='&'?
+		{
+			$procList = new ArrayList<Node.ProcessNode>($a.size());
+			for(int i = 0; i < $a.size(); i++) {
+				$procList.add($a.get(i).node);
+			}
+			$node = new Node.TaskNode($procList, $b.size() == 1);
+		}
 	;
 
-singleCommandExpr returns [Node.CommandNode node]
-	: {isCommand()}? commandName (WhiteSpace a+=commandArg)*
+singleCommandExpr returns [Node.ProcessNode node]
+	: {isCommand()}? commandName (WhiteSpace a+=commandArg)* (WhiteSpace b+=redirOption)*
 		{
-			$node = new Node.CommandNode($commandName.token, cmdScope.resolveCommandPath($commandName.token.getText()));
+			$node = new Node.ProcessNode($commandName.token, cmdScope.resolveCommandPath($commandName.token.getText()));
 			for(int i = 0; i < $a.size(); i++) {
 				$node.setArg($a.get(i).node);
+			}
+			for(int i = 0; i < $b.size(); i++) {
+				$node.addRedirOption($b.get(i).option);
 			}
 		}
 	;
 
 commandArg returns [Node.ExprNode node] locals [Token token]
 	: commandName {$node = new Node.StringValueNode($commandName.token);}
+	;
+
+redirOption returns [ParserUtils.RedirOption option]
+	: a=('<' | '>') WhiteSpace? commandArg 
+		{$option = new ParserUtils.RedirOption($a, $commandArg.node);}
+	| b+='>' b+=('>' | '&') WhiteSpace? commandArg
+		{$option = new ParserUtils.RedirOption($b.get(0), $b.get(1), $commandArg.node);}
+	| c+='&' c+='>' c+='>'? WhiteSpace? commandArg
+		{$option = new ParserUtils.RedirOption($c.get(0), $c.get($c.size() - 1), $commandArg.node);}
+	| {isNum(1)}? d+=IntLiteral d+='>' d+='>'? WhiteSpace? commandArg
+		{$option = new ParserUtils.RedirOption($d.get(0), $d.get($d.size() - 1), $commandArg.node);}
+	| {isNum(2)}? e+=IntLiteral e+='>' e+='>'? WhiteSpace? commandArg
+		{$option = new ParserUtils.RedirOption($e.get(0), $e.get($e.size() - 1), $commandArg.node);}
+	| {isNum(2)}? f+=IntLiteral f+='>' f+='&' {isNum(1)}? f+=IntLiteral
+		{$option = new ParserUtils.RedirOption($f.get(0), $f.get($f.size() - 1));}
 	;
 
 // normal expression

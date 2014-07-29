@@ -48,6 +48,7 @@ public class BuiltinCommandHolder {
 		context.setExistStatus(1);
 	}
 
+	// builtin command implementation.
 	public static class Command_cd implements ExecutableAsCommand {
 		@Override
 		public void execute(CommandContext context, List<String> argList) {

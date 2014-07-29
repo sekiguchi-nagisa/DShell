@@ -37,7 +37,7 @@ public class ProcessContext extends AbstractProcessContext {
 	public ProcessContext(String commandPath) {
 		super(commandPath);
 		this.procBuilder = new ProcessBuilder(this.argList);
-		this.procBuilder.inheritIO();
+		this.procBuilder.redirectError(Redirect.INHERIT);
 	}
 
 	public void initTrace(boolean tracable) {
@@ -83,13 +83,7 @@ public class ProcessContext extends AbstractProcessContext {
 	}
 
 	@Override
-	public AbstractProcessContext mergeErrorToOut() {
-		this.procBuilder.redirectErrorStream(true);
-		this.stderrIsDirty = true;
-		return this;
-	}
-
-	public void setStreamBehavior(TaskOption option) {
+	public AbstractProcessContext setStreamBehavior(TaskOption option) {
 		if(this.isFirstProc) {
 			if(this.procBuilder.redirectInput().file() == null) {
 				this.procBuilder.redirectInput(Redirect.INHERIT);
@@ -106,17 +100,18 @@ public class ProcessContext extends AbstractProcessContext {
 			this.procBuilder.redirectError(Redirect.PIPE);
 			this.stderrIsDirty = false;
 		}
+		return this;
 	}
 
 	@Override
-	public AbstractProcessContext setInputRedirect(String readFileName) {
+	protected AbstractProcessContext setInputRedirect(String readFileName) {
 		this.stdinIsDirty = true;
 		this.procBuilder.redirectInput(new File(readFileName.toString()));
 		return this;
 	}
 
 	@Override
-	public AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append) {
+	protected AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append) {
 		File file = new File(writeFileName.toString());
 		Redirect redirDest = Redirect.to(file);
 		if(append) {
@@ -129,6 +124,13 @@ public class ProcessContext extends AbstractProcessContext {
 			this.stderrIsDirty = true;
 			this.procBuilder.redirectError(redirDest);
 		}
+		return this;
+	}
+
+	@Override
+	protected AbstractProcessContext mergeErrorToOut() {
+		this.procBuilder.redirectErrorStream(true);
+		this.stderrIsDirty = true;
 		return this;
 	}
 

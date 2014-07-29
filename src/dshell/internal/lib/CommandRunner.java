@@ -1,6 +1,7 @@
 package dshell.internal.lib;
 
 import dshell.internal.process.AbstractProcessContext;
+import dshell.internal.process.TaskOption;
 
 public class CommandRunner extends AbstractProcessContext {
 	private final ExecutableAsCommand executor;
@@ -15,17 +16,17 @@ public class CommandRunner extends AbstractProcessContext {
 	}
 
 	@Override
-	public AbstractProcessContext mergeErrorToOut() {
+	protected AbstractProcessContext mergeErrorToOut() {
 		return this;
 	}
 
 	@Override
-	public AbstractProcessContext setInputRedirect(String readFileName) {
+	protected AbstractProcessContext setInputRedirect(String readFileName) {
 		return this;
 	}
 
 	@Override
-	public AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append) {
+	protected AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append) {
 		return this;
 	}
 
@@ -60,5 +61,10 @@ public class CommandRunner extends AbstractProcessContext {
 	@Override
 	public boolean checkTermination() {
 		return this.isTerminated;
+	}
+
+	@Override
+	public AbstractProcessContext setStreamBehavior(TaskOption option) {
+		return this;
 	}
 }

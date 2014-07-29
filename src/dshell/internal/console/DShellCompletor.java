@@ -8,6 +8,11 @@ import dshell.internal.lib.Utils;
 import dshell.internal.process.BuiltinSymbol;
 import jline.Completor;
 
+/**
+ * root completor for dshell console.
+ * @author skgchxngsxyz-opensuse
+ *
+ */
 public class DShellCompletor implements Completor {
 	private final jline.SimpleCompletor commandCompletor;
 	private final jline.SimpleCompletor envCompletor;

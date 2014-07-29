@@ -76,29 +76,36 @@ public abstract class AbstractConsole {
 		for(int i = 0; i < size; i++) {
 			char ch = text.charAt(i);
 			if(!foundSingleQuote && !foundDoubleQuote) {
-				if(ch == '{' || ch == '[' || ch == '(') {
+				switch(ch) {
+				case '{':
+				case '[':
+				case '(':
 					level++;
-				}
-				if(ch == '}' || ch == ']' || ch == ')') {
+					break;
+				case '}':
+				case ']':
+				case ')':
 					level--;
-				}
-				if(ch == '\'') {
+					break;
+				case '\'':
 					foundSingleQuote = true;
-				}
-				if(ch == '"') {
+					break;
+				case '"':
 					foundDoubleQuote = true;
+					break;
 				}
 			}
 			else {
-				if(ch == '\\') {
+				switch(ch) {
+				case '\\':
 					i++;
 					continue;
-				}
-				if(ch == '\'') {
+				case '\'':
 					foundSingleQuote = !foundSingleQuote;
-				}
-				if(ch == '"') {
+					break;
+				case '"':
 					foundDoubleQuote = !foundDoubleQuote;
+					break;
 				}
 			}
 		}

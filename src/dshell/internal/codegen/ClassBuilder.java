@@ -24,6 +24,7 @@ import dshell.internal.type.CalleeHandle.StaticFunctionHandle;
 import dshell.internal.type.DSType.FuncHolderType;
 import dshell.internal.type.DSType.FunctionType;
 import dshell.internal.type.DSType;
+import dshell.lang.GenericPair;
 
 /**
  * used for class and function wrapper class generation.
@@ -120,14 +121,10 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	 */
 	public static class MethodBuilder extends GeneratorAdapter {
 		/**
-		 * used for loop statement and continue statement.
+		 * contains loop statement label(break, continue).
+		 * left is break label and right is continue label.
 		 */
-		protected final Stack<Label> continueLabels;
-
-		/**
-		 * used for loop statement and break statement.
-		 */
-		protected final Stack<Label> breakLabels;
+		protected final Stack<GenericPair<Label, Label>> loopLabels;
 
 		/**
 		 * used for try catch statement.
@@ -145,10 +142,9 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 */
 		protected int currentLineNum = -1;
 
-		protected MethodBuilder(int access, Method method, String signature, org.objectweb.asm.Type[] exceptions, ClassVisitor cv) {
+		protected MethodBuilder(int access, Method method, String signature, Type[] exceptions, ClassVisitor cv) {
 			super(access, method, signature, exceptions, cv);
-			this.continueLabels = new Stack<>();
-			this.breakLabels = new Stack<>();
+			this.loopLabels = new Stack<>();
 			this.tryLabels = new Stack<>();
 			int startIndex = 0;
 			if((access & ACC_STATIC) != ACC_STATIC) {
@@ -157,12 +153,13 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 			this.varScopes = new VarScopes(startIndex);
 		}
 
-		public Stack<Label> getContinueLabels() {
-			return this.continueLabels;
-		}
-
-		public Stack<Label> getBreakLabels() {
-			return this.breakLabels;
+		/**
+		 * get loop labels
+		 * @return
+		 * - stack of label pair. pair's left value is break label, right value is continue label.
+		 */
+		public Stack<GenericPair<Label, Label>> getLoopLabels() {
+			return this.loopLabels;
 		}
 
 		public Stack<TryBlockLabels> getTryLabels() {
@@ -179,8 +176,8 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 * @param type
 		 * - stack top type.
 		 */
-		public void pop(org.objectweb.asm.Type type) {
-			if(type.equals(org.objectweb.asm.Type.LONG_TYPE) || type.equals(org.objectweb.asm.Type.DOUBLE_TYPE)) {
+		public void pop(Type type) {
+			if(type.equals(Type.LONG_TYPE) || type.equals(Type.DOUBLE_TYPE)) {
 				this.pop2();
 			} else {
 				this.pop();
@@ -224,7 +221,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 				return;
 			}
 			// local variable
-			org.objectweb.asm.Type typeDesc = TypeUtils.toTypeDescriptor(type);
+			Type typeDesc = TypeUtils.toTypeDescriptor(type);
 			this.visitVarInsn(typeDesc.getOpcode(ISTORE), entry.getVarIndex());
 			return;
 		}
@@ -238,7 +235,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 				return;
 			}
 			// local variable
-			org.objectweb.asm.Type typeDesc = TypeUtils.toTypeDescriptor(type);
+			Type typeDesc = TypeUtils.toTypeDescriptor(type);
 			this.visitVarInsn(typeDesc.getOpcode(ISTORE), entry.getVarIndex());
 		}
 
@@ -251,7 +248,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 				return;
 			}
 			// local variable
-			org.objectweb.asm.Type typeDesc = TypeUtils.toTypeDescriptor(type);
+			Type typeDesc = TypeUtils.toTypeDescriptor(type);
 			this.visitVarInsn(typeDesc.getOpcode(ILOAD), entry.getVarIndex());
 		}
 

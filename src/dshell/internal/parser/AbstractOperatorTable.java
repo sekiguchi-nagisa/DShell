@@ -18,8 +18,8 @@ public abstract class AbstractOperatorTable {
 	private final Map<String, OperatorEntry> unaryEntryMap;
 
 	public AbstractOperatorTable() {
-		this.binaryEntryMap = new HashMap<>(16);
-		this.unaryEntryMap = new HashMap<>(5);
+		this.binaryEntryMap = new HashMap<>();
+		this.unaryEntryMap = new HashMap<>();
 	}
 
 	/**

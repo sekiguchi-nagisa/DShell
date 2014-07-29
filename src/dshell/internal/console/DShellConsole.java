@@ -32,6 +32,7 @@ public class DShellConsole extends AbstractConsole {
 		}
 	}
 
+	@Override
 	public final String readLine() {
 		String[] prompts = this.getPrompts();
 		String prompt = prompts[0];
@@ -60,7 +61,12 @@ public class DShellConsole extends AbstractConsole {
 		}
 	}
 
-	private String[] getPrompts() {
+	/**
+	 * get console prompt
+	 * @return
+	 * - array of prompt. size is two. fist one is primary prompt, second is secondary prompt.
+	 */
+	private String[] getPrompts() {	// TODO: PS1 PS2 variable.
 		String homeDir = Utils.getEnv("HOME");
 		String[] prompts = new String[2];
 		String currentDir = RuntimeContext.getInstance().getWorkingDirectory();
@@ -86,6 +92,11 @@ class ShutdownOp extends Thread {
 	}
 }
 
+/**
+ * for tty configuration load/store
+ * @author skgchxngsxyz-opensuse
+ *
+ */
 class TTYConfigurator {
 	private final String originalTTYConfig;
 	private final String jlineTTYConfig;

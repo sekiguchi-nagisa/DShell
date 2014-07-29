@@ -170,14 +170,6 @@ EscapeSequence	// TODO: unicode escape
 	;
 
 // symbol , class and command name
-//CommandName	//FIXME:
-//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {cmdScope.isCommand(getText())}? -> mode(CMD_ARG)
-//	;
-//
-//CommandSymbol
-//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+ {requireCommand()}?
-//	;
-
 Identifier
 	: [_a-zA-Z] [_0-9a-zA-Z]*
 	;
@@ -191,27 +183,7 @@ WhiteSpace
 	: [\t\u000B\u000C\u0020\u00A0]+
 	;
 
-//LineEndInCmd
-//	: {requireCommand()}? [\r\n\u2028\u2029]
-//	;
 LineEnd
 	: [\r\n\u2028\u2029]+
 	;
-
-//// command arg mode
-//mode CMD_ARG;
-//CommandArg
-//	: ~[\n\t\r\u0020|#&$'"\\;<>()]+
-//	;
-//
-//InnerComment
-//	: '#' ~[\r\n\u2028\u2029]* -> skip
-//	;
-//InnerWhiteSpace
-//	: [\t\u000B\u000C\u0020\u00A0]+ -> skip
-//	;
-//
-//CommandEnd
-//	: ([\n\r&;] | '||' | '&&' ) -> mode(DEFAULT_MODE)
-//	;
 

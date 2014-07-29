@@ -9,6 +9,11 @@ import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
 
+/**
+ * helper utilities for type descriptor generation.
+ * @author skgchxngsxyz-opensuse
+ *
+ */
 public class TypeUtils {
 	/**
 	 * create type descriptor from type.
@@ -51,6 +56,7 @@ public class TypeUtils {
 		return toTypeDescriptor(exceptionType);
 	}
 
+	// for method descriptor generation
 	/**
 	 * create mrthod descriptor from types.
 	 * @param returnType

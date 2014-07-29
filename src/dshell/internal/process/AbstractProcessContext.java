@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import dshell.internal.lib.Utils;
+import dshell.internal.parser.ParserUtils.RedirOption;
 import dshell.lang.GenericArray;
 
 /**
@@ -99,9 +100,50 @@ public abstract class AbstractProcessContext {
 		return this;
 	}
 
-	public abstract AbstractProcessContext mergeErrorToOut();
-	public abstract AbstractProcessContext setInputRedirect(String readFileName);
-	public abstract AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append);
+	public abstract AbstractProcessContext setStreamBehavior(TaskOption option);
+
+	protected abstract AbstractProcessContext setInputRedirect(String readFileName);
+	protected abstract AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append);
+	protected abstract AbstractProcessContext mergeErrorToOut();
+
+	/**
+	 * 
+	 * @param option
+	 * - must be RedirectOption's element
+	 * @param targetFileName
+	 * - not null
+	 * @return
+	 * - this
+	 */
+	public final AbstractProcessContext setRedirOption(int option, String targetFileName) {
+		switch(option) {
+		case RedirOption.FromFile:
+			this.setInputRedirect(targetFileName);
+			break;
+		case RedirOption.To1File:
+			this.setOutputRedirect(STDOUT_FILENO, targetFileName, false);
+			break;
+		case RedirOption.To1FileAppend:
+			this.setOutputRedirect(STDOUT_FILENO, targetFileName, true);
+			break;
+		case RedirOption.To2File:
+			this.setOutputRedirect(STDERR_FILENO, targetFileName, false);
+			break;
+		case RedirOption.To2FileAppend:
+			this.setOutputRedirect(STDERR_FILENO, targetFileName, true);
+			break;
+		case RedirOption.Merge2To1:
+			this.mergeErrorToOut();
+			break;
+		case RedirOption.ToFileAnd:
+			this.mergeErrorToOut().setOutputRedirect(STDOUT_FILENO, targetFileName, false);
+			break;
+		case RedirOption.AndToFileAppend:
+			this.mergeErrorToOut().setOutputRedirect(STDOUT_FILENO, targetFileName, true);
+			break;
+		}
+		return this;
+	}
 
 	/**
 	 * create and start new process.

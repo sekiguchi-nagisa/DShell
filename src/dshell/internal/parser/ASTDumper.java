@@ -81,21 +81,21 @@ public class ASTDumper {
 	public void convertToJson(RootNode node) {
 		String fileName = "ast" + ++this.fileNamePrefix + "_" + new Random().nextInt() + ".txt";
 		try(FileOutputStream output = new FileOutputStream(fileName)) {
-			System.err.println("dump ast @@@ " + fileName + " @@@");
+			System.err.println("@@@ Dump AST " + fileName + " @@@");
 			this.convertToJson(node, output, true);
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void convertToJson(RootNode node, OutputStream output, boolean closable) {
+	public void convertToJson(RootNode node, OutputStream output, boolean closeable) {
 		this.sBuilder = new StringBuilder();
 		this.currentIndentLevel = 0;
 		this.getHanlder(RootNode.class).encode(node);
 		try(OutputStreamWriter writer = new OutputStreamWriter(output)) {
 			writer.write(this.sBuilder.toString());
 			this.sBuilder = null;
-			if(closable) {
+			if(closeable) {
 				writer.close();
 			}
 		} catch(IOException e) {

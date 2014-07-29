@@ -1,7 +1,9 @@
 package dshell.internal.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
@@ -12,7 +14,13 @@ import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
+import dshell.lang.GenericPair;
 
+/**
+ * helper utilities for node generation.
+ * @author skgchxngsxyz-opensuse
+ *
+ */
 public class ParserUtils {
 	public static class MapEntry {
 		public final ExprNode keyNode;
@@ -77,22 +85,6 @@ public class ParserUtils {
 
 		public BlockNode getElseBlockNode() {
 			return this.elseBlockNode;
-		}
-	}
-
-	public static class ReturnExpr {
-		private ExprNode exprNode;
-
-		public ReturnExpr() {
-			this.exprNode = new Node.EmptyNode();
-		}
-
-		public void setNode(Node node) {
-			this.exprNode = (ExprNode) node;
-		}
-
-		public ExprNode getExprNode() {
-			return this.exprNode;
 		}
 	}
 
@@ -205,6 +197,46 @@ public class ParserUtils {
 					startToken.getChannel(), 
 					startToken.getStartIndex(), 
 					stopToken.getStopIndex());
+		}
+	}
+
+	public static class RedirOption extends GenericPair<Integer, ExprNode> {
+		// definition of redirect option.
+		public final static int FromFile        = 0; // <
+		public final static int To1File         = 1; // 1> >
+		public final static int To1FileAppend   = 2; // 1>> >>
+		public final static int To2File         = 3; // 2>
+		public final static int To2FileAppend   = 4; // 2>>
+		public final static int Merge2To1       = 5; // 2>&1
+		public final static int ToFileAnd       = 6; // >& &>
+		public final static int AndToFileAppend = 7; // &>>
+
+		public final static Map<String, Integer> optionMap = new HashMap<>();
+
+		static {
+			optionMap.put("<",    FromFile);
+			optionMap.put("1>",   To1File);
+			optionMap.put(">",    To1File);
+			optionMap.put("1>>",  To1FileAppend);
+			optionMap.put(">>",   To1FileAppend);
+			optionMap.put("2>",   To2File);
+			optionMap.put("2>>",  To2FileAppend);
+			optionMap.put("2>&1", Merge2To1);
+			optionMap.put(">&",   ToFileAnd);
+			optionMap.put("&>",   ToFileAnd);
+			optionMap.put("&>>",  AndToFileAppend);
+		}
+
+		public RedirOption(Token startToken, Token stopToken) {
+			this(startToken, stopToken, new Node.StringValueNode(""));
+		}
+
+		public RedirOption(Token startToken, Token stopToken, ExprNode targetNode) {
+			this(new JoinedToken(startToken, stopToken), targetNode);
+		}
+
+		public RedirOption(Token token, ExprNode targetNode) {
+			super(optionMap.get(token.getText()), targetNode);
 		}
 	}
 }

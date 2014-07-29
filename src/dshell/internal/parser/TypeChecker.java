@@ -15,7 +15,7 @@ import dshell.internal.parser.Node.BreakNode;
 import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.CatchNode;
 import dshell.internal.parser.Node.ClassNode;
-import dshell.internal.parser.Node.CommandNode;
+import dshell.internal.parser.Node.ProcessNode;
 import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
 import dshell.internal.parser.Node.ConstructorNode;
@@ -44,6 +44,7 @@ import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
+import dshell.internal.parser.Node.TaskNode;
 import dshell.internal.parser.Node.ThrowNode;
 import dshell.internal.parser.Node.TryNode;
 import dshell.internal.parser.Node.VarDeclNode;
@@ -66,6 +67,7 @@ import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.DSType.UnresolvedType;
 import dshell.internal.type.DSType.VoidType;
 import dshell.internal.type.TypePool;
+import dshell.lang.GenericPair;
 
 public class TypeChecker implements NodeVisitor<Node>{
 	private final TypePool typePool;
@@ -125,7 +127,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 			this.error.reportTypeError(exprNode, TypeErrorKind.Unresolved);
 		}
 
-		/**
+		/**	
 		 * do not try type matching.
 		 */
 		if(requiredType == null) {
@@ -265,7 +267,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 		int endIndex = blockNode.getNodeList().size() - 1;
 		Node endNode = blockNode.getNodeList().get(endIndex);
 		if((returnType instanceof VoidType) && !(endNode instanceof BlockEndNode)) {
-			blockNode.getNodeList().add(new ReturnNode(null, new EmptyNode()));
+			blockNode.getNodeList().add(new ReturnNode(null));
 			return;
 		}
 		if(!this.findBlockEnd(blockNode)) {
@@ -588,11 +590,24 @@ public class TypeChecker implements NodeVisitor<Node>{
 	}
 
 	@Override
-	public Node visit(CommandNode node) {	//TODO: context typing, redirect, pipe .. etc.
+	public Node visit(ProcessNode node) {
 		for(ExprNode argNode : node.getArgNodeList()) {
 			this.checkType(this.typePool.stringType, argNode);
 		}
-		node.setType(this.typePool.intType);
+		// check type redirect options
+		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
+			this.checkType(pair.getRight());
+		}
+		node.setType(TypePool.voidType);
+		return node;
+	}
+
+	@Override
+	public Node visit(TaskNode node) {	//TODO: context typing, redirect, pipe .. etc.
+		for(ProcessNode procNode : node.getProcNodeList()) {
+			this.checkType(procNode);
+		}
+		node.setType(this.typePool.intType);	// FIXME:
 		return node;
 	}
 

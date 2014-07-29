@@ -33,9 +33,6 @@ public class TaskContext {
 		if(context.isTraced()) {
 			this.enableTrace = true;
 		}
-		if(context instanceof ProcessContext) {
-			((ProcessContext) context).setStreamBehavior(this.option);
-		}
 		return this;
 	}
 
@@ -73,6 +70,8 @@ public class TaskContext {
 		/**
 		 * launch task.
 		 */
+		this.procContexts.get(0).setAsFirstProc(true);
+		this.procContexts.get(this.procContexts.size() - 1).setAsLastProc(true);
 		Task task = new Task(this.procContexts, this.option);
 		if(this.option.is(background)) {
 			return (this.option.isRetType(TaskType) && this.option.is(returnable)) ? task : null;

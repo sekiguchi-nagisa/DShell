@@ -24,7 +24,7 @@ import dshell.internal.parser.Node.BreakNode;
 import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.CatchNode;
 import dshell.internal.parser.Node.ClassNode;
-import dshell.internal.parser.Node.CommandNode;
+import dshell.internal.parser.Node.ProcessNode;
 import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
 import dshell.internal.parser.Node.ConstructorNode;
@@ -52,6 +52,7 @@ import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
+import dshell.internal.parser.Node.TaskNode;
 import dshell.internal.parser.Node.ThrowNode;
 import dshell.internal.parser.Node.TryNode;
 import dshell.internal.parser.Node.VarDeclNode;
@@ -69,6 +70,7 @@ import dshell.internal.type.CalleeHandle.StaticFunctionHandle;
 import dshell.internal.type.DSType.FunctionType;
 import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.DSType.VoidType;
+import dshell.lang.GenericPair;
 
 /**
  * generate java byte code from node.
@@ -203,7 +205,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		int size = node.getNodeList().size();
 		DSType elementType = ((GenericType) node.getType()).getElementTypeList().get(0);
 		Type elementTypeDesc = TypeUtils.toTypeDescriptor(elementType);
-		Type arrayClassDesc = TypeUtils.toTypeDescriptor(node.getType().getInternalName());
+		Type arrayClassDesc = TypeUtils.toTypeDescriptor(node.getType());
 
 		GeneratorAdapter adapter = this.getCurrentMethodBuilder();
 		adapter.newInstance(arrayClassDesc);
@@ -225,9 +227,9 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	public Void visit(MapNode node) {
 		int size = node.getKeyList().size();
 		Type elementTypeDesc = TypeUtils.toTypeDescriptor(node.getValueList().get(0).getType());
-		Type keyTypeDesc = TypeUtils.toTypeDescriptor("java/lang/String");
-		Type valueTypeDesc = TypeUtils.toTypeDescriptor("java/lang/Object");
-		Type mapClassDesc = TypeUtils.toTypeDescriptor(node.getType().getInternalName());
+		Type keyTypeDesc = Type.getType(String.class);
+		Type valueTypeDesc = Type.getType(Object.class);
+		Type mapClassDesc = TypeUtils.toTypeDescriptor(node.getType());
 
 		GeneratorAdapter adapter = this.getCurrentMethodBuilder();
 		adapter.newInstance(mapClassDesc);
@@ -259,7 +261,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	public Void visit(PairNode node) {
 		Type leftTypeDesc = TypeUtils.toTypeDescriptor(node.getLeftNode().getType());
 		Type rightTypeDesc = TypeUtils.toTypeDescriptor(node.getRightNode().getType());
-		Type pairClassDesc = TypeUtils.toTypeDescriptor(node.getType().getInternalName());
+		Type pairClassDesc = TypeUtils.toTypeDescriptor(node.getType());
 
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		mBuilder.newInstance(pairClassDesc);
@@ -443,32 +445,55 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(CommandNode node) {	//TODO: pipe, reidirect .. etc.
+	public Void visit(ProcessNode node) {	//TODO: trace
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Type taskCtxDesc = Type.getType(TaskContext.class);
 		Type procCtxDesc = Type.getType(AbstractProcessContext.class);
 
-		mBuilder.newInstance(taskCtxDesc);
-		mBuilder.dup();
-		mBuilder.invokeConstructor(taskCtxDesc, Method.getMethod("void <init> ()"));
 		int argSize = node.getArgNodeList().size();
 		mBuilder.push(node.getCommandPath());
-		Method method = new Method("createProcessContext", procCtxDesc, 
+		Method methodDesc = new Method("createProcessContext", procCtxDesc, 
 						new Type[]{Type.getType(String.class)});
-		mBuilder.invokeStatic(taskCtxDesc, method);
+		mBuilder.invokeStatic(taskCtxDesc, methodDesc);
 
-		method = new Method("addArg", procCtxDesc, 
+		// set arguments
+		methodDesc = new Method("addArg", procCtxDesc, 
 				new Type[]{Type.getType(String.class)});
 		for(int i = 0; i < argSize; i++) {
 			this.generateCode(node.getArgNodeList().get(i));
-			mBuilder.invokeVirtual(procCtxDesc, method);
+			mBuilder.invokeVirtual(procCtxDesc, methodDesc);
 		}
 
-		method = new Method("addContext", taskCtxDesc, new Type[]{procCtxDesc});
-		mBuilder.invokeVirtual(taskCtxDesc, method);
+		// set redirect options
+		Method redirDesc = new Method("setRedirOption", procCtxDesc, 
+				new Type[]{Type.getType(int.class), Type.getType(String.class)});
+		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
+			mBuilder.push(pair.getLeft());
+			this.generateCode(pair.getRight());
+			mBuilder.invokeVirtual(procCtxDesc, redirDesc);
+		}
 
-		method = new Method("execAsInt", Type.LONG_TYPE, new Type[]{});
-		mBuilder.invokeVirtual(taskCtxDesc, method);
+		methodDesc = new Method("addContext", taskCtxDesc, new Type[]{procCtxDesc});
+		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
+		return null;
+	}
+
+	@Override
+	public Void visit(TaskNode node) {	//TODO: pipe .. etc.
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Type taskCtxDesc = Type.getType(TaskContext.class);
+
+		mBuilder.newInstance(taskCtxDesc);
+		mBuilder.dup();
+		mBuilder.invokeConstructor(taskCtxDesc, Method.getMethod("void <init> ()"));
+
+		// generate process context
+		for(ProcessNode prcoNode : node.getProcNodeList()) {
+			this.generateCode(prcoNode);
+		}
+
+		Method methodDesc = new Method("execAsInt", Type.LONG_TYPE, new Type[]{});	//FIXME
+		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
 		return null;
 	}
 
@@ -490,14 +515,14 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	@Override
 	public Void visit(BreakNode node) {
-		Label label = this.getCurrentMethodBuilder().getBreakLabels().peek();
+		Label label = this.getCurrentMethodBuilder().getLoopLabels().peek().getLeft();
 		this.getCurrentMethodBuilder().goTo(label);
 		return null;
 	}
 
 	@Override
 	public Void visit(ContinueNode node) {
-		Label label = this.getCurrentMethodBuilder().getContinueLabels().peek();
+		Label label = this.getCurrentMethodBuilder().getLoopLabels().peek().getRight();
 		this.getCurrentMethodBuilder().goTo(label);
 		return null;
 	}
@@ -527,8 +552,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Label continueLabel = mBuilder.newLabel();
 		Label breakLabel = mBuilder.newLabel();
-		mBuilder.continueLabels.push(continueLabel);
-		mBuilder.breakLabels.push(breakLabel);
+		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
 		mBuilder.createNewLocalScope();
 		// init
@@ -549,8 +573,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 		mBuilder.removeCurrentLocalScope();
 		// remove label
-		mBuilder.continueLabels.pop();
-		mBuilder.breakLabels.pop();
+		mBuilder.getLoopLabels().pop();
 		return null;
 	}
 
@@ -560,8 +583,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Label continueLabel = mBuilder.newLabel();
 		Label breakLabel = mBuilder.newLabel();
-		mBuilder.continueLabels.push(continueLabel);
-		mBuilder.breakLabels.push(breakLabel);
+		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
 		mBuilder.createNewLocalScope();
 		// init
@@ -587,8 +609,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.removeCurrentLocalScope();
 		mBuilder.pop();
 		// remove label
-		mBuilder.continueLabels.pop();
-		mBuilder.breakLabels.pop();
+		mBuilder.getLoopLabels().pop();
 		return null;
 	}
 
@@ -602,8 +623,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Label continueLabel = mBuilder.newLabel();
 		Label breakLabel = mBuilder.newLabel();
-		mBuilder.continueLabels.push(continueLabel);
-		mBuilder.breakLabels.push(breakLabel);
+		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
 		mBuilder.mark(continueLabel);
 		mBuilder.push(true);
@@ -614,8 +634,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.mark(breakLabel);
 
 		// remove label
-		mBuilder.continueLabels.pop();
-		mBuilder.breakLabels.pop();
+		mBuilder.getLoopLabels().pop();
 		return null;
 	}
 
@@ -625,8 +644,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		Label continueLabel = mBuilder.newLabel();
 		Label breakLabel = mBuilder.newLabel();
 		Label enterLabel = mBuilder.newLabel();
-		mBuilder.continueLabels.push(continueLabel);
-		mBuilder.breakLabels.push(breakLabel);
+		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
 		mBuilder.mark(enterLabel);
 		this.generateBlockWithNewScope(node.getBlockNode());
@@ -638,8 +656,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.mark(breakLabel);
 
 		// remove label
-		mBuilder.continueLabels.pop();
-		mBuilder.breakLabels.pop();
+		mBuilder.getLoopLabels().pop();
 	}
 
 	@Override
@@ -828,7 +845,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		Method initDesc = TypeUtils.toConstructorDescriptor(new ArrayList<DSType>());
 		GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, initDesc, null, null, classBuilder);
 		adapter.loadThis();
-		adapter.invokeConstructor(Type.getType("java/lang/Object"), initDesc);
+		adapter.invokeConstructor(Type.getType(Object.class), initDesc);
 		adapter.returnValue();
 		adapter.endMethod();
 

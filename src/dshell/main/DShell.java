@@ -13,7 +13,6 @@ import dshell.internal.exe.ExecutionEngine.EngineConfig;
 import dshell.internal.exe.DShellEngineFactory;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
-import dshell.main.ArgsParser.CommandLine;
 import dshell.main.ArgsParser.OptionListener;
 //import dshell.internal.remote.RequestReceiver;
 import static dshell.internal.lib.RuntimeContext.AppenderType;
@@ -129,8 +128,7 @@ public class DShell {
 		});
 
 		try {
-			CommandLine cl = parser.parse(args);
-			this.scriptArgs = cl.getRestArgs();
+			this.scriptArgs = parser.parse(args).getRestArgs();
 			if(!this.enablePseudoTerminal && System.console() == null) {
 				this.mode = ExecutionMode.inputEvalMode;
 			}
