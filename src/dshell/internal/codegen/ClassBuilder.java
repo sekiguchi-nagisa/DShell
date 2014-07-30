@@ -174,12 +174,12 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 * generate pop instruction.
 		 * if type is long or double, generate pop2.
 		 * @param type
-		 * - stack top type.
+		 * - stack top type. if type is void, not generate pop ins
 		 */
 		public void pop(Type type) {
 			if(type.equals(Type.LONG_TYPE) || type.equals(Type.DOUBLE_TYPE)) {
 				this.pop2();
-			} else {
+			} else if(!type.equals(Type.VOID_TYPE)) {
 				this.pop();
 			}
 		}

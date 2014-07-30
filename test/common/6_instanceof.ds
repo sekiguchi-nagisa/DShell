@@ -65,7 +65,7 @@ try {
 	assert(e instanceof Exception)
 }
 
-// IOStream
+# IOStream
 assert(stdin instanceof InputStream)
 assert(stdout instanceof OutputStream)
 assert(stderr instanceof OutputStream)

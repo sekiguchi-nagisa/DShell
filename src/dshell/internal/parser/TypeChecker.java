@@ -465,15 +465,14 @@ public class TypeChecker implements NodeVisitor<Node>{
 
 	@Override
 	public Node visit(InstanceofNode node) {
-		this.checkTypeAcceptingVoidType(node.getExprNode());
+		DSType exprType = ((ExprNode)this.checkType(node.getExprNode())).getType();
 		node.setTargetType(this.typePool);
 		DSType targetType = node.getTargetType();
 
 		// resolve instanceof op
-		if(targetType instanceof VoidType) {
+		if((targetType instanceof VoidType) || (exprType instanceof VoidType)) {
 			node.resolveOpType(InstanceofNode.ALWAYS_FALSE);
-		} else if((node.getExprNode().getType() instanceof PrimitiveType) || 
-				(targetType instanceof PrimitiveType) || 
+		} else if((exprType instanceof PrimitiveType) || (targetType instanceof PrimitiveType) || 
 				(targetType instanceof GenericType) || (targetType instanceof FunctionType)) {
 			node.resolveOpType(InstanceofNode.COMP_TYPE);
 		} else {

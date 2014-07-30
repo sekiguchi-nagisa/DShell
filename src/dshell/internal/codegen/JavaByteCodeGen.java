@@ -122,11 +122,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		if(!(node instanceof ExprNode)) {
 			return;
 		}
-		DSType type = ((ExprNode) node).getType();
-		if(type instanceof VoidType) {
-			return;
-		}
-		this.getCurrentMethodBuilder().pop(TypeUtils.toTypeDescriptor(type));
+		this.getCurrentMethodBuilder().pop(TypeUtils.toTypeDescriptor(((ExprNode) node).getType()));
 	}
 
 	/**
