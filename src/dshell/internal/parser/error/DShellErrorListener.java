@@ -30,6 +30,7 @@ public class DShellErrorListener {
 		NotNeedExpr    ("not need expression"),
 		Assignable     ("require assignable node"),
 		ReadOnly       ("read only value"),
+		Unacceptable   ("unacceptable type: %s"),
 
 		Unimplemented  ("unimplemented type checker api: %s");
 
@@ -44,6 +45,15 @@ public class DShellErrorListener {
 		}
 	}
 
+	/**
+	 * report type error and throw exception.
+	 * @param node
+	 * - the node having type error
+	 * @param kind
+	 * - reporting error kind
+	 * @param args
+	 * - specific arguments for error message
+	 */
 	public void reportTypeError(Node node, TypeErrorKind kind, Object... args) {
 		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), args));
 	}

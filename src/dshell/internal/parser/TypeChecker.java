@@ -83,25 +83,54 @@ public class TypeChecker implements NodeVisitor<Node>{
 	}
 
 	/**
+	 * check type.
+	 * @param targetNode
+	 * @return
+	 * - this node. if node type is void type, always success.
+	 */
+	private Node checkTypeAcceptingVoidType(Node targetNode) {
+		return this.checkType(null, targetNode, null);
+	}
+
+	/**
 	 * check node type.
 	 * @param targetNode
 	 * @return
 	 * - typed this node.
+	 * if node type is void type, throw exception
 	 */
 	private Node checkType(Node targetNode) {
-		return this.checkType(null, targetNode);
+		return this.checkType(null, targetNode, TypePool.voidType);
 	}
 
 	/**
 	 * check node type
 	 * @param requiredType
+	 * - not null
 	 * @param targetNode
 	 * @return
 	 * - typed this node.
 	 * if requiredType is not equivalent to node type, throw exception.
-	 * if requiredType is null, do not try matching node type.
 	 */
 	private Node checkType(DSType requiredType, Node targetNode) {
+		assert requiredType != null;
+		return this.checkType(requiredType, targetNode, null);
+	}
+
+	/**
+	 * check node type
+	 * @param requiredType
+	 * - may be null
+	 * @param targetNode
+	 * @param unacceptableType
+	 * - may be null
+	 * @return
+	 * - typed this node.
+	 * if requiredType is not equivalent to node type, throw exception.
+	 * if requiredType is null, do not try matching node type 
+	 * and if unaccepatbelType is equivalent to node type, throw exception.
+	 */
+	private Node checkType(DSType requiredType, Node targetNode, DSType unacceptableType) {
 		/**
 		 * if target node is statement, always check type.
 		 */
@@ -131,6 +160,9 @@ public class TypeChecker implements NodeVisitor<Node>{
 		 * do not try type matching.
 		 */
 		if(requiredType == null) {
+			if(unacceptableType != null && unacceptableType.isAssignableFrom(type)) {
+				this.error.reportTypeError(exprNode, TypeErrorKind.Unacceptable, type);
+			}
 			return exprNode;
 		}
 
@@ -433,7 +465,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 
 	@Override
 	public Node visit(InstanceofNode node) {
-		this.checkType(node.getExprNode());
+		this.checkTypeAcceptingVoidType(node.getExprNode());
 		node.setTargetType(this.typePool);
 		DSType targetType = node.getTargetType();
 
@@ -598,14 +630,14 @@ public class TypeChecker implements NodeVisitor<Node>{
 		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
 			this.checkType(pair.getRight());
 		}
-		node.setType(TypePool.voidType);
+		node.setType(TypePool.voidType);	// ProcessNode is always void type
 		return node;
 	}
 
 	@Override
-	public Node visit(TaskNode node) {	//TODO: context typing, redirect, pipe .. etc.
+	public Node visit(TaskNode node) {	//TODO: context typing.
 		for(ProcessNode procNode : node.getProcNodeList()) {
-			this.checkType(procNode);
+			this.checkTypeAcceptingVoidType(procNode);	// accept void type
 		}
 		node.setType(this.typePool.intType);	// FIXME:
 		return node;
@@ -627,7 +659,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 		int size = node.getNodeList().size();
 		for(int i = 0; i < size; i++) {
 			Node targetNode = node.getNodeList().get(i);
-			this.checkType(targetNode);
+			this.checkTypeAcceptingVoidType(targetNode);
 			if((targetNode instanceof BlockEndNode) && (i != size - 1)) {
 				this.error.reportTypeError(node.getNodeList().get(i + 1), TypeErrorKind.Unreachable);
 			}
@@ -673,9 +705,9 @@ public class TypeChecker implements NodeVisitor<Node>{
 	@Override
 	public Node visit(ForNode node) {
 		this.symbolTable.createAndPushNewTable();
-		this.checkType(node.getInitNode());
+		this.checkTypeAcceptingVoidType(node.getInitNode());
 		this.checkType(this.typePool.booleanType, node.getCondNode());
-		this.checkType(node.getIterNode());
+		this.checkTypeAcceptingVoidType(node.getIterNode());
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
 		this.symbolTable.popCurrentTable();
 		return node;
@@ -959,7 +991,7 @@ public class TypeChecker implements NodeVisitor<Node>{
 	public RootNode checkTypeRootNode(RootNode node) {
 		this.symbolTable.clearEntryCache();
 		for(Node targetNode : node.getNodeList()) {
-			this.checkType(targetNode);
+			this.checkTypeAcceptingVoidType(targetNode);
 		}
 		OperatorHandle handle = this.opTable.getOperatorHandle(RootNode.opName, this.typePool.objectType, this.typePool.stringType);
 		if(handle == null) {

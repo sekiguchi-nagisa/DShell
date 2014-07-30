@@ -89,7 +89,9 @@ public class Utils {
 	/**
 	 * print message and stack trace before exit.
 	 * @param status
+	 * - if 0, exit success, otherwise exit failed.
 	 * @param message
+	 * - not null
 	 */
 	public final static void fatal(int status, String message) {
 		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
@@ -191,6 +193,10 @@ public class Utils {
 		return getEnv("USER");
 	}
 
+	/**
+	 * print dshell style stack trace message
+	 * @param e
+	 */
 	public static void printException(InvocationTargetException e) {
 		dshell.lang.Exception.wrapException(e.getCause()).printStackTrace();
 	}

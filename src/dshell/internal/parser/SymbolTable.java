@@ -6,7 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import dshell.internal.lib.Utils;
 import dshell.internal.parser.SymbolTable.SymbolEntry;
+import dshell.internal.type.DSType.UnresolvedType;
+import dshell.internal.type.DSType.VoidType;
+import dshell.internal.type.ParametricType;
+import dshell.internal.type.ParametricType.ParametricGenericType;
 import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
 
@@ -30,6 +35,7 @@ interface SymbolTableOp {
 	 * add new entry
 	 * @param symbolName
 	 * @param type
+	 * - must not void type, parametric type or unresolved type.
 	 * @param isReadOnly
 	 * @return
 	 * - if entry has already existed , return false.
@@ -54,6 +60,10 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 
 	@Override
 	public boolean addEntry(String symbolName, DSType type, boolean isReadOnly) {
+		if((type instanceof UnresolvedType) || (type instanceof ParametricType) || 
+				(type instanceof ParametricGenericType) || (type instanceof VoidType)) {
+			Utils.fatal(1, "unacceptable type: " + type);
+		}
 		return this.tableStack.peek().addEntry(symbolName, type, isReadOnly);
 	}
 
