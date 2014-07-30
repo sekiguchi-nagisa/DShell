@@ -192,7 +192,7 @@ returnType returns [TypeSymbol type]
 	;
 
 argumentsDeclaration returns [ParserUtils.ArgsDecl decl]
-	: a+=variableDeclarationWithType (comma a+=variableDeclarationWithType)*
+	: a+=argumentDeclarationWithType (comma a+=argumentDeclarationWithType)*
 		{
 			$decl = new ParserUtils.ArgsDecl();
 			for(int i = 0; i < $a.size(); i++) {
@@ -202,19 +202,23 @@ argumentsDeclaration returns [ParserUtils.ArgsDecl decl]
 	| { $decl = new ParserUtils.ArgsDecl();}
 	;
 
-variableDeclarationWithType returns [ParserUtils.ArgDecl arg]
-	: Identifier colon typeName {$arg = new ParserUtils.ArgDecl($Identifier, $typeName.type);}
+argumentDeclarationWithType returns [ParserUtils.ArgDecl arg]
+	: Identifier colon typeNameWithoutVoid {$arg = new ParserUtils.ArgDecl($Identifier, $typeNameWithoutVoid.type);}
 	;
 
 typeName returns [TypeSymbol type] locals [TypeSymbol[] types]
+	: typeNameWithoutVoid {$type = $typeNameWithoutVoid.type;}
+	| Void {$type = TypeSymbol.toVoid($Void);}
+	;
+
+typeNameWithoutVoid returns [TypeSymbol type] locals [TypeSymbol[] types]
 	: Int {$type = TypeSymbol.toPrimitive($Int);}
 	| Float {$type = TypeSymbol.toPrimitive($Float);}
 	| Boolean {$type = TypeSymbol.toPrimitive($Boolean);}
-	| Void {$type = TypeSymbol.toVoid($Void);}
 	| Identifier {$type = TypeSymbol.toClass($Identifier);}
 	| Func lAngle aa=typeName paramTypes rAngle
 		{$type = TypeSymbol.toFunc($Func, $aa.type, $paramTypes.types);}
-	| Identifier lAngle a+=typeName (comma a+=typeName)* rAngle
+	| Identifier lAngle a+=typeNameWithoutVoid (comma a+=typeNameWithoutVoid)* rAngle
 		{
 			$types = new TypeSymbol[$a.size()];
 			for(int i = 0; i < $types.length; i++) {
@@ -225,7 +229,7 @@ typeName returns [TypeSymbol type] locals [TypeSymbol[] types]
 	;
 
 paramTypes returns [TypeSymbol[] types] locals [ParserUtils.ParamTypeResolver resolver]
-	: comma lBracket a+=typeName (comma a+=typeName)* rBracket
+	: comma lBracket a+=typeNameWithoutVoid (comma a+=typeNameWithoutVoid)* rBracket
 		{
 			$resolver = new ParserUtils.ParamTypeResolver();
 			for(int i = 0; i < $a.size(); i++) {
