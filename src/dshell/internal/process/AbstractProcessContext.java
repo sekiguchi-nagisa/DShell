@@ -66,11 +66,18 @@ public abstract class AbstractProcessContext {
 	/**
 	 * exit status of process launched by this context.
 	 */
-	protected int retValue = 0;
+	protected int exitStatus = 0;
+
+	/**
+	 * for represent string
+	 */
+	protected final StringBuilder cmdBuilder;
 
 	protected AbstractProcessContext(String commandPath) {
 		this.argList = new LinkedList<>();
 		this.argList.add(commandPath);
+		this.cmdBuilder = new StringBuilder();
+		this.cmdBuilder.append(commandPath);
 	}
 
 	/**
@@ -81,7 +88,10 @@ public abstract class AbstractProcessContext {
 	 * - this.
 	 */
 	public AbstractProcessContext addArg(String arg) {
-		this.argList.add(Utils.resolveHome(arg));
+		String resolvedArg = Utils.resolveHome(arg);
+		this.argList.add(resolvedArg);
+		this.cmdBuilder.append(' ');
+		this.cmdBuilder.append(resolvedArg);
 		return this;
 	}
 
@@ -95,7 +105,10 @@ public abstract class AbstractProcessContext {
 	public AbstractProcessContext addArg(GenericArray argArray) {
 		long size = argArray.size();
 		for(long i = 0; i < size; i++) {
-			this.argList.add((String) argArray.get(i));
+			String arg = (String) argArray.get(i);
+			this.argList.add(arg);
+			this.cmdBuilder.append(' ');
+			this.cmdBuilder.append(arg);
 		}
 		return this;
 	}
@@ -119,27 +132,42 @@ public abstract class AbstractProcessContext {
 		switch(option) {
 		case RedirOption.FromFile:
 			this.setInputRedirect(targetFileName);
+			this.cmdBuilder.append(" < ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.To1File:
 			this.setOutputRedirect(STDOUT_FILENO, targetFileName, false);
+			this.cmdBuilder.append(" > ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.To1FileAppend:
 			this.setOutputRedirect(STDOUT_FILENO, targetFileName, true);
+			this.cmdBuilder.append(" >> ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.To2File:
 			this.setOutputRedirect(STDERR_FILENO, targetFileName, false);
+			this.cmdBuilder.append(" 2> ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.To2FileAppend:
 			this.setOutputRedirect(STDERR_FILENO, targetFileName, true);
+			this.cmdBuilder.append(" 2>> ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.Merge2To1:
 			this.mergeErrorToOut();
+			this.cmdBuilder.append("2>&1");
 			break;
 		case RedirOption.ToFileAnd:
 			this.mergeErrorToOut().setOutputRedirect(STDOUT_FILENO, targetFileName, false);
+			this.cmdBuilder.append(" &> ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		case RedirOption.AndToFileAppend:
 			this.mergeErrorToOut().setOutputRedirect(STDOUT_FILENO, targetFileName, true);
+			this.cmdBuilder.append(" &>> ");
+			this.cmdBuilder.append(targetFileName);
 			break;
 		}
 		return this;
@@ -226,12 +254,17 @@ public abstract class AbstractProcessContext {
 	 * get exit status of created process.
 	 * @return
 	 */
-	public int getRet() {
-		return this.retValue;
+	public int getExitStatus() {
+		return this.exitStatus;
 	}
 
-	public String getCmdName() {	// FIXME:
-		return "FIXME";
+	public String getCmdName() {
+		return this.toString();
+	}
+
+	@Override
+	public String toString() {
+		return this.cmdBuilder.toString();
 	}
 
 	/**
@@ -248,7 +281,7 @@ public abstract class AbstractProcessContext {
 	 * @return
 	 * - if true, system call trace is enabled.
 	 */
-	public boolean isTraced() {
+	public boolean hasTraced() {
 		return false;
 	}
 }

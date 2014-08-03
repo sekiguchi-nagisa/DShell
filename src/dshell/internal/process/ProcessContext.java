@@ -71,7 +71,7 @@ public class ProcessContext extends AbstractProcessContext {
 	@Override
 	public AbstractProcessContext start() {
 		try {
-			this.proc = procBuilder.start();
+			this.proc = this.procBuilder.start();
 			this.stdin = this.proc.getOutputStream();
 			this.stdout = this.proc.getInputStream();
 			this.stderr = this.proc.getErrorStream();
@@ -137,7 +137,7 @@ public class ProcessContext extends AbstractProcessContext {
 	@Override
 	public void waitTermination() {
 		try {
-			this.retValue = this.proc.waitFor();
+			this.exitStatus = this.proc.waitFor();
 		} catch(InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -163,7 +163,7 @@ public class ProcessContext extends AbstractProcessContext {
 
 	public boolean checkTermination() {
 		try {
-			this.retValue = this.proc.exitValue();
+			this.exitStatus = this.proc.exitValue();
 			return true;
 		} catch(IllegalThreadStateException e) {
 			return false;
@@ -181,7 +181,7 @@ public class ProcessContext extends AbstractProcessContext {
 	}
 
 	@Override
-	public boolean isTraced() {
+	public boolean hasTraced() {
 		return this.enableTrace;
 	}
 }

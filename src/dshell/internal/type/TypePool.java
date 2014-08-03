@@ -83,6 +83,11 @@ public class TypePool {
 	 */
 	public final ClassType exceptionType;
 
+	/**
+	 * represent D-Shell Task type.
+	 */
+	public final ClassType taskType;
+
 	public final GenericBaseType baseArrayType;
 	public final GenericBaseType baseMapType;
 	public final GenericBaseType basePairType;
@@ -116,6 +121,7 @@ public class TypePool {
 		this.booleanType     = (PrimitiveType) this.setTypeAndThrowIfDefined(new PrimitiveType("boolean", "boolean"));
 		this.stringType          = (ClassType) this.setTypeAndThrowIfDefined(TypeInitializer.init_StringWrapper(this));
 		this.exceptionType       = (ClassType) this.setTypeAndThrowIfDefined(TypeInitializer.init_Exception(this));
+		this.taskType            = (ClassType) this.setTypeAndThrowIfDefined(TypeInitializer.init_Task(this));
 		this.baseArrayType = (GenericBaseType) this.setTypeAndThrowIfDefined(TypeInitializer.init_GenericArray(this));
 		this.baseMapType   = (GenericBaseType) this.setTypeAndThrowIfDefined(TypeInitializer.init_GenericMap(this));
 		this.basePairType  = (GenericBaseType) this.setTypeAndThrowIfDefined(TypeInitializer.init_GenericPair(this));
@@ -131,6 +137,7 @@ public class TypePool {
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_TypeCastException(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_DShellException(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_NullException(this));
+		this.setTypeAndThrowIfDefined(TypeInitializer.init_MultipleException(this));
 
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_InputStream(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_OutputStream(this));

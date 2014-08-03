@@ -79,7 +79,7 @@ class CauseInferencer_ltrace implements CauseInferencer {
 			System.exit(1);
 		}
 		FunctionContext topLevelContext = createTopLevelFuncContext(lineList);
-		proc.retValue = Integer.parseInt(topLevelContext.getRetValue());
+		proc.exitStatus = Integer.parseInt(topLevelContext.getRetValue());
 		return this.findCauseInfo(topLevelContext);
 	}
 

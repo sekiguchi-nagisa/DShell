@@ -50,7 +50,7 @@ public class CommandRunner extends AbstractProcessContext {
 	public void waitTermination() {
 		try {
 			this.runner.join();
-			this.retValue = this.context.getExitStatus();
+			this.exitStatus = this.context.getExitStatus();
 			this.isTerminated = true;
 		}
 		catch(InterruptedException e) {

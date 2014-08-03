@@ -69,7 +69,7 @@ import dshell.internal.type.DSType.VoidType;
 import dshell.internal.type.TypePool;
 import dshell.lang.GenericPair;
 
-public class TypeChecker implements NodeVisitor<Node>{
+public class TypeChecker implements NodeVisitor<Node> {
 	private final TypePool typePool;
 	private final SymbolTable symbolTable;
 	private final AbstractOperatorTable opTable;
@@ -634,11 +634,48 @@ public class TypeChecker implements NodeVisitor<Node>{
 	}
 
 	@Override
-	public Node visit(TaskNode node) {	//TODO: context typing.
+	public Node visit(TaskNode node) {	//TODO: task type
 		for(ProcessNode procNode : node.getProcNodeList()) {
 			this.checkTypeAcceptingVoidType(procNode);	// accept void type
 		}
-		node.setType(this.typePool.intType);	// FIXME:
+
+		/**
+		 * resolve task type
+		 */
+		Node parentNode = node.getParentNode();
+		/**
+		 * as void type in statement.
+		 */
+		if((parentNode instanceof RootNode) || (parentNode instanceof BlockNode)) {
+			node.setType(TypePool.voidType);
+
+		}
+		else if((parentNode instanceof VarDeclNode) || (parentNode instanceof AssignNode)) {
+			/**
+			 * as Task type if background.
+			 */
+			if(node.isBackGround()) { 
+				node.setType(this.typePool.taskType);
+			}
+			/**
+			 * as int type in variable declaration or assign statement.
+			 */
+			else {
+				node.setType(this.typePool.intType);
+			}
+		}
+		/**
+		 * as boolean type in conditional logical operation or if condition.
+		 */
+		else if((parentNode instanceof IfNode) || (parentNode instanceof CondOpNode)) {
+			node.setType(this.typePool.booleanType);
+		}
+		/**
+		 * otherwise, as string type.
+		 */
+		else {
+			node.setType(this.typePool.stringType);	// FIXME:
+		}
 		return node;
 	}
 

@@ -24,7 +24,7 @@ public CommandScope getCmdScope() {
 	return this.cmdScope;
 }
 
-// ';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | WhiteSpace | LineEnd | Comment)+
+// ';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
 private boolean matchCmdEnd(Token token) {
 	switch(token.getType()) {
 	case EOF:
@@ -37,6 +37,8 @@ private boolean matchCmdEnd(Token token) {
 	case GT:
 	case AND:
 	case OR:
+	case COND_AND:
+	case COND_OR:
 	case Comment:
 	case WhiteSpace:
 	case LineEnd:
@@ -306,13 +308,13 @@ statement returns [Node node]
 	| variableDeclaration statementEnd {$node = $variableDeclaration.node;}
 	| assignStatement statementEnd {$node = $assignStatement.node;}
 	| suffixStatement statementEnd {$node = $suffixStatement.node;}
-	| commandExpression statementEnd {$node = $commandExpression.node;}
+	| commandListExpression statementEnd {$node = $commandListExpression.node;}
 	| expression statementEnd {$node = $expression.node;}
 	;
 
 assertStatement returns [Node node]
-	: Assert lParenthese expression rParenthese 
-		{$node = new Node.AssertNode($Assert, $expression.node);}
+	: Assert lParenthese condExpression rParenthese 
+		{$node = new Node.AssertNode($Assert, $condExpression.node);}
 	;
 
 breakStatement returns [Node node]
@@ -357,8 +359,13 @@ foreachStatement returns [Node node]
 		{$node = new Node.ForInNode($For, $Identifier, $expression.node, $block.node);}
 	;
 
+condExpression returns [Node.ExprNode node]
+	: commandListExpression {$node = $commandListExpression.node;}
+	| expression {$node = $expression.node;}
+	;
+
 ifStatement returns [Node node] locals [ParserUtils.IfElseBlock ifElseBlock]
-	: If lParenthese expression rParenthese b+=block (Else ws ei+=ifStatement | Else b+=block)?
+	: If lParenthese condExpression rParenthese b+=block (Else ws ei+=ifStatement | Else b+=block)?
 		{
 			$ifElseBlock = new ParserUtils.IfElseBlock($b.get(0).node);
 			if($b.size() > 1) {
@@ -367,7 +374,7 @@ ifStatement returns [Node node] locals [ParserUtils.IfElseBlock ifElseBlock]
 			if($ei.size() > 0) {
 				$ifElseBlock.setElseBlockNode($ei.get(0).node);
 			}
-			$node = new Node.IfNode($If, $expression.node, $ifElseBlock);
+			$node = new Node.IfNode($If, $condExpression.node, $ifElseBlock);
 		}
 	;
 
@@ -401,11 +408,11 @@ throwStatement returns [Node node]
 	;
 
 whileStatement returns [Node node]
-	: While lParenthese expression rParenthese block {$node = new Node.WhileNode($While, $expression.node, $block.node);}
+	: While lParenthese condExpression rParenthese block {$node = new Node.WhileNode($While, $condExpression.node, $block.node);}
 	;
 
 doWhileStatement returns [Node node]
-	: Do block While lParenthese expression rParenthese {$node = new Node.WhileNode($Do, $expression.node, $block.node, true);}
+	: Do block While lParenthese condExpression rParenthese {$node = new Node.WhileNode($Do, $condExpression.node, $block.node, true);}
 	;
 
 tryCatchStatement returns [Node node] locals [Node.TryNode tryNode]
@@ -441,15 +448,20 @@ exceptDeclaration returns [ParserUtils.CatchedException except]
 		}
 	;
 
+assingRightExpression returns [Node.ExprNode node]
+	: commandExpression {$node = $commandExpression.node;}
+	| expression {$node = $expression.node;}
+	;
+
 variableDeclaration returns [Node node]
-	: flag=(Let | Var) ws Identifier assign expression
+	: flag=(Let | Var) ws Identifier assign assingRightExpression
 		{
-			$node = new Node.VarDeclNode($flag, $Identifier, $expression.node);
+			$node = new Node.VarDeclNode($flag, $Identifier, $assingRightExpression.node);
 		}
 	;
 
 assignStatement returns [Node node]
-	: left=expression assign_ops right=expression
+	: left=expression assign_ops right=assingRightExpression
 		{
 			$node = new Node.AssignNode($assign_ops.token, $left.node, $right.node);
 		}
@@ -466,7 +478,7 @@ suffixStatement returns [Node node]
 // expression definition.
 // command expression
 commandName returns [Token token]
-	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | WhiteSpace | LineEnd | Comment)+
+	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
 		{
 			if($a.size() == 1) {
 				$token = $a.get(0);
@@ -517,6 +529,33 @@ redirOption returns [ParserUtils.RedirOption option]
 		{$option = new ParserUtils.RedirOption($e.get(0), $e.get($e.size() - 1), $commandArg.node);}
 	| {isNum(2)}? f+=IntLiteral f+='>' f+='&' {isNum(1)}? f+=IntLiteral
 		{$option = new ParserUtils.RedirOption($f.get(0), $f.get($f.size() - 1));}
+	;
+
+commandListExpression returns [Node.ExprNode node]
+	: commandExpression {$node = $commandExpression.node;}
+	| left=commandExpression condAnd right=commandListRight
+		{$node = new Node.CondOpNode($condAnd.token, $left.node, $right.node);}
+	| left=commandExpression condOr right=commandListRight
+		{$node = new Node.CondOpNode($condOr.token, $left.node, $right.node);}
+	;
+
+commandListRight returns [Node.ExprNode node]
+	: left=commandExpression (opAnd+=condAnd right+=commandListRight)?
+		{
+			if($opAnd.size() == 0) {
+				$node = $left.node;
+			} else {
+				$node = new Node.CondOpNode($opAnd.get(0).token, $left.node, $right.get(0).node);
+			}
+		}
+	| left=commandExpression (opOr+=condOr right+=commandListRight)?
+		{
+			if($opOr.size() == 0) {
+				$node = $left.node;
+			} else {
+				$node = new Node.CondOpNode($opOr.get(0).token, $left.node, $right.get(0).node);
+			}
+		}
 	;
 
 // normal expression

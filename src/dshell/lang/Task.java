@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import dshell.annotation.Shared;
+import dshell.annotation.SharedClass;
 import dshell.internal.lib.Utils;
 import dshell.internal.process.AbstractProcessContext;
 import dshell.internal.process.ShellExceptionBuilder;
@@ -18,6 +20,7 @@ import static dshell.internal.process.TaskOption.Behavior.printable;
 import static dshell.internal.process.TaskOption.Behavior.receiver;
 import static dshell.internal.process.TaskOption.Behavior.throwable;
 
+@SharedClass
 public class Task implements Serializable {
 	private static final long serialVersionUID = 7531968866962967914L;
 
@@ -32,7 +35,6 @@ public class Task implements Serializable {
 	private String stdoutMessage;
 	private String stderrMessage;
 	private List<Integer> exitStatusList;
-//	private final String representString;
 	private DShellException exception = DShellException.createNullException("");
 
 	public Task(List<AbstractProcessContext> procContexts, TaskOption option) {
@@ -104,11 +106,6 @@ public class Task implements Serializable {
 		return new MessageStreamHandler(srcErrorStreams, System.err);
 	}
 
-	@Override public String toString() {
-		//return this.representString;
-		return "FIXME";
-	}
-
 	private void joinAndSetException() {
 		this.terminated = true;
 		if(!option.is(background)) {
@@ -128,7 +125,7 @@ public class Task implements Serializable {
 		this.stderrMessage = this.stderrHandler.waitTermination();
 		this.exitStatusList = new ArrayList<Integer>();
 		for(AbstractProcessContext proc : this.procContexts) {
-			this.exitStatusList.add(proc.getRet());
+			this.exitStatusList.add(proc.getExitStatus());
 		}
 		// exception raising
 		this.exception = ShellExceptionBuilder.getException(this.procContexts, this.option, this.stderrHandler.getEachBuffers());
@@ -146,19 +143,36 @@ public class Task implements Serializable {
 		}
 	}
 
-	public String getOutMessage() {
+	@Shared
+	public String getOutput() {
 		this.join();
 		return this.stdoutMessage;
 	}
 
+	@Shared
 	public String getErrorMessage() {
 		this.join();
 		return this.stderrMessage;
 	}
 
-	public int getExitStatus() {
+	@Shared
+	public long getExitStatus() {
 		this.join();
 		return this.exitStatusList.get(this.exitStatusList.size() - 1);
+	}
+
+	@Shared
+	@Override
+	public String toString() {
+		StringBuilder sBuilder = new StringBuilder();
+		int count = 0;
+		for(AbstractProcessContext proc : this.procContexts) {
+			if(count++ > 0) {
+				sBuilder.append(" | ");
+			}
+			sBuilder.append(proc.toString());
+		}
+		return sBuilder.toString();
 	}
 
 	private boolean timeoutIfEnable() {

@@ -50,9 +50,9 @@ public class ShellExceptionBuilder {
 	private static void createAndAddException(List<DShellException> exceptionList, AbstractProcessContext proc, String errorMessage) {
 		CauseInferencer inferencer = CauseInferencer_ltrace.getInferencer();
 		String message = proc.getCmdName();
-		if(proc.isTraced() || proc.getRet() != 0) {
+		if(proc.hasTraced() || proc.getExitStatus() != 0) {
 			DShellException exception;
-			if(proc.isTraced()) {
+			if(proc.hasTraced()) {
 				List<String> infoList = inferencer.doInference((ProcessContext)proc);
 				exception = createException(message, infoList.toArray(new String[infoList.size()]));
 			}

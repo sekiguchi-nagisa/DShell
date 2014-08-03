@@ -23,14 +23,14 @@ public class TaskContext {
 	private final TaskOption option;
 	private boolean enableTrace = false;
 
-	public TaskContext() {
+	public TaskContext(boolean isBackGround) {
 		this.procContexts = new ArrayList<>();
-		this.option = new TaskOption();
+		this.option = new TaskOption().setFlag(background, isBackGround);
 	}
 
 	public TaskContext addContext(AbstractProcessContext context) {
 		this.procContexts.add(context);
-		if(context.isTraced()) {
+		if(context.hasTraced()) {
 			this.enableTrace = true;
 		}
 		return this;
@@ -79,9 +79,9 @@ public class TaskContext {
 		task.join();
 		if(this.option.is(returnable)) {
 			if(this.option.isRetType(StringType)) {
-				return task.getOutMessage();
+				return task.getOutput();
 			} else if(this.option.isRetType(IntType)) {
-				return new Integer(task.getExitStatus());
+				return new Long(task.getExitStatus());
 			} else if(this.option.isRetType(TaskType)) {
 				return task;
 			} else if(this.option.isRetType(TaskArrayType)) {	//FIXME:
@@ -99,7 +99,7 @@ public class TaskContext {
 
 	public long execAsInt() {
 		this.option.setRetType(IntType).setFlag(printable, true).setFlag(returnable, true);
-		return ((Integer)this.execTask()).longValue();
+		return ((Long)this.execTask()).longValue();
 	}
 
 	public boolean execAsBoolean() {

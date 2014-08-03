@@ -475,20 +475,41 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(TaskNode node) {	//TODO: pipe .. etc.
+	public Void visit(TaskNode node) {	// TODO: refactoring
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Type taskCtxDesc = Type.getType(TaskContext.class);
 
 		mBuilder.newInstance(taskCtxDesc);
 		mBuilder.dup();
-		mBuilder.invokeConstructor(taskCtxDesc, Method.getMethod("void <init> ()"));
+		mBuilder.push(node.isBackGround());
+		mBuilder.invokeConstructor(taskCtxDesc, Method.getMethod("void <init> (boolean)"));
 
 		// generate process context
 		for(ProcessNode prcoNode : node.getProcNodeList()) {
 			this.generateCode(prcoNode);
 		}
 
-		Method methodDesc = new Method("execAsInt", Type.LONG_TYPE, new Type[]{});	//FIXME
+		// resolve execution type
+		Type returnTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
+		Method methodDesc = new Method("execAsInt", returnTypeDesc, new Type[]{});
+		String typeName = node.getType().getTypeName();	// FIXME:
+		switch(typeName) {
+		case "int":
+			methodDesc = new Method("execAsInt", returnTypeDesc, new Type[]{});
+			break;
+		case "boolean":
+			methodDesc = new Method("execAsBoolean", returnTypeDesc, new Type[]{});
+			break;
+		case "void":
+			methodDesc = new Method("execAsVoid", returnTypeDesc, new Type[]{});
+			break;
+		case "String":
+			methodDesc = new Method("execAsString", returnTypeDesc, new Type[]{});
+			break;
+		case "Task":
+			methodDesc = new Method("execAsTask", returnTypeDesc, new Type[]{});
+			break;
+		}
 		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
 		return null;
 	}

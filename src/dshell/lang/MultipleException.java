@@ -1,5 +1,10 @@
 package dshell.lang;
 
+import dshell.annotation.Shared;
+import dshell.annotation.SharedClass;
+import dshell.annotation.TypeAlias;
+
+@SharedClass("DShellException")
 public class MultipleException extends DShellException {	//TODO:
 	private static final long serialVersionUID = 164898266354483402L;
 	private DShellException[] exceptions;
@@ -14,6 +19,8 @@ public class MultipleException extends DShellException {	//TODO:
 		}
 	}
 
+	@Shared
+	@TypeAlias("Array<DShellException>")
 	public GenericArray getExceptions() {
 		if(this.exceptionArray == null) {
 			this.exceptionArray = new GenericArray(exceptions);
@@ -21,6 +28,7 @@ public class MultipleException extends DShellException {	//TODO:
 		return this.exceptionArray;
 	}
 
+	@Shared
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName() + ": " + this.getExceptions().toString();
