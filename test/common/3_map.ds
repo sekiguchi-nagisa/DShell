@@ -9,3 +9,8 @@ assert(b.size() == 2)
 assert(a.hasKey(b[0]))
 assert(a.hasKey(b[1]))
 
+a = new Map<int>()
+a.set("a", 12)
+assert(a.get("a") == 12)
+a["a"] /= 4
+assert(a["a"] == 3)

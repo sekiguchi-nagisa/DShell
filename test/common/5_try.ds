@@ -11,11 +11,9 @@ try {
 
 try {
 	[12][3]
-}
-catch(e : KeyNotFoundException) {
+} catch(e : KeyNotFoundException) {
 	assert(false)
-}
-catch(e) {
+} catch(e) {
 	assert(true)
 }
 

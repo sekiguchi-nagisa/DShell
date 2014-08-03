@@ -1,3 +1,17 @@
 var str = "はるのサクラ"
 str = str.replace("はるの", "うずまき")
 assert(str == "うずまきサクラ")
+
+var a = "hello world"
+assert(a.size() == 11)
+assert(a == "hello" + ' ' + "world")
+assert(a.get(2) == "l")
+assert(a.sliceFrom(3) == "lo world")
+assert(a.sliceTo(3) == "hel")
+assert(a.slice(1, 3) == "el")
+assert(!a.equals("hf"))
+assert(!a.startsWith("hoge"))
+assert(a.endsWith("rld"))
+assert(a.indexOf("q") == -1)
+assert(a.lastIndexOf("l") == 9)
+assert(a.clone() == a)

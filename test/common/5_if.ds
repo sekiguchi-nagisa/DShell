@@ -1,8 +1,8 @@
 function func(num: int) : boolean {
-  if (num == 2) {
-    return true
-  }
-  return false
+	if (num == 2) {
+		return true
+	}
+	return false
 }
 
 assert(!func(1))
