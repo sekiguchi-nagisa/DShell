@@ -65,7 +65,7 @@ public class Task implements Serializable {
 				}
 				while(true) {
 					if(checkTermination()) {
-						System.err.println("Terminated Task: " + "FIXME");
+						System.err.println("Terminated Task: " + getRepresentString());
 						// run exit handler
 						return;
 					}
@@ -128,7 +128,8 @@ public class Task implements Serializable {
 			this.exitStatusList.add(proc.getExitStatus());
 		}
 		// exception raising
-		this.exception = ShellExceptionBuilder.getException(this.procContexts, this.option, this.stderrHandler.getEachBuffers());
+		this.exception = ShellExceptionBuilder.getException(this.procContexts, 
+				this.option, this.stderrHandler.getEachBuffers());
 		// get remote task result if supported
 		this.getRemoteTaskResult();
 	}
@@ -138,23 +139,36 @@ public class Task implements Serializable {
 			return;
 		}
 		this.joinAndSetException();
-		if(!this.option.is(receiver) && this.option.is(throwable) && !(this.exception instanceof DShellException.NullException)) {
+		if(!this.option.is(receiver) && this.option.is(throwable) 
+				&& !(this.exception instanceof DShellException.NullException)) {
 			throw this.exception;
 		}
 	}
 
+	/**
+	 * get standard output message
+	 * @return
+	 */
 	@Shared
 	public String getOutput() {
 		this.join();
 		return this.stdoutMessage;
 	}
 
+	/**
+	 * get standard error message
+	 * @return
+	 */
 	@Shared
 	public String getErrorMessage() {
 		this.join();
 		return this.stderrMessage;
 	}
 
+	/**
+	 * get exist status of last process
+	 * @return
+	 */
 	@Shared
 	public long getExitStatus() {
 		this.join();
@@ -172,7 +186,14 @@ public class Task implements Serializable {
 			}
 			sBuilder.append(proc.toString());
 		}
+		if(this.option.is(background)) {
+			sBuilder.append(" &");
+		}
 		return sBuilder.toString();
+	}
+
+	private String getRepresentString() {
+		return this.toString();
 	}
 
 	private boolean timeoutIfEnable() {
@@ -207,9 +228,14 @@ public class Task implements Serializable {
 		}
 	}
 
+	/**
+	 * check termination of processes.
+	 * @return
+	 * - if all of processes have already terminated, return true.
+	 */
 	private boolean checkTermination() {
 		for(AbstractProcessContext proc : this.procContexts) {
-			if(proc.checkTermination()) {
+			if(!proc.checkTermination()) {
 				return false;
 			}
 		}

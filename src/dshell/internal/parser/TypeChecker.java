@@ -671,6 +671,12 @@ public class TypeChecker implements NodeVisitor<Node> {
 			node.setType(this.typePool.booleanType);
 		}
 		/**
+		 * as string array type in for in statement or command argument.
+		 */
+		else if((parentNode instanceof ForInNode) || (parentNode instanceof ProcessNode)) {
+			node.setType(this.typePool.getTypeAndThrowIfUndefined("Array<String>"));
+		}
+		/**
 		 * otherwise, as string type.
 		 */
 		else {
@@ -717,9 +723,10 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ExportEnvNode node) {
-		this.addEntryAndThrowIfDefined(node, node.getEnvName(), this.typePool.stringType, true);
-		this.checkType(this.typePool.stringType, node.getExprNode());
-		OperatorHandle handle = this.opTable.getOperatorHandle("setEnv", this.typePool.stringType, this.typePool.stringType);
+		DSType stringType = this.typePool.stringType;
+		this.addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, true);
+		this.checkType(stringType, node.getExprNode());
+		OperatorHandle handle = this.opTable.getOperatorHandle("setEnv", stringType, stringType);
 		if(handle == null) {
 			Utils.fatal(1, "undefined operator: setEnv(String, String)");
 		}
@@ -729,8 +736,9 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ImportEnvNode node) {
-		this.addEntryAndThrowIfDefined(node, node.getEnvName(), this.typePool.stringType, true);
-		OperatorHandle handle = this.opTable.getOperatorHandle("getEnv", this.typePool.stringType);
+		DSType stringType = this.typePool.stringType;
+		this.addEntryAndThrowIfDefined(node, node.getEnvName(), stringType, true);
+		OperatorHandle handle = this.opTable.getOperatorHandle("getEnv", stringType);
 		if(handle == null) {
 			Utils.fatal(1, "undefined operator: getEnv(String)");
 		}

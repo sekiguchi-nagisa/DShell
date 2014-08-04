@@ -490,26 +490,29 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		}
 
 		// resolve execution type
-		Type returnTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
-		Method methodDesc = new Method("execAsInt", returnTypeDesc, new Type[]{});
-		String typeName = node.getType().getTypeName();	// FIXME:
-		switch(typeName) {
+		String methodName = "execAsInt";
+		switch(node.getType().getTypeName()) {
 		case "int":
-			methodDesc = new Method("execAsInt", returnTypeDesc, new Type[]{});
+			methodName = "execAsInt";
 			break;
 		case "boolean":
-			methodDesc = new Method("execAsBoolean", returnTypeDesc, new Type[]{});
+			methodName = "execAsBoolean";
 			break;
 		case "void":
-			methodDesc = new Method("execAsVoid", returnTypeDesc, new Type[]{});
+			methodName = "execAsVoid";
 			break;
 		case "String":
-			methodDesc = new Method("execAsString", returnTypeDesc, new Type[]{});
+			methodName = "execAsString";
 			break;
 		case "Task":
-			methodDesc = new Method("execAsTask", returnTypeDesc, new Type[]{});
+			methodName = "execAsTask";
+			break;
+		case "Array<String>":
+			methodName = "execAsStringArray";
 			break;
 		}
+		Type returnTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
+		Method methodDesc = new Method(methodName, returnTypeDesc, new Type[]{});
 		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
 		return null;
 	}

@@ -191,7 +191,7 @@ public abstract class AbstractProcessContext {
 	/**
 	 * 
 	 * @return
-	 * return true, if creted process has already terminated.
+	 * return true, if created process has already terminated.
 	 */
 	public abstract boolean checkTermination();
 

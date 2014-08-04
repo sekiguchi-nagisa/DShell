@@ -90,11 +90,11 @@ public abstract class Node {
 
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName() + ":voidType";
+		return this.getClass().getSimpleName() + ":void";
 	}
 
 	abstract public <T> T accept(NodeVisitor<T> visitor);
-	
+
 	// ##################
 	// #   expression   #
 	// ##################
