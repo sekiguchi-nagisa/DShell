@@ -40,6 +40,7 @@ import dshell.internal.parser.Node.LoopNode;
 import dshell.internal.parser.Node.MapNode;
 import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.PairNode;
+import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.StringValueNode;
@@ -52,6 +53,7 @@ import dshell.internal.parser.Node.WhileNode;
 import dshell.internal.parser.SymbolTable.SymbolEntry;
 import dshell.internal.parser.error.DShellErrorListener;
 import dshell.internal.parser.error.DShellErrorListener.TypeErrorKind;
+import dshell.internal.process.OutputBuffer;
 import dshell.internal.type.CalleeHandle;
 import dshell.internal.type.ClassType;
 import dshell.internal.type.DSType;
@@ -611,12 +613,13 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(CondOpNode node) {
 		String condOp = node.getConditionalOp();
+		DSType booleanType = this.typePool.booleanType;
 		if(!condOp.equals("&&") && !condOp.equals("||")) {
-			this.error.reportTypeError(node, TypeErrorKind.BinaryOp, this.typePool.booleanType, condOp, this.typePool.booleanType);
+			this.error.reportTypeError(node, TypeErrorKind.BinaryOp, booleanType, condOp, booleanType);
 		}
-		this.checkType(this.typePool.booleanType, node.getLeftNode());
-		this.checkType(this.typePool.booleanType, node.getRightNode());
-		node.setType(this.typePool.booleanType);
+		this.checkType(booleanType, node.getLeftNode());
+		this.checkType(booleanType, node.getRightNode());
+		node.setType(booleanType);
 		return node;
 	}
 
@@ -634,7 +637,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	@Override
-	public Node visit(TaskNode node) {	//TODO: task type
+	public Node visit(TaskNode node) {
 		for(ProcessNode procNode : node.getProcNodeList()) {
 			this.checkTypeAcceptingVoidType(procNode);	// accept void type
 		}
@@ -671,18 +674,50 @@ public class TypeChecker implements NodeVisitor<Node> {
 			node.setType(this.typePool.booleanType);
 		}
 		/**
-		 * as string array type in for in statement or command argument.
-		 */
-		else if((parentNode instanceof ForInNode) || (parentNode instanceof ProcessNode)) {
-			node.setType(this.typePool.getTypeAndThrowIfUndefined("Array<String>"));
-		}
-		/**
-		 * otherwise, as string type.
+		 * otherwise, as int type.
 		 */
 		else {
-			node.setType(this.typePool.stringType);	// FIXME:
+			node.setType(this.typePool.booleanType);
 		}
 		return node;
+	}
+
+	@Override
+	public Node visit(QuotedTaskNode node) {
+		ExprNode exprNode = (ExprNode) this.checkType(node.getExprNode());
+		// generate var entry of output buffer
+		String internalName = OutputBuffer.class.getCanonicalName().replace('.', '/');
+		String typeName = internalName.substring(internalName.lastIndexOf('/'));
+		DSType varType = new DSType(typeName, internalName) {};
+		String bufferName = node.getBufferName();
+		GenericPair<String, DSType> bufferEntry = new GenericPair<>(bufferName, varType);
+		node.setEntry(bufferEntry);
+
+		// add entry to expr node
+		this.setEntryToTaskNode(bufferEntry, exprNode);
+
+		// resolve node type
+		Node parentNode = node.getParentNode();
+		if((parentNode instanceof ProcessNode) || (parentNode instanceof ForInNode)) {
+			List<DSType> elementTypeList = new ArrayList<>(1);
+			elementTypeList.add(this.typePool.stringType);
+			node.setType(this.typePool.createAndGetReifiedTypeIfUndefined("Array", elementTypeList));
+		} else {
+			node.setType(this.typePool.stringType);
+		}
+		return node;
+	}
+
+	private void setEntryToTaskNode(GenericPair<String, DSType> entry, ExprNode targetNode) {
+		if(targetNode instanceof TaskNode) {
+			 ((TaskNode)targetNode).setBufferEntry(entry);
+		} else if(targetNode instanceof CondOpNode) {
+			CondOpNode condOpNode = (CondOpNode) targetNode;
+			this.setEntryToTaskNode(entry, condOpNode.getLeftNode());
+			this.setEntryToTaskNode(entry, condOpNode.getRightNode());
+		} else {
+			Utils.fatal(1, "illeagal node type: " + targetNode.getClass());
+		}
 	}
 
 	@Override

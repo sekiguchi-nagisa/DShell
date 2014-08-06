@@ -1,7 +1,7 @@
 package dshell.internal.lib;
 
 import dshell.internal.process.AbstractProcessContext;
-import dshell.internal.process.TaskOption;
+import dshell.internal.process.TaskConfig;
 
 public class CommandRunner extends AbstractProcessContext {
 	private final ExecutableAsCommand executor;
@@ -64,7 +64,7 @@ public class CommandRunner extends AbstractProcessContext {
 	}
 
 	@Override
-	public AbstractProcessContext setStreamBehavior(TaskOption option) {
+	public AbstractProcessContext setStreamBehavior(TaskConfig option) {
 		return this;
 	}
 }

@@ -1,11 +1,9 @@
 package dshell.internal.process;
 
-import static dshell.internal.process.TaskOption.Behavior.returnable;
-import static dshell.internal.process.TaskOption.Behavior.sender;
-import static dshell.internal.process.TaskOption.Behavior.throwable;
-import static dshell.internal.process.TaskOption.Behavior.timeout;
-import static dshell.internal.process.TaskOption.RetType.StringType;
-import static dshell.internal.process.TaskOption.RetType.TaskType;
+import static dshell.internal.process.TaskConfig.Behavior.returnable;
+import static dshell.internal.process.TaskConfig.Behavior.throwable;
+import static dshell.internal.process.TaskConfig.Behavior.timeout;
+import static dshell.internal.process.TaskConfig.RetType.TaskType;
 
 import java.io.Serializable;
 import java.util.EnumSet;
@@ -15,7 +13,7 @@ import java.util.EnumSet;
  * @author skgchxngsxyz-opensuse
  *
  */
-public class TaskOption implements Serializable {
+public class TaskConfig implements Serializable {
 	private static final long serialVersionUID = 5651190312973095075L;
 
 	public static enum Behavior {
@@ -23,17 +21,13 @@ public class TaskOption implements Serializable {
 		printable ,
 		throwable ,
 		background,
-		sender,
-		receiver,
 		timeout   ,
 	}
 
 	public static enum RetType {
 		VoidType   ,
 		IntType    ,
-		StringType ,
 		TaskType   ,
-		TaskArrayType,
 	}
 
 	/**
@@ -41,10 +35,18 @@ public class TaskOption implements Serializable {
 	 */
 	private RetType retType;
 
+	/**
+	 * set of behaivor flags
+	 */
 	private final EnumSet<Behavior> flagSet;
 	private long time = -1;
 
-	public TaskOption() {
+	/**
+	 * may be null
+	 */
+	private OutputBuffer buffer;
+
+	public TaskConfig() {
 		this.retType = RetType.IntType;
 		this.flagSet = EnumSet.noneOf(Behavior.class);
 	}
@@ -57,27 +59,26 @@ public class TaskOption implements Serializable {
 		return this.flagSet.contains(optionFlag);
 	}
 
-	public TaskOption setRetType(RetType type) {
+	public TaskConfig setRetType(RetType type) {
 		this.retType = type;
 		return this;
 	}
 
-	public TaskOption setFlag(Behavior optionFlag, boolean set) {
+	public TaskConfig setFlag(Behavior optionFlag, boolean set) {
 		if(set) {
 			this.flagSet.add(optionFlag);
-		}
-		else {
+		} else {
 			this.flagSet.remove(optionFlag);
 		}
 		return this;
 	}
 
 	public boolean supportStdoutHandler() {
-		return !this.is(sender) && this.is(returnable) && (this.isRetType(StringType) || this.isRetType(TaskType));
+		return this.is(returnable) && (this.isRetType(TaskType) || this.buffer != null);
 	}
 
 	public boolean supportStderrHandler() {
-		return !this.is(sender) && this.is(throwable) || this.isRetType(TaskType);
+		return this.is(throwable) || this.isRetType(TaskType);
 	}
 
 	public void setTimeout(String timeSymbol) {
@@ -87,6 +88,19 @@ public class TaskOption implements Serializable {
 
 	public long getTimeout() {
 		return this.time;
+	}
+
+	public void setOutputBuffer(OutputBuffer buffer) {
+		this.buffer = buffer;
+	}
+
+	/**
+	 * 
+	 * @return
+	 * mye be null
+	 */
+	public OutputBuffer getOutoutBuffer() {
+		return this.buffer;
 	}
 
 	@Override

@@ -48,6 +48,7 @@ import dshell.internal.parser.Node.ApplyNode;
 import dshell.internal.parser.Node.MapNode;
 import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.PairNode;
+import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.StringValueNode;
@@ -484,6 +485,16 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.push(node.isBackGround());
 		mBuilder.invokeConstructor(taskCtxDesc, Method.getMethod("void <init> (boolean)"));
 
+		// set output buffer
+		GenericPair<String, DSType> bufferEntry = node.getBufferEntry();
+		if(bufferEntry != null) {
+			DSType bufferType = bufferEntry.getRight();
+			mBuilder.loadValueFromVar(bufferEntry.getLeft(), bufferType);
+			Method methodDesc = new Method("setOutputBuffer", 
+					taskCtxDesc, new Type[] {TypeUtils.toTypeDescriptor(bufferType)});
+			mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
+		}
+
 		// generate process context
 		for(ProcessNode prcoNode : node.getProcNodeList()) {
 			this.generateCode(prcoNode);
@@ -501,19 +512,54 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		case "void":
 			methodName = "execAsVoid";
 			break;
-		case "String":
-			methodName = "execAsString";
-			break;
 		case "Task":
 			methodName = "execAsTask";
-			break;
-		case "Array<String>":
-			methodName = "execAsStringArray";
 			break;
 		}
 		Type returnTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
 		Method methodDesc = new Method(methodName, returnTypeDesc, new Type[]{});
 		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
+		return null;
+	}
+
+	@Override
+	public Void visit(QuotedTaskNode node) {	//FIXME: refactoring
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		mBuilder.createNewLocalScope();
+
+		GenericPair<String, DSType> bufferEntry = node.getEntry();
+		DSType bufferType = bufferEntry.getRight();
+
+		// create output buffer
+		Type bufferTypeDesc = TypeUtils.toTypeDescriptor(bufferType);
+		Method methodDesc = new Method("newBuffer", bufferTypeDesc, new Type[]{});
+		mBuilder.invokeStatic(bufferTypeDesc, methodDesc);
+		mBuilder.createNewVarAndStoreValue(bufferEntry.getLeft(), bufferType);
+
+		// generate command expression
+		this.generateCode(node.getExprNode());
+
+		// pop return value of command
+		mBuilder.pop(TypeUtils.toTypeDescriptor(node.getExprNode().getType()));
+
+		// get message
+		DSType type = node.getType();
+		Type typeDesc = TypeUtils.toTypeDescriptor(type);
+		mBuilder.loadValueFromVar(bufferEntry.getLeft(), bufferType);
+		switch(type.getTypeName()) {
+		case "String":
+			methodDesc = new Method("getMessageString", typeDesc, new Type[]{});
+			mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
+			break;
+		case "Array<String>":
+			methodDesc = new Method("getMessageArray", typeDesc, new Type[]{});
+			mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
+			break;
+		default:
+			Utils.fatal(1, "unsupported type: " + type);
+			break;
+		}
+		mBuilder.removeCurrentLocalScope();
 		return null;
 	}
 

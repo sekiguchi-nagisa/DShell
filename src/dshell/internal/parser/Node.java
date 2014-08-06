@@ -240,7 +240,7 @@ public abstract class Node {
 			String text = token.getText();
 			int startIndex = 1;
 			int endIndex = text.length() - 1;
-			if(!text.startsWith("\"")) {	// for command argument. FIXME:
+			if(!text.startsWith("\"") && !text.startsWith("'")) {	// for command argument. FIXME:
 				startIndex = 0;
 				endIndex += 1;
 			}
@@ -828,6 +828,11 @@ public abstract class Node {
 		}
 	}
 
+	/**
+	 * represent for command expression
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
 	public static class ProcessNode extends ExprNode {
 		private final String commandPath;
 		private final List<ExprNode> argNodeList;
@@ -866,9 +871,20 @@ public abstract class Node {
 		}
 	}
 
+	/**
+	 * represent for (piped) command expression
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
 	public static class TaskNode extends ExprNode {	//TODO: timeout
 		private final List<ProcessNode> procNodeList;
 		private final boolean isBackGround;
+
+		/**
+		 * variable entry of output buffer.
+		 * may be null.
+		 */
+		private GenericPair<String, DSType> bufferEntry;
 
 		protected TaskNode(List<ProcessNode> procNodeList, boolean isBackGround) {
 			super(procNodeList.get(0).getToken());
@@ -887,12 +903,74 @@ public abstract class Node {
 			return this.isBackGround;
 		}
 
+		public void setBufferEntry(GenericPair<String, DSType> entry) {
+			this.bufferEntry = entry;
+		}
+
+		/**
+		 * may be null
+		 * @return
+		 */
+		public GenericPair<String, DSType> getBufferEntry() {
+			return this.bufferEntry;
+		}
+
 		@Override
 		public <T> T accept(NodeVisitor<T> visitor) {
 			return visitor.visit(this);
 		}
 	}
-	
+
+	/**
+	 * represent for quoted command expression (command substitution).
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
+	public static class QuotedTaskNode extends ExprNode {
+		private static int nameSuffixCount = -1;
+		/**
+		 * task node or cond op node.
+		 */
+		private final ExprNode exprNode;
+
+		/**
+		 * contains variable entry of output buffer
+		 */
+		private GenericPair<String, DSType> bufferEntry;
+
+		protected QuotedTaskNode(ExprNode exprNode) {
+			super(exprNode.getToken());
+			assert (exprNode instanceof TaskNode) || (exprNode instanceof CondOpNode);
+			this.exprNode = this.setExprNodeAsChild(exprNode);
+		}
+
+		public ExprNode getExprNode() {
+			return this.exprNode;
+		}
+
+		/**
+		 * get buffer name.
+		 * @return
+		 * - unique name
+		 */
+		public String getBufferName() {
+			return "@outputBuffer" + ++nameSuffixCount;
+		}
+
+		public void setEntry(GenericPair<String, DSType> bufferEntry) {
+			this.bufferEntry = bufferEntry;
+		}
+
+		public GenericPair<String, DSType> getEntry() {
+			return this.bufferEntry;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
 	// #################
 	// #   statement   #
 	// #################

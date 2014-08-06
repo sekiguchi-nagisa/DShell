@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Calendar;
-import java.util.LinkedList;
 
 import dshell.internal.lib.Utils;
 
@@ -45,7 +44,7 @@ public class ProcessContext extends AbstractProcessContext {
 			this.enableTrace = false;
 			return;
 		}
-		logFilePath = new String(logDirPath + "/" + createLogNameHeader() + ".log");
+		logFilePath = logDirPath + "/" + createLogNameHeader() + ".log";
 		new File(logDirPath).mkdir();
 		String[] traceCmds;
 		if(traceBackendType == traceBackend_ltrace) {
@@ -55,10 +54,9 @@ public class ProcessContext extends AbstractProcessContext {
 			Utils.fatal(1, "invalid trace backend type");
 			return;
 		}
-		LinkedList<String> list = (LinkedList<String>) this.argList;
-		int size = traceCmds.length;
+		final int size = traceCmds.length;
 		for(int i = 0 ; i < size; i++) {
-			list.add(i, traceCmds[i]);
+			this.argList.add(i, traceCmds[i]);
 		}
 	}
 
@@ -83,7 +81,7 @@ public class ProcessContext extends AbstractProcessContext {
 	}
 
 	@Override
-	public AbstractProcessContext setStreamBehavior(TaskOption option) {
+	public AbstractProcessContext setStreamBehavior(TaskConfig config) {
 		if(this.isFirstProc) {
 			if(this.procBuilder.redirectInput().file() == null) {
 				this.procBuilder.redirectInput(Redirect.INHERIT);
@@ -91,12 +89,12 @@ public class ProcessContext extends AbstractProcessContext {
 			}
 		}
 		if(this.isLastProc) {
-			if(this.procBuilder.redirectOutput().file() == null && !option.supportStdoutHandler()) {
+			if(this.procBuilder.redirectOutput().file() == null && !config.supportStdoutHandler()) {
 				this.procBuilder.redirectOutput(Redirect.INHERIT);
 				this.stdoutIsDirty = true;
 			}
 		}
-		if(this.procBuilder.redirectError().file() == null && option.supportStderrHandler()) {
+		if(this.procBuilder.redirectError().file() == null && config.supportStderrHandler()) {
 			this.procBuilder.redirectError(Redirect.PIPE);
 			this.stderrIsDirty = false;
 		}

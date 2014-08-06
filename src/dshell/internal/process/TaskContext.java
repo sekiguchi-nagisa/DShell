@@ -1,31 +1,28 @@
 package dshell.internal.process;
 
-import static dshell.internal.process.TaskOption.Behavior.background;
-import static dshell.internal.process.TaskOption.Behavior.printable;
-import static dshell.internal.process.TaskOption.Behavior.returnable;
-import static dshell.internal.process.TaskOption.Behavior.throwable;
-import static dshell.internal.process.TaskOption.RetType.IntType;
-import static dshell.internal.process.TaskOption.RetType.StringType;
-import static dshell.internal.process.TaskOption.RetType.TaskArrayType;
-import static dshell.internal.process.TaskOption.RetType.TaskType;
-import static dshell.internal.process.TaskOption.RetType.VoidType;
+import static dshell.internal.process.TaskConfig.Behavior.background;
+import static dshell.internal.process.TaskConfig.Behavior.printable;
+import static dshell.internal.process.TaskConfig.Behavior.returnable;
+import static dshell.internal.process.TaskConfig.Behavior.throwable;
+import static dshell.internal.process.TaskConfig.RetType.IntType;
+import static dshell.internal.process.TaskConfig.RetType.TaskType;
+import static dshell.internal.process.TaskConfig.RetType.VoidType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
-import dshell.lang.GenericArray;
 import dshell.lang.Task;
 
 public class TaskContext {
 	private final List<AbstractProcessContext> procContexts;
-	private final TaskOption option;
+	private final TaskConfig config;
 	private boolean enableTrace = false;
 
 	public TaskContext(boolean isBackGround) {
 		this.procContexts = new ArrayList<>();
-		this.option = new TaskOption().setFlag(background, isBackGround);
+		this.config = new TaskConfig().setFlag(background, isBackGround);
 	}
 
 	public TaskContext addContext(AbstractProcessContext context) {
@@ -33,6 +30,11 @@ public class TaskContext {
 		if(context.hasTraced()) {
 			this.enableTrace = true;
 		}
+		return this;
+	}
+
+	public TaskContext setOutputBuffer(OutputBuffer buffer) {
+		this.config.setOutputBuffer(buffer);
 		return this;
 	}
 
@@ -72,20 +74,16 @@ public class TaskContext {
 		 */
 		this.procContexts.get(0).setAsFirstProc(true);
 		this.procContexts.get(this.procContexts.size() - 1).setAsLastProc(true);
-		Task task = new Task(this.procContexts, this.option);
-		if(this.option.is(background)) {
-			return (this.option.isRetType(TaskType) && this.option.is(returnable)) ? task : null;
+		Task task = new Task(this.procContexts, this.config);
+		if(this.config.is(background)) {
+			return (this.config.isRetType(TaskType) && this.config.is(returnable)) ? task : null;
 		}
 		task.join();
-		if(this.option.is(returnable)) {
-			if(this.option.isRetType(StringType)) {
-				return task.getOutput();
-			} else if(this.option.isRetType(IntType)) {
+		if(this.config.is(returnable)) {
+			if(this.config.isRetType(IntType)) {
 				return new Long(task.getExitStatus());
-			} else if(this.option.isRetType(TaskType)) {
+			} else if(this.config.isRetType(TaskType)) {
 				return task;
-			} else if(this.option.isRetType(TaskArrayType)) {	//FIXME:
-				return Task.getTaskArray(task);
 			}
 		}
 		return null;
@@ -93,12 +91,13 @@ public class TaskContext {
 
 	// launch task.
 	public void execAsVoid() {
-		this.option.setRetType(VoidType).setFlag(printable, true).setFlag(throwable, true);
+		this.config.setRetType(VoidType).setFlag(printable, true).setFlag(throwable, true);
 		this.execTask();
 	}
 
 	public long execAsInt() {
-		this.option.setRetType(IntType).setFlag(printable, true).setFlag(returnable, true);
+		this.config.setRetType(IntType).setFlag(printable, true).
+		setFlag(returnable, true).setFlag(background, false);
 		return ((Long)this.execTask()).longValue();
 	}
 
@@ -106,17 +105,8 @@ public class TaskContext {
 		return this.execAsInt() == 0;
 	}
 
-	public String execAsString() {
-		this.option.setRetType(StringType).setFlag(returnable, true);
-		return (String) this.execTask();
-	}
-
-	public GenericArray execAsStringArray() {
-		return new GenericArray(Utils.splitWithDelim(this.execAsString()));
-	}
-
 	public Task execAsTask() {
-		this.option.setRetType(TaskType).
+		this.config.setRetType(TaskType).
 		setFlag(printable, true).setFlag(returnable, true).setFlag(throwable, true);
 		return (Task) this.execTask();
 	}

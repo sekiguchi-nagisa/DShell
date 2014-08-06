@@ -206,7 +206,7 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 			}
 		}
 	}
-	
+
 	public static class SymbolEntry {
 		/**
 		 * represent read only symbol (constant variable, function).

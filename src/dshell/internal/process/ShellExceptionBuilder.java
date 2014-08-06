@@ -1,8 +1,7 @@
 package dshell.internal.process;
 
-import static dshell.internal.process.TaskOption.Behavior.sender;
-import static dshell.internal.process.TaskOption.Behavior.throwable;
-import static dshell.internal.process.TaskOption.Behavior.timeout;
+import static dshell.internal.process.TaskConfig.Behavior.throwable;
+import static dshell.internal.process.TaskConfig.Behavior.timeout;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
@@ -16,8 +15,8 @@ import dshell.lang.MultipleException;
 
 public class ShellExceptionBuilder {
 	public static DShellException getException(final List<AbstractProcessContext> procs, 
-			final TaskOption option, final ByteArrayOutputStream[] eachBuffers) {
-		if(option.is(sender) || !option.is(throwable) || option.is(timeout)) {
+			final TaskConfig config, final ByteArrayOutputStream[] eachBuffers) {
+		if(!config.is(throwable) || config.is(timeout)) {
 			return DShellException.createNullException("");
 		}
 		List<DShellException> exceptionList = new ArrayList<>();

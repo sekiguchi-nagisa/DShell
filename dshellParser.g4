@@ -18,7 +18,12 @@ public ToplevelContext startParser() {
 	return this.toplevel();
 }
 
-private final CommandScope cmdScope = new CommandScope();
+private CommandScope cmdScope = new CommandScope();
+
+// for child parser
+protected void setCmdScope(CommandScope cmdScope) {
+	this.cmdScope = cmdScope;
+}
 
 public CommandScope getCmdScope() {
 	return this.cmdScope;
@@ -296,7 +301,7 @@ statement returns [Node node]
 	| continueStatement statementEnd {$node = $continueStatement.node;}
 	| exportEnvStatement statementEnd {$node = $exportEnvStatement.node;}
 	| forStatement {$node = $forStatement.node;}
-	| foreachStatement {$node = $foreachStatement.node;}
+	| forInStatement {$node = $forInStatement.node;}
 	| ifStatement {$node = $ifStatement.node;}
 	| importEnvStatement statementEnd {$node = $importEnvStatement.node;}
 	| importCommandStatement statementEnd {$node = $importCommandStatement.node;}
@@ -354,7 +359,7 @@ forIter returns [Node node]
 	| {$node = new Node.EmptyNode();}
 	;
 
-foreachStatement returns [Node node]
+forInStatement returns [Node node]
 	: For lParenthese Identifier ws? 'in' ws? expression rParenthese block 
 		{$node = new Node.ForInNode($For, $Identifier, $expression.node, $block.node);}
 	;
@@ -582,6 +587,7 @@ expression returns [Node.ExprNode node]
 primaryExpression returns [Node.ExprNode node]
 	: literal {$node = $literal.node;}
 	| symbol {$node = $symbol.node;}
+	| substitutedCommand {$node = $substitutedCommand.node;}
 	| lParenthese expression rParenthese {$node = $expression.node;}
 	;
 
@@ -597,6 +603,10 @@ literal returns [Node.ExprNode node]
 	| arrayLiteral {$node = $arrayLiteral.node;}
 	| mapLiteral {$node = $mapLiteral.node;}
 	| pairLiteral {$node = $pairLiteral.node;}
+	;
+
+substitutedCommand returns [Node.ExprNode node]
+	: BackquotedLiteral {$node = ParserUtils.parseBackquotedLiteral($BackquotedLiteral, this);}
 	;
 
 arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]

@@ -49,8 +49,6 @@ public class DShellTest extends DShell {
 		RuntimeContext.getInstance();
 		ExecutionEngine engine = new TestableEngineFactory().getEngine();
 		switch(this.mode) {
-		case receiverMode:
-//			RequestReceiver.invoke(null);	// never return
 		case interactiveMode:
 			this.runInteractiveMode(engine, new DummyConsole(this.scriptArgs[0]));	// never return
 		case scriptingMode:

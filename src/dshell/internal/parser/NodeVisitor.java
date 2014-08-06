@@ -32,6 +32,7 @@ import dshell.internal.parser.Node.ApplyNode;
 import dshell.internal.parser.Node.MapNode;
 import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.PairNode;
+import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
@@ -61,6 +62,7 @@ public interface NodeVisitor <T> {
 	public T visit(CondOpNode           node);
 	public T visit(ProcessNode          node);
 	public T visit(TaskNode             node);
+	public T visit(QuotedTaskNode       node);
 	public T visit(EmptyNode            node);
 	// statement
 	public T visit(AssertNode           node);

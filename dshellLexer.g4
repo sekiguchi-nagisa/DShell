@@ -152,18 +152,22 @@ BooleanLiteral
 
 // String literal	//TODO: interpolation
 StringLiteral
-	: '"' StringChars? '"'
-	| '\'' StringChars? '\''
+	: '"' DoubleQuoteStringChar* '"'
+	| '\'' SingleQuoteStringChar* '\''
 	;
+
 fragment
-StringChars
-	: StringChar+
-	;
-fragment
-StringChar
+DoubleQuoteStringChar
 	: ~["\\]
 	| EscapeSequence
 	;
+
+fragment
+SingleQuoteStringChar
+	: ~['\\]
+	| EscapeSequence
+	;
+
 fragment
 EscapeSequence	// TODO: unicode escape
 	: '\\' [btnfr"'\\]
@@ -172,6 +176,17 @@ EscapeSequence	// TODO: unicode escape
 // symbol , class and command name
 Identifier
 	: [_a-zA-Z] [_0-9a-zA-Z]*
+	;
+
+// back quoted command
+BackquotedLiteral
+	: '`' BackquotedChar+ '`'
+	;
+
+fragment
+BackquotedChar
+	: '\\' '`'
+	| ~['`']
 	;
 
 

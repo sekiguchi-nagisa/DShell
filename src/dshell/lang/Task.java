@@ -10,15 +10,17 @@ import dshell.annotation.Shared;
 import dshell.annotation.SharedClass;
 import dshell.internal.lib.Utils;
 import dshell.internal.process.AbstractProcessContext;
+import dshell.internal.process.PipeStreamHandler.EmptyErrorStreamHandler;
+import dshell.internal.process.PipeStreamHandler.ErrorStreamHandler;
+import dshell.internal.process.PipeStreamHandler.ErrorStreamHandlerImpl;
 import dshell.internal.process.ShellExceptionBuilder;
-import dshell.internal.process.TaskOption;
-import dshell.internal.process.PipeStreamHandler.EmptyMessageStreamHandler;
-import dshell.internal.process.PipeStreamHandler.MessageStreamHandler;
-import dshell.internal.process.PipeStreamHandler.MessageStreamHandlerOp;
-import static dshell.internal.process.TaskOption.Behavior.background;
-import static dshell.internal.process.TaskOption.Behavior.printable;
-import static dshell.internal.process.TaskOption.Behavior.receiver;
-import static dshell.internal.process.TaskOption.Behavior.throwable;
+import dshell.internal.process.TaskConfig;
+import dshell.internal.process.PipeStreamHandler.EmptyOutputStreamHandler;
+import dshell.internal.process.PipeStreamHandler.OutputStreamHandlerImpl;
+import dshell.internal.process.PipeStreamHandler.OutputStreamHandler;
+import static dshell.internal.process.TaskConfig.Behavior.background;
+import static dshell.internal.process.TaskConfig.Behavior.printable;
+import static dshell.internal.process.TaskConfig.Behavior.throwable;
 
 @SharedClass
 public class Task implements Serializable {
@@ -26,10 +28,9 @@ public class Task implements Serializable {
 
 	transient private Thread stateMonitor;
 	transient private final List<AbstractProcessContext> procContexts;
-	transient private final TaskOption option;
-	transient private MessageStreamHandlerOp stdoutHandler;
-	transient private MessageStreamHandlerOp stderrHandler;
-	transient private List<Task> taskList;
+	transient private final TaskConfig config;
+	transient private OutputStreamHandler stdoutHandler;
+	transient private ErrorStreamHandler stderrHandler;
 
 	private boolean terminated = false;
 	private String stdoutMessage;
@@ -37,14 +38,14 @@ public class Task implements Serializable {
 	private List<Integer> exitStatusList;
 	private DShellException exception = DShellException.createNullException("");
 
-	public Task(List<AbstractProcessContext> procContexts, TaskOption option) {
+	public Task(List<AbstractProcessContext> procContexts, TaskConfig option) {
 		this.procContexts = procContexts;
-		this.option = option;
+		this.config = option;
 		// start task
 		int size = this.procContexts.size();
-		this.procContexts.get(0).setStreamBehavior(this.option).start();
+		this.procContexts.get(0).setStreamBehavior(this.config).start();
 		for(int i = 1; i < size; i++) {
-			this.procContexts.get(i).setStreamBehavior(this.option)
+			this.procContexts.get(i).setStreamBehavior(this.config)
 									.start().pipe(this.procContexts.get(i - 1));
 		}
 		// start message handler
@@ -81,39 +82,37 @@ public class Task implements Serializable {
 		this.stateMonitor.start();
 	}
 
-	private MessageStreamHandlerOp createStdoutHandler() {
-		if(!this.option.supportStdoutHandler()) {
-			return EmptyMessageStreamHandler.getHandler();
+	private OutputStreamHandler createStdoutHandler() {	//FIXME: refactoring
+		if(!this.config.supportStdoutHandler()) {
+			return EmptyOutputStreamHandler.getHandler();
 		}
 		OutputStream stdoutStream = null;
-		if(this.option.is(printable)) {
+		if(this.config.is(printable) && this.config.getOutoutBuffer() == null) {
 			stdoutStream = System.out;
 		}
 		AbstractProcessContext LastContext = this.procContexts.get(this.procContexts.size() - 1);
-		InputStream[] srcOutStreams = new InputStream[] {LastContext.accessOutStream()};
-		return new MessageStreamHandler(srcOutStreams, stdoutStream);
+		return new OutputStreamHandlerImpl(LastContext.accessOutStream(), stdoutStream, this.config.getOutoutBuffer());
 	}
 
-	private MessageStreamHandlerOp createStderrHandler() {
-		if(!this.option.supportStderrHandler()) {
-			return EmptyMessageStreamHandler.getHandler();
+	private ErrorStreamHandler createStderrHandler() {
+		if(!this.config.supportStderrHandler()) {
+			return EmptyErrorStreamHandler.getHandler();
 		}
 		int size = this.procContexts.size();
 		InputStream[] srcErrorStreams = new InputStream[size];
 		for(int i = 0; i < size; i++) {
 			srcErrorStreams[i] = this.procContexts.get(i).accessErrorStream();
 		}
-		return new MessageStreamHandler(srcErrorStreams, System.err);
+		return new ErrorStreamHandlerImpl(srcErrorStreams);
 	}
 
 	private void joinAndSetException() {
 		this.terminated = true;
-		if(!option.is(background)) {
+		if(!config.is(background)) {
 			if(!this.timeoutIfEnable()) {
 				this.waitTermination();
 			}
-		}
-		else {
+		} else {
 			try {
 				stateMonitor.join();
 			}
@@ -129,9 +128,7 @@ public class Task implements Serializable {
 		}
 		// exception raising
 		this.exception = ShellExceptionBuilder.getException(this.procContexts, 
-				this.option, this.stderrHandler.getEachBuffers());
-		// get remote task result if supported
-		this.getRemoteTaskResult();
+				this.config, this.stderrHandler.getEachBuffers());
 	}
 
 	public void join() {
@@ -139,8 +136,7 @@ public class Task implements Serializable {
 			return;
 		}
 		this.joinAndSetException();
-		if(!this.option.is(receiver) && this.option.is(throwable) 
-				&& !(this.exception instanceof DShellException.NullException)) {
+		if(this.config.is(throwable) && !(this.exception instanceof DShellException.NullException)) {
 			throw this.exception;
 		}
 	}
@@ -186,7 +182,7 @@ public class Task implements Serializable {
 			}
 			sBuilder.append(proc.toString());
 		}
-		if(this.option.is(background)) {
+		if(this.config.is(background)) {
 			sBuilder.append(" &");
 		}
 		return sBuilder.toString();
@@ -197,7 +193,7 @@ public class Task implements Serializable {
 	}
 
 	private boolean timeoutIfEnable() {
-		long timeout = this.option.getTimeout();
+		long timeout = this.config.getTimeout();
 		if(timeout > 0) { // timeout
 			try {
 				Thread.sleep(timeout);	// ms
@@ -207,8 +203,7 @@ public class Task implements Serializable {
 				System.err.println(msgBuilder.toString());
 				// run exit handler
 				return true;
-			} 
-			catch (InterruptedException e) {
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 				Utils.fatal(1, "interrupt problem");
 			}
@@ -240,29 +235,5 @@ public class Task implements Serializable {
 			}
 		}
 		return true;
-	}
-
-	private void getRemoteTaskResult() {	//TODO:
-//		if(!this.option.is(sender) && !(this.procs[this.procs.length - 1] instanceof RequestSender)) {
-//			return;
-//		}
-//		RequestSender sender = (RequestSender) this.procs[this.procs.length - 1];
-//		Task remoteTask = sender.getRemoteTask();
-//		if(remoteTask != null) {
-//			this.stdoutMessage = remoteTask.getOutMessage();
-//			this.stderrMessage = remoteTask.getErrorMessage();
-//			this.exception = remoteTask.exception;
-//			if(this.option.is(printable)) {
-//				System.out.println(this.stdoutMessage);
-//			}
-//		}
-	}
-
-	public static GenericArray getTaskArray(Task task) {	//TODO:
-		Task[] values = new Task[task.taskList.size()];
-		for(int i = 0; i < values.length; i++) {
-			values[i] = task.taskList.get(i);
-		}
-		return new GenericArray(values);
 	}
 }

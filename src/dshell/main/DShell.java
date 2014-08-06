@@ -32,7 +32,6 @@ public class DShell {
 		interactiveMode,
 		scriptingMode,
 		inputEvalMode,
-		receiverMode,
 	}
 
 	protected ExecutionMode mode;
@@ -148,8 +147,6 @@ public class DShell {
 		ExecutionEngine engine = factory.getEngine();
 		engine.setConfig(this.config);
 		switch(this.mode) {
-		case receiverMode:
-//			RequestReceiver.invoke(this.specificArg);	// never return
 		case interactiveMode:
 			this.runInteractiveMode(engine, new DShellConsole());	// never return
 		case scriptingMode:

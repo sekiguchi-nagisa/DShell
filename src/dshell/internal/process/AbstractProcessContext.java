@@ -113,7 +113,7 @@ public abstract class AbstractProcessContext {
 		return this;
 	}
 
-	public abstract AbstractProcessContext setStreamBehavior(TaskOption option);
+	public abstract AbstractProcessContext setStreamBehavior(TaskConfig option);
 
 	protected abstract AbstractProcessContext setInputRedirect(String readFileName);
 	protected abstract AbstractProcessContext setOutputRedirect(int fd, String writeFileName, boolean append);

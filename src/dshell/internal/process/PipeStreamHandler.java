@@ -125,24 +125,66 @@ public class PipeStreamHandler extends Thread {
 		}
 	}
 
-	public static interface MessageStreamHandlerOp {
+	public static interface OutputStreamHandler {
+		public void startHandler();
+		public String waitTermination();
+	}
+
+	public static interface ErrorStreamHandler {
 		public void startHandler();
 		public String waitTermination();
 		public ByteArrayOutputStream[] getEachBuffers();
 	}
 
-	public static class MessageStreamHandler implements MessageStreamHandlerOp {
+	public static class OutputStreamHandlerImpl implements OutputStreamHandler {	//FIXME: refactoring
+		private final ByteArrayOutputStream messageBuffer;
+		private final PipeStreamHandler streamHandler;
+
+		/**
+		 * 
+		 * @param srcStream
+		 * @param consoleStream
+		 * @param messageBuffer
+		 * - if null, create new buffer.
+		 */
+		public OutputStreamHandlerImpl(InputStream srcStream, OutputStream consoleStream, ByteArrayOutputStream messageBuffer) {
+			this.messageBuffer = messageBuffer == null ? new ByteArrayOutputStream() : messageBuffer;
+			boolean[] closeOutputs = {false, false};
+			OutputStream[] destStreams = new OutputStream[] {consoleStream, this.messageBuffer};
+			this.streamHandler = new PipeStreamHandler(srcStream, destStreams, true, closeOutputs);
+		}
+
+		@Override
+		public void startHandler() {
+			this.streamHandler.start();
+		}
+
+		@Override
+		public String waitTermination() {
+			try {
+				this.streamHandler.join();
+			}
+			catch(InterruptedException e) {
+				e.printStackTrace();
+				Utils.fatal(1, "interrupt problem");
+			}
+			if(this.messageBuffer instanceof OutputBuffer) {
+				return "";
+			}
+			return Utils.removeNewLine(this.messageBuffer.toString());
+		}
+	}
+
+	public static class ErrorStreamHandlerImpl implements ErrorStreamHandler {
 		private InputStream[] srcStreams;
-		private OutputStream consoleStream;
 		private ByteArrayOutputStream messageBuffer;
 		private ByteArrayOutputStream[] eachBuffers;
 		private PipeStreamHandler[] streamHandlers;
 
-		public MessageStreamHandler(InputStream[] srcStreams, OutputStream consoleStream) {
+		public ErrorStreamHandlerImpl(InputStream[] srcStreams) {
 			this.srcStreams = srcStreams;
 			this.messageBuffer = new ByteArrayOutputStream();
 			this.streamHandlers = new PipeStreamHandler[this.srcStreams.length];
-			this.consoleStream = consoleStream;
 			this.eachBuffers = new ByteArrayOutputStream[this.srcStreams.length];
 		}
 
@@ -151,7 +193,7 @@ public class PipeStreamHandler extends Thread {
 			boolean[] closeOutputs = {false, false, false};
 			for(int i = 0; i < srcStreams.length; i++) {
 				this.eachBuffers[i] = new ByteArrayOutputStream();
-				OutputStream[] destStreams = new OutputStream[]{this.consoleStream, this.messageBuffer, this.eachBuffers[i]};
+				OutputStream[] destStreams = new OutputStream[]{System.err, this.messageBuffer, this.eachBuffers[i]};
 				this.streamHandlers[i] = new PipeStreamHandler(this.srcStreams[i], destStreams, true, closeOutputs);
 				this.streamHandlers[i].start();
 			}
@@ -171,13 +213,31 @@ public class PipeStreamHandler extends Thread {
 			return Utils.removeNewLine(this.messageBuffer.toString());
 		}
 
-		@Override
 		public ByteArrayOutputStream[] getEachBuffers() {
 			return this.eachBuffers;
 		}
 	}
 
-	public static class EmptyMessageStreamHandler implements MessageStreamHandlerOp {
+	public static class EmptyOutputStreamHandler implements OutputStreamHandler {
+		@Override
+		public void startHandler() { // do nothing
+		}
+
+		@Override
+		public String waitTermination() {
+			return "";
+		}
+
+		public static OutputStreamHandler getHandler() {
+			return Holder.HANDLER;
+		}
+
+		private static class Holder {
+			private final static OutputStreamHandler HANDLER = new EmptyOutputStreamHandler();
+		}
+	}
+
+	public static class EmptyErrorStreamHandler implements ErrorStreamHandler {
 		@Override
 		public void startHandler() { // do nothing
 		}
@@ -192,12 +252,12 @@ public class PipeStreamHandler extends Thread {
 			return new ByteArrayOutputStream[0];
 		}
 
-		public static MessageStreamHandlerOp getHandler() {
+		public static ErrorStreamHandler getHandler() {
 			return Holder.HANDLER;
 		}
 
 		private static class Holder {
-			private final static MessageStreamHandlerOp HANDLER = new EmptyMessageStreamHandler();
+			private final static ErrorStreamHandler HANDLER = new EmptyErrorStreamHandler();
 		}
 	}
 }
