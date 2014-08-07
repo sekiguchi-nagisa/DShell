@@ -63,7 +63,7 @@ public class GenericArray implements Cloneable {
 
 	private void expandIfNoFreeSpace() {
 		if(this.size() == this.values.length) {
-			Arrays.copyOf(this.values, this.values.length * 2);
+			this.values = Arrays.copyOf(this.values, this.values.length * 2);
 		}
 	}
 
@@ -158,7 +158,7 @@ public class GenericArray implements Cloneable {
 	@Shared
 	public void trim() {
 		if(this.size > 0) {
-			Arrays.copyOf(this.values, this.size);
+			this.values = Arrays.copyOf(this.values, this.size);
 		}
 	}
 
