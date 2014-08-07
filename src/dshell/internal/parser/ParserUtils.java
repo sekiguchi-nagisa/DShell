@@ -16,7 +16,7 @@ import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
-import dshell.internal.parser.error.ParserErrorHandler;
+import dshell.internal.parser.error.ParserErrorListener;
 import dshell.lang.GenericPair;
 
 /**
@@ -246,9 +246,12 @@ public class ParserUtils {
 	public static ExprNode parseBackquotedLiteral(Token token, dshellParser parser) {
 		// init child parser
 		dshellLexer childLexer = new dshellLexer(null);
+		childLexer.removeErrorListeners();
+		childLexer.addErrorListener(ParserErrorListener.getInstance());
 		dshellParser childParser = new dshellParser(null);
+		childParser.removeErrorListeners();
+		childParser.addErrorListener(ParserErrorListener.getInstance());
 		childParser.setCmdScope(parser.getCmdScope());
-		childParser.setErrorHandler(new ParserErrorHandler());
 
 		// init intput
 		StringBuilder sBuilder = new StringBuilder();

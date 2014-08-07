@@ -5,7 +5,6 @@ package dshell.internal.parser;
 import dshell.internal.parser.Node;
 import dshell.internal.parser.ParserUtils;
 import dshell.internal.parser.TypeSymbol;
-import dshell.internal.parser.error.ParserErrorHandler;
 }
 
 @members {
@@ -18,16 +17,6 @@ public Token nextToken() {
 		System.err.println("@nextToken: " + token);
 	}
 	return token;
-}
-
-@Override
-public void recover(LexerNoViableAltException e) {
-	ParserErrorHandler.reportError(e);
-}
-
-@Override
-public void recover(RecognitionException e) {
-	ParserErrorHandler.reportError(e);
 }
 
 public void setTrace(boolean trace) {

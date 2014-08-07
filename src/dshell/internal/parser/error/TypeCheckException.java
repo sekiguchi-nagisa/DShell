@@ -10,6 +10,40 @@ import org.antlr.v4.runtime.Token;
 public class TypeCheckException extends RuntimeException {
 	private static final long serialVersionUID = 5959458194095777506L;
 
+	public static enum TypeErrorKind {
+		Unresolved     ("having unresolved type"),
+		Required       ("require %s, but is %s"),
+		DefinedSymbol  ("already defined symbol: %s"),
+		InsideLoop     ("only available inside loop statement"),
+		UnfoundReturn  ("not found return statement"),
+		UndefinedSymbol("undefined symbol: %s"),
+		UndefinedField ("undefined field: %s"),
+		CastOp         ("unsupported cast op: %s -> %s"),
+		UnaryOp        ("undefined operator: %s %s"),
+		BinaryOp       ("undefined operator: %s %s %s"),
+		UnmatchParam   ("not match parameter, require size is %d, but is %d"),
+		UndefinedMethod("undefined method: %s"),
+		UndefinedInit  ("undefined constructor: %s"),
+		Unreachable    ("found unreachable code"),
+		InsideFunc     ("only available inside function"),
+		NotNeedExpr    ("not need expression"),
+		Assignable     ("require assignable node"),
+		ReadOnly       ("read only value"),
+		Unacceptable   ("unacceptable type: %s"),
+
+		Unimplemented  ("unimplemented type checker api: %s");
+
+		private final String template;
+
+		private TypeErrorKind(String template) {
+			this.template = template;
+		}
+
+		public String getTemplate() {
+			return this.template;
+		}
+	}
+
 	/**
 	 * used for message foramting.
 	 * may be null

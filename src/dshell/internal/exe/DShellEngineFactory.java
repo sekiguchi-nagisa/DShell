@@ -8,7 +8,6 @@ import java.util.TreeSet;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
@@ -23,9 +22,10 @@ import dshell.internal.parser.dshellParser;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.dshellParser.ToplevelContext;
 import dshell.internal.parser.error.DShellErrorListener;
-import dshell.internal.parser.error.ParserErrorHandler;
 import dshell.internal.parser.error.TypeCheckException;
-import dshell.internal.parser.error.ParserErrorHandler.ParserException;
+import dshell.internal.parser.error.ParserErrorListener;
+import dshell.internal.parser.error.ParserErrorListener.LexerException;
+import dshell.internal.parser.error.ParserErrorListener.ParserException;
 import dshell.internal.type.TypePool;
 import dshell.lang.GenericArray;
 import dshell.lang.InputStream;
@@ -43,16 +43,21 @@ public class DShellEngineFactory implements EngineFactory {
 		protected final DShellClassLoader classLoader;
 		protected final TypeChecker checker;
 		protected final JavaByteCodeGen codeGen;
+		protected final DShellErrorListener listener;
 		protected EngineConfig config;
 
 		protected DShellExecutionEngine() {
 			this.lexer = new dshellLexer(null);
+			this.lexer.removeErrorListeners();
+			this.lexer.addErrorListener(ParserErrorListener.getInstance());
 			this.parser = new dshellParser(null);
-			this.parser.setErrorHandler(new ParserErrorHandler());
+			this.parser.removeErrorListeners();
+			this.parser.addErrorListener(ParserErrorListener.getInstance());
 
 			this.classLoader = new DShellClassLoader();
 			this.checker = new TypeChecker(new TypePool(this.classLoader));
 			this.codeGen = new JavaByteCodeGen(this.classLoader);
+			this.listener = new DShellErrorListener();
 			this.config = new EngineConfig();
 
 			this.initGlobalVar();
@@ -162,7 +167,11 @@ public class DShellEngineFactory implements EngineFactory {
 			ToplevelContext tree;
 			try {
 				tree = this.parser.startParser();
-			} catch(ParseCancellationException | ParserException e) {	// TODO: error report
+			} catch(LexerException e) {
+				this.listener.displayTokenError(e);
+				return false;
+			} catch(ParserException e) {
+				this.listener.displayParseError(e);
 				return false;
 			}
 			if(this.config.is(EngineConfigRule.parserInspect)) {
@@ -175,8 +184,8 @@ public class DShellEngineFactory implements EngineFactory {
 			try {
 				checkedNode = this.checker.checkTypeRootNode(tree.node);
 			} catch(TypeCheckException e) {
-				this.checker.reset();
-				System.err.println(DShellErrorListener.formatTypeError(e, this.parser));
+				this.checker.recover();
+				this.listener.displayTypeError(e, this.parser);
 				return false;
 			}
 

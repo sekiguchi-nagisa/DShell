@@ -3,84 +3,91 @@ package dshell.internal.parser.error;
 import java.util.List;
 
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.FailedPredicateException;
+import org.antlr.v4.runtime.LexerNoViableAltException;
+import org.antlr.v4.runtime.NoViableAltException;
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.IntervalSet;
 
 import dshell.internal.lib.Utils;
-import dshell.internal.parser.Node;
 import dshell.internal.parser.ParserUtils;
 import dshell.internal.parser.dshellParser;
+import dshell.internal.parser.error.ParserErrorListener.LexerException;
+import dshell.internal.parser.error.ParserErrorListener.ParserException;
 
 public class DShellErrorListener {
-	public static enum TypeErrorKind {
-		Unresolved     ("having unresolved type"),
-		Required       ("require %s, but is %s"),
-		DefinedSymbol  ("already defined symbol: %s"),
-		InsideLoop     ("only available inside loop statement"),
-		UnfoundReturn  ("not found return statement"),
-		UndefinedSymbol("undefined symbol: %s"),
-		UndefinedField ("undefined field: %s"),
-		CastOp         ("unsupported cast op: %s -> %s"),
-		UnaryOp        ("undefined operator: %s %s"),
-		BinaryOp       ("undefined operator: %s %s %s"),
-		UnmatchParam   ("not match parameter, require size is %d, but is %d"),
-		UndefinedMethod("undefined method: %s"),
-		UndefinedInit  ("undefined constructor: %s"),
-		Unreachable    ("found unreachable code"),
-		InsideFunc     ("only available inside function"),
-		NotNeedExpr    ("not need expression"),
-		Assignable     ("require assignable node"),
-		ReadOnly       ("read only value"),
-		Unacceptable   ("unacceptable type: %s"),
 
-		Unimplemented  ("unimplemented type checker api: %s");
-
-		private final String template;
-
-		private TypeErrorKind(String template) {
-			this.template = template;
-		}
-
-		public String getTemplate() {
-			return this.template;
-		}
+	public void displayTokenError(LexerException e) {
+		System.err.println(this.formatTokenError(e));
+	}
+	
+	public void displayParseError(ParserException e) {
+		System.err.println(this.formatParseError(e));
 	}
 
-	/**
-	 * report type error and throw exception.
-	 * @param node
-	 * - the node having type error
-	 * @param kind
-	 * - reporting error kind
-	 * @param args
-	 * - specific arguments for error message
-	 */
-	public void reportTypeError(Node node, TypeErrorKind kind, Object... args) {
-		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), args));
-	}
-
-	public static String formatTypeError(TypeCheckException e, dshellParser parser) {
-		Token token = e.getErrorToken();
+	protected String formatTokenError(LexerException cause) {
 		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(formatLocation(token));
-		sBuilder.append(" [TypeError] ");
-		sBuilder.append(e.getMessage().trim());
+		sBuilder.append(this.formatLocation(cause.getCause(), cause.getLineNum(), cause.getCharPosInLine()));
+
+		String message = cause.getCause().toString();
+		int startIndex = message.indexOf('\'');
+		int stopIndex = message.lastIndexOf('\'');
+		String tokenText = message.substring(startIndex + 1, stopIndex);
+		sBuilder.append(" [SyntaxError] ");
+		sBuilder.append("unrecognized token: '" + tokenText + '\'');
+		return sBuilder.toString();
+	}
+
+	protected String formatLocation(LexerNoViableAltException e, int lineNum, int charPosInLine) {
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append(e.getInputStream().getSourceName());
+		sBuilder.append(':');
+		sBuilder.append(lineNum);
+		sBuilder.append(':');
+		sBuilder.append(charPosInLine);
+		sBuilder.append(':');
+		return sBuilder.toString();
+	}
+
+	protected String formatParseError(ParserException cause) {
+		RecognitionException e = cause.getCause();
+		dshellParser parser = cause.getParser();
+
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append(this.formatLocation(e.getOffendingToken()));
+		sBuilder.append(" [SyntaxError] ");
+		sBuilder.append("invalid syntax");
+		if(e instanceof NoViableAltException) {
+			IntervalSet expectedTokens = e.getExpectedTokens();
+			if(expectedTokens != null && expectedTokens.size() == 1) {
+				sBuilder.append(", expect for: ");
+				sBuilder.append(expectedTokens.toString(parser.getTokenNames()));
+			}
+		} else if(e instanceof FailedPredicateException) {
+			String predicate = ((FailedPredicateException) e).getPredicate();
+			if(predicate.equals("isCommand()")) {
+				sBuilder.append(", expect for command");
+			}
+		}
+		Token token = e.getOffendingToken();
 		if(token != null) {
 			sBuilder.append('\n');
-			sBuilder.append(formatLine(parser, token));
+			sBuilder.append(this.formatLine(parser, token));
 		}
 		return sBuilder.toString();
 	}
 
 	/**
-	 * 
+	 * format error location from token.
 	 * @param token
 	 * - may be null
 	 * @return
 	 */
-	private static String formatLocation(Token token) {
+	protected String formatLocation(Token token) {
 		StringBuilder sBuilder = new StringBuilder();
 		if(token == null) {
-			return "???:?:?:";
+			return "??:??:?:";
 		}
 		sBuilder.append(token.getTokenSource().getSourceName());
 		sBuilder.append(':');
@@ -91,13 +98,31 @@ public class DShellErrorListener {
 		return sBuilder.toString();
 	}
 
+	// for type error
 	/**
-	 * 
-	 * @param token
-	 * - not null
-	 * @return
+	 * format and display type error.
+	 * @param e
+	 * @param parser
+	 * - for error location
 	 */
-	private static String formatLine(dshellParser parser, Token token) {
+	public void displayTypeError(TypeCheckException e, dshellParser parser) {
+		System.err.println(this.formatTypeError(e, parser));
+	}
+
+	protected String formatTypeError(TypeCheckException e, dshellParser parser) {
+		Token token = e.getErrorToken();
+		StringBuilder sBuilder = new StringBuilder();
+		sBuilder.append(this.formatLocation(token));
+		sBuilder.append(" [TypeError] ");
+		sBuilder.append(e.getMessage().trim());
+		if(token != null) {
+			sBuilder.append('\n');
+			sBuilder.append(this.formatLine(parser, token));
+		}
+		return sBuilder.toString();
+	}
+
+	protected String formatLine(dshellParser parser, Token token) {
 		StringBuilder sBuilder = new StringBuilder();
 		List<Token> tokenList = ((CommonTokenStream) parser.getTokenStream()).getTokens();
 		final int lineNum = token.getLine();
