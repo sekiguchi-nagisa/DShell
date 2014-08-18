@@ -1,5 +1,6 @@
 package dshell.internal.parser;
 
+import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
@@ -61,6 +62,7 @@ public interface NodeVisitor <T> {
 	public T visit(ConstructorCallNode  node);
 	public T visit(CondOpNode           node);
 	public T visit(ProcessNode          node);
+	public T visit(ArgumentNode         node);
 	public T visit(TaskNode             node);
 	public T visit(QuotedTaskNode       node);
 	public T visit(EmptyNode            node);

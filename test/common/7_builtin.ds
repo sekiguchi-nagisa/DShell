@@ -4,14 +4,17 @@ import-command pwd
 var a = pwd
 cd ./
 assert(a == $(pwd))
+assert(a == `pwd`)
 
 cd ~
 import env HOME
 assert(HOME == $(pwd))
+assert(HOME == `pwd`)
 
 cd ../../
 cd 
 assert(HOME == $(pwd))
+assert(HOME == `pwd`)
 
 cd /
 a = $(pwd)
@@ -19,6 +22,7 @@ cd
 cd ../
 cd /
 assert(a == $(pwd))
+assert(a == `pwd`)
 
 ## test exit
 exit

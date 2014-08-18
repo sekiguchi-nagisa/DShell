@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dshell.internal.lib.Utils;
+import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
@@ -460,7 +461,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			node.resolveCastOp(CastNode.INT_2_FLOAT);
 		} else if(type.equals(this.typePool.floatType) && targetType.equals(this.typePool.intType)) {
 			node.resolveCastOp(CastNode.FLOAT_2_INT);
-		} else if(targetType.getTypeName().equals("String")) {
+		} else if(targetType.equals(this.typePool.stringType)) {
 			node.resolveCastOp(CastNode.TO_STRING);
 		} else if(!(type instanceof PrimitiveType) && !(targetType instanceof PrimitiveType) &&
 				!(type instanceof GenericType) && !(targetType instanceof GenericType) &&
@@ -633,13 +634,29 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(ProcessNode node) {
 		for(ExprNode argNode : node.getArgNodeList()) {
-			this.checkType(this.typePool.stringType, argNode);
+			this.checkType(argNode);
 		}
 		// check type redirect options
 		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
 			this.checkType(pair.getRight());
 		}
 		node.setType(TypePool.voidType);	// ProcessNode is always void type
+		return node;
+	}
+
+	@Override
+	public Node visit(ArgumentNode node) {
+		for(ExprNode exprNode : node.getSegmentNodeList()) {
+			this.checkType(this.typePool.stringType, exprNode);
+		}
+		DSType nodeType = this.typePool.stringType;
+		if(node.hasQuotedTaskNode()) {
+			String baseTypeName = this.typePool.baseArrayType.getTypeName();
+			List<DSType> typeList = new ArrayList<>(1);
+			typeList.add(this.typePool.stringType);
+			nodeType = this.typePool.createAndGetReifiedTypeIfUndefined(baseTypeName, typeList);
+		}
+		node.setType(nodeType);
 		return node;
 	}
 
@@ -705,10 +722,11 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 		// resolve node type
 		Node parentNode = node.getParentNode();
-		if((parentNode instanceof ProcessNode) || (parentNode instanceof ForInNode)) {
+		if(parentNode instanceof ForInNode) {
 			List<DSType> elementTypeList = new ArrayList<>(1);
 			elementTypeList.add(this.typePool.stringType);
-			node.setType(this.typePool.createAndGetReifiedTypeIfUndefined("Array", elementTypeList));
+			String baseTypeName = this.typePool.baseArrayType.getTypeName();
+			node.setType(this.typePool.createAndGetReifiedTypeIfUndefined(baseTypeName, elementTypeList));
 		} else {
 			node.setType(this.typePool.stringType);
 		}

@@ -15,6 +15,7 @@ import dshell.internal.codegen.ClassBuilder.MethodBuilder;
 import dshell.internal.codegen.ClassBuilder.TryBlockLabels;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
+import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
@@ -62,6 +63,7 @@ import dshell.internal.parser.Node;
 import dshell.internal.parser.NodeVisitor;
 import dshell.internal.parser.TypeUtils;
 import dshell.internal.process.AbstractProcessContext;
+import dshell.internal.process.ArgumentBuffer;
 import dshell.internal.process.TaskContext;
 import dshell.internal.type.DSType;
 import dshell.internal.type.GenericType;
@@ -454,10 +456,11 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.invokeStatic(taskCtxDesc, methodDesc);
 
 		// set arguments
-		methodDesc = new Method("addArg", procCtxDesc, 
-				new Type[]{Type.getType(String.class)});
 		for(int i = 0; i < argSize; i++) {
-			this.generateCode(node.getArgNodeList().get(i));
+			ExprNode argNode = node.getArgNodeList().get(i);	// string type or string array type
+			methodDesc = new Method("addArg", procCtxDesc, 
+					new Type[]{TypeUtils.toTypeDescriptor(argNode.getType())});
+			this.generateCode(argNode);
 			mBuilder.invokeVirtual(procCtxDesc, methodDesc);
 		}
 
@@ -472,6 +475,34 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 		methodDesc = new Method("addContext", taskCtxDesc, new Type[]{procCtxDesc});
 		mBuilder.invokeVirtual(taskCtxDesc, methodDesc);
+		return null;
+	}
+
+	@Override
+	public Void visit(ArgumentNode node) {	//TODO: refactoring
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Type bufferTypeDesc = Type.getType(ArgumentBuffer.class);
+		Type stringTypeDesc = Type.getType(String.class);
+		Method methodDesc = new Method("newBuffer", bufferTypeDesc, new Type[]{});
+
+		mBuilder.invokeStatic(bufferTypeDesc, methodDesc);
+
+		// add argument segment
+		methodDesc = new Method("append", bufferTypeDesc, new Type[]{stringTypeDesc});
+		for(ExprNode exprNode : node.getSegmentNodeList()) {
+			this.generateCode(exprNode);
+			mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
+		}
+
+		// get joined argument
+		DSType type = node.getType();
+		Type returnTypeDesc = TypeUtils.toTypeDescriptor(type);
+		if(type.getTypeName().equals("String")) {
+			methodDesc = new Method("getAsString", returnTypeDesc, new Type[]{});
+		} else {
+			methodDesc = new Method("getAsArray", returnTypeDesc, new Type[]{});
+		}
+		mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
 		return null;
 	}
 

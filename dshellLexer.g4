@@ -72,6 +72,9 @@ Colon           : ':';
 Semicolon       : ';';
 Comma           : ',';
 Period          : '.';
+BackSlash       : '\\';
+Dollar          : '$';
+At              : '@';
 
 // operator
 // binary op
@@ -178,16 +181,41 @@ BackquotedChar
 	| ~['`']
 	;
 
+// unicode character
+UTF8Chars
+	: UTF8Char+
+	;
+
+UTF8Char
+	: [\u0080-\u07FF]
+	| [\u0800-\uFFFF]
+	;
 
 // comment & space
 Comment
 	: '#' ~[\r\n\u2028\u2029]* -> skip
 	;
+
+fragment
+WhiteSpaceFragment
+	: [\t\u000B\u000C\u0020\u00A0]
+	;
+
 WhiteSpace
-	: [\t\u000B\u000C\u0020\u00A0]+
+	: WhiteSpaceFragment+
+	;
+
+fragment
+LineEndFragment
+	:[\r\n\u2028\u2029]
 	;
 
 LineEnd
-	: [\r\n\u2028\u2029]+
+	: LineEndFragment+
 	;
 
+EscapedSymbol
+	: '\\' '#'
+	| '\\' LineEndFragment
+	| '\\' WhiteSpaceFragment
+	;

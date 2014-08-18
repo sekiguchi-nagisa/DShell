@@ -483,14 +483,20 @@ suffixStatement returns [Node node]
 // expression definition.
 // command expression
 commandName returns [Token token]
-	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
+	: commandSymbol
 		{
-			if($a.size() == 1) {
-				$token = $a.get(0);
+			if($commandSymbol.tokenList.size() == 1) {
+				$token = $commandSymbol.tokenList.get(0);
 			} else {
-				$token = new ParserUtils.JoinedToken($a.get(0), $a.get($a.size() - 1));
+				final int size = $commandSymbol.tokenList.size();
+				$token = new ParserUtils.JoinedToken($commandSymbol.tokenList.get(0), $commandSymbol.tokenList.get(size - 1));
 			}
 		}
+	;
+
+commandSymbol returns [List<Token> tokenList]
+	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
+		{ $tokenList = $a; }
 	;
 
 commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> procList]
@@ -517,8 +523,8 @@ singleCommandExpr returns [Node.ProcessNode node]
 		}
 	;
 
-commandArg returns [Node.ExprNode node] locals [Token token]
-	: commandName {$node = new Node.StringValueNode($commandName.token);}
+commandArg returns [Node.ArgumentNode node]
+	: commandSymbol {$node = ParserUtils.toCommandArg($commandSymbol.tokenList, this);}
 	;
 
 redirOption returns [ParserUtils.RedirOption option]

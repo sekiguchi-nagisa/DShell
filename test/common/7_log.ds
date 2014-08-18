@@ -1,3 +1,7 @@
 log "hello dshell"
+log "hello "dshell
+log "hello ""dshell"
+log hello\
+dshell
 
 #always passed

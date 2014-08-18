@@ -105,10 +105,10 @@ public abstract class AbstractProcessContext {
 	public AbstractProcessContext addArg(GenericArray argArray) {
 		long size = argArray.size();
 		for(long i = 0; i < size; i++) {
-			String arg = (String) argArray.get(i);
-			this.argList.add(arg);
+			String resolvedArg = Utils.resolveHome((String) argArray.get(i));
+			this.argList.add(resolvedArg);
 			this.cmdBuilder.append(' ');
-			this.cmdBuilder.append(arg);
+			this.cmdBuilder.append(resolvedArg);
 		}
 		return this;
 	}

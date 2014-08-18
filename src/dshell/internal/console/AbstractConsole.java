@@ -6,6 +6,10 @@ package dshell.internal.console;
  *
  */
 public abstract class AbstractConsole {
+	/**
+	 * represent current brace level
+	 */
+	protected int level;
 	protected int lineNumber;
 
 	/**
@@ -50,13 +54,13 @@ public abstract class AbstractConsole {
 		StringBuilder lineBuilder = new StringBuilder();
 		String line = this.readLine(prompt1);
 		lineBuilder.append(line);
-		int level = 0;
-		while((level = this.checkBraceLevel(line, level)) > 0) {
+		this.level = 0;
+		while(this.checkLineContinuation(line)) {
 			line = this.readLine(prompt2);
 			lineBuilder.append('\n');
 			lineBuilder.append(line);
 		}
-		if(level < 0) {
+		if(this.level < 0) {
 			if(line == null) {
 				return null;
 			}
@@ -66,9 +70,10 @@ public abstract class AbstractConsole {
 		return lineBuilder.toString().trim();
 	}
 
-	protected int checkBraceLevel(String text, int level) {
+	protected boolean checkLineContinuation(String text) {
 		if(text == null) {
-			return -1;
+			this.level = -1;
+			return false;
 		}
 		boolean foundDoubleQuote = false;
 		boolean foundSingleQuote = false;
@@ -80,18 +85,23 @@ public abstract class AbstractConsole {
 				case '{':
 				case '[':
 				case '(':
-					level++;
+					this.level++;
 					break;
 				case '}':
 				case ']':
 				case ')':
-					level--;
+					this.level--;
 					break;
 				case '\'':
 					foundSingleQuote = true;
 					break;
 				case '"':
 					foundDoubleQuote = true;
+					break;
+				case '\\':
+					if(i == size - 1) {
+						return true;
+					}
 					break;
 				}
 			}
@@ -109,6 +119,6 @@ public abstract class AbstractConsole {
 				}
 			}
 		}
-		return level;
+		return this.level > 0;
 	}
 }

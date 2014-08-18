@@ -235,15 +235,12 @@ public abstract class Node {
 			super(null);
 			this.value = value;
 		}
+
 		public static String parseTokenText(Token token) {
 			StringBuilder sBuilder = new StringBuilder();
 			String text = token.getText();
 			int startIndex = 1;
 			int endIndex = text.length() - 1;
-			if(!text.startsWith("\"") && !text.startsWith("'")) {	// for command argument. FIXME:
-				startIndex = 0;
-				endIndex += 1;
-			}
 			for(int i = startIndex; i < endIndex; i++) {
 				char ch = text.charAt(i);
 				if(ch == '\\') {
@@ -255,7 +252,7 @@ public abstract class Node {
 					case 'r' : ch = '\r'; break;
 					case 'f' : ch = '\f'; break;
 					case '\'': ch = '\''; break;
-					case '"' : ch = '"';  break;
+					case '"' : ch = '"' ; break;
 					case '\\': ch = '\\'; break;
 					}
 				}
@@ -587,6 +584,7 @@ public abstract class Node {
 			castNode.setType(pool.floatType);
 			return castNode;
 		}
+
 		@Override
 		public <T> T accept(NodeVisitor<T> visitor) {
 			return visitor.visit(this);
@@ -660,7 +658,7 @@ public abstract class Node {
 		public OperatorCallNode(Token token, ExprNode node) {
 			super(token);
 			this.funcName = this.token.getText();
-			this.argNodeList = new ArrayList<>();
+			this.argNodeList = new ArrayList<>(1);
 			this.argNodeList.add(this.setExprNodeAsChild(node));
 		}
 
@@ -676,9 +674,21 @@ public abstract class Node {
 		public OperatorCallNode(Token token, ExprNode leftNode, ExprNode rightNode) {
 			super(token);
 			this.funcName = this.token.getText();
-			this.argNodeList = new ArrayList<>();
+			this.argNodeList = new ArrayList<>(2);
 			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
 			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
+		}
+
+		private OperatorCallNode(String funcName, ExprNode leftNode, ExprNode rightNode) {
+			super(null);
+			this.funcName = funcName;
+			this.argNodeList = new ArrayList<>(2);
+			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
+			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
+		}
+
+		public static OperatorCallNode createAddNode(ExprNode leftNode, ExprNode rightNode) {
+			return new OperatorCallNode("+", leftNode, rightNode);
 		}
 
 		public String getFuncName() {
@@ -835,7 +845,7 @@ public abstract class Node {
 	 */
 	public static class ProcessNode extends ExprNode {
 		private final String commandPath;
-		private final List<ExprNode> argNodeList;
+		private final List<ArgumentNode> argNodeList;
 		private final List<GenericPair<Integer, ExprNode>> redirOptionList;
 
 		protected ProcessNode(Token token, String commandPath) {
@@ -845,15 +855,15 @@ public abstract class Node {
 			this.redirOptionList = new ArrayList<>(5);
 		}
 
-		public void setArg(ExprNode argNode) {
-			this.argNodeList.add(this.setExprNodeAsChild(argNode));
+		public void setArg(ArgumentNode argNode) {
+			this.argNodeList.add((ArgumentNode) this.setExprNodeAsChild(argNode));
 		}
 
 		public String getCommandPath() {
 			return this.commandPath;
 		}
 
-		public List<ExprNode> getArgNodeList() {
+		public List<ArgumentNode> getArgNodeList() {
 			return this.argNodeList;
 		}
 
@@ -863,6 +873,64 @@ public abstract class Node {
 
 		public List<GenericPair<Integer, ExprNode>> getRedirOptionList() {
 			return this.redirOptionList;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	/**
+	 * represent for command argument
+	 * may be string type or string array type
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
+	public static class ArgumentNode extends ExprNode {
+		/**
+		 * contains segment of argument.
+		 */
+		private final List<ExprNode> segmentNodeList;
+
+		protected ArgumentNode(Token token) {
+			super(token);
+			this.segmentNodeList = new ArrayList<>();
+		}
+
+		public void addTokenAsArgSegment(Token segmentToken) {
+			String tokenText = segmentToken.getText();
+			StringBuilder sBuilder = new StringBuilder();
+			final int size = tokenText.length();
+			for(int i = 0; i < size; i++) {
+				char ch = tokenText.charAt(i);
+				if(ch == '\\') {
+					char nextCh = tokenText.charAt(++i);
+					if(nextCh == '\r' || nextCh == '\n') {
+						continue;
+					}
+					ch = nextCh;
+				}
+				sBuilder.append(ch);
+			}
+			this.addArgSegment(new StringValueNode(sBuilder.toString()));
+		}
+
+		public void addArgSegment(ExprNode segmentNode) {
+			this.segmentNodeList.add((ExprNode) this.setNodeAsChild(segmentNode));
+		}
+
+		public List<ExprNode> getSegmentNodeList() {
+			return this.segmentNodeList;
+		}
+
+		public boolean hasQuotedTaskNode() {
+			for(ExprNode node : this.segmentNodeList) {
+				if(node instanceof QuotedTaskNode) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		@Override

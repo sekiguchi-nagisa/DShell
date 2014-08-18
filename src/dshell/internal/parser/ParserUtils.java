@@ -11,9 +11,11 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Pair;
 
+import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.BlockNode;
 import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
+import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
 import dshell.internal.parser.error.ParserErrorListener;
@@ -257,7 +259,16 @@ public class ParserUtils {
 		StringBuilder sBuilder = new StringBuilder();
 		String tokenText = token.getText();
 		final int size = tokenText.length();
-		for(int i = 1; i < size - 1; i++) {
+		int startIndex = 1;
+		for(int i = 1; i < size; i++) {
+			char ch = tokenText.charAt(i);
+			if(ch == ' ' || ch == '\t')  {
+				continue;
+			}
+			startIndex = i;
+			break;
+		}
+		for(int i = startIndex; i < size - 1; i++) {
 			char ch = tokenText.charAt(i);
 			switch(ch) {
 			case '\\': {
@@ -280,5 +291,55 @@ public class ParserUtils {
 		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
 		childParser.setTokenStream(tokenStream);
 		return new Node.QuotedTaskNode(childParser.commandListExpression().node);
+	}
+
+	/**
+	 * concate tokens and create argument node
+	 * @param tokenList
+	 * @return
+	 */
+	public static ArgumentNode toCommandArg(List<Token> tokenList, dshellParser parser) {
+		ArgumentNode node = new ArgumentNode(tokenList.get(0));
+		final int size = tokenList.size();
+		List<Token> tokenBuffer = new ArrayList<>();
+		for(int i = 0; i < size; i++) {
+			Token curToken = tokenList.get(i);
+			switch(curToken.getType()) {
+			case dshellParser.Dollar:
+				int nextIndex = i + 1;
+				if(nextIndex < size && tokenList.get(nextIndex).getType() == dshellParser.Identifier) {
+					flushTokenBuffer(node, tokenBuffer);
+					Token nextToken = tokenList.get(++i);
+					ExprNode symbolNode = new SymbolNode(nextToken);
+					ExprNode stringNode = new Node.StringValueNode("");
+					node.addArgSegment(OperatorCallNode.createAddNode(stringNode, symbolNode));
+				} else {
+					tokenBuffer.add(curToken);
+				}
+				break;
+			case dshellParser.StringLiteral:
+				flushTokenBuffer(node, tokenBuffer);
+				node.addArgSegment(new Node.StringValueNode(curToken));
+				break;
+			case dshellParser.BackquotedLiteral:
+				flushTokenBuffer(node, tokenBuffer);
+				node.addArgSegment(parseBackquotedLiteral(curToken, parser));
+				break;
+			default:
+				tokenBuffer.add(curToken);
+				break;
+			}
+		}
+		flushTokenBuffer(node, tokenBuffer);
+		return node;
+	}
+
+	private static void flushTokenBuffer(ArgumentNode node, List<Token> tokenBuffer) {
+		final int bufferSize = tokenBuffer.size();
+		if(bufferSize > 0) {
+			Token joinedToken = new JoinedToken(tokenBuffer.get(0), tokenBuffer.get(bufferSize - 1));
+			node.addTokenAsArgSegment(joinedToken);
+		}
+		tokenBuffer.clear();
 	}
 }
