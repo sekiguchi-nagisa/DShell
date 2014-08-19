@@ -179,6 +179,10 @@ public class AnnotationProcessor extends AbstractProcessor {
 		superTypeName = superTypeName.equals("") ? null : superTypeName;
 		String className = typeElement.getSimpleName().toString();
 		String internalName = typeElement.getQualifiedName().toString().replace('.', '/');
+		if(typeElement.getNestingKind().isNested()) {
+			String namePrefix = internalName.substring(0, internalName.lastIndexOf('/'));
+			internalName = namePrefix + "$" + className;
+		}
 
 		if(typeElement.getAnnotation(WrapperClass.class) != null) {
 			return new StringWrapperBuilder(className, internalName, superTypeName);
