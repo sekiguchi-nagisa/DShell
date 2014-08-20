@@ -1,11 +1,12 @@
-import-command echo ls grep
+import-command echo
 
 echo "hello world"
-var a = echo hello world
+var a = `echo hello world`
 assert(a == "hello world")
 
-var b : int = echo hello wolrd
-assert(b == 0)
+a = $(echo hello world)
+assert(a == "hello world")
 
-assert(ls)
+var b = echo hello wolrd
+assert(b == 0)
 

@@ -2,6 +2,7 @@ package dshell.annotation;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,9 +32,6 @@ import javax.tools.Diagnostic.Kind;
 	"dshell.annotation.Wrapper", "dshell.annotation.OpHolder", "dshell.annotation.WrapperClass", 
 	"dshell.annotation.SharedClass", "dshell.annotation.TypeAlias", "dshell.annotation.PrimitiveArray"})
 public class AnnotationProcessor extends AbstractProcessor {
-	private final static String A_SHARED_CLASS = "dshell.annotation.SharedClass";
-	private final static String A_OP_HOLDER = "dshell.annotation.OpHolder";
-
 	private final static boolean debugMode = false;
 
 	private boolean isInitialazed = false;
@@ -52,7 +50,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 		this.initialize();
 		TypeInitBuilder initBuilder = new TypeInitBuilder();
 		for(TypeElement annotation : annotations) {
-			if(this.matchAnnotation(annotation, A_OP_HOLDER)) {
+			if(this.matchAnnotation(annotation, OpHolder.class)) {
 				Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(annotation);
 				if(elements.size() != 1) {
 					this.reportErrorAndExit("found duplicated operator table", annotation);
@@ -60,7 +58,7 @@ public class AnnotationProcessor extends AbstractProcessor {
 				for(Element element : elements) {
 					this.generateOpTable(element);
 				}
-			} else if(this.matchAnnotation(annotation, A_SHARED_CLASS)) {
+			} else if(this.matchAnnotation(annotation, SharedClass.class)) {
 				Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(annotation);
 				for(Element element : elements) {
 					this.generateInitMethod(initBuilder, element);
@@ -74,18 +72,17 @@ public class AnnotationProcessor extends AbstractProcessor {
 	/**
 	 * match annotation 
 	 * @param annotation
-	 * @param targetName
+	 * @param annotationClass
 	 * @return
-	 * - if annotaion's name equals targetName, return true.
 	 */
-	private boolean matchAnnotation(TypeElement annotation, String targetName) {
-		this.debugPrint("target name-> " + targetName);
+	private boolean matchAnnotation(TypeElement annotation, Class<? extends Annotation> annotationClass) {
+		this.debugPrint("target name-> " + annotationClass.getSimpleName());
 		if(annotation.getKind() != ElementKind.ANNOTATION_TYPE) {
 			return false;
 		}
 		String name = annotation.getQualifiedName().toString();
 		this.debugPrint("annotation name-> " + name);
-		return name.equals(targetName);
+		return name.equals(annotationClass.getCanonicalName());
 	}
 
 	/**

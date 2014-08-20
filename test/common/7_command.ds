@@ -3,5 +3,8 @@ import-command ls grep echo
 echo "hello" | grep "hello"
 echo "hello" > /dev/null
 
-var a = ls hueri &> /dev/null
+var a = `ls hueri &> /dev/null`
+assert(a == "")
+
+a = $(ls hueri &> /dev/null)
 assert(a == "")
