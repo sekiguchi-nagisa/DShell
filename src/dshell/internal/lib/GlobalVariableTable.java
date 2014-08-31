@@ -51,7 +51,7 @@ public class GlobalVariableTable {
 
 	// create new global variable entry
 	public static int newLongVarEntry(String varName) {
-		checkEntryExistance(varName);
+		checkEntryExistence(varName);
 		final int size = longVarTable.length;
 		if(longVarIndexCount == size) {
 			checkIndexRange(size);
@@ -63,7 +63,7 @@ public class GlobalVariableTable {
 	}
 
 	public static int newDoubleVarEntry(String varName) {
-		checkEntryExistance(varName);
+		checkEntryExistence(varName);
 		final int size = doubleVarTable.length;
 		if(doubleVarIndexCount == size) {
 			checkIndexRange(size);
@@ -75,7 +75,7 @@ public class GlobalVariableTable {
 	}
 
 	public static int newBooleanVarEntry(String varName) {
-		checkEntryExistance(varName);
+		checkEntryExistence(varName);
 		final int size = booleanVarTable.length;
 		if(booleanVarIndexCount == size) {
 			checkIndexRange(size);
@@ -87,7 +87,7 @@ public class GlobalVariableTable {
 	}
 
 	public static int newObjectVarEntry(String varName) {
-		checkEntryExistance(varName);
+		checkEntryExistence(varName);
 		final int size = objectVarTable.length;
 		if(objectVarIndexCount == size) {
 			checkIndexRange(size);
@@ -102,7 +102,7 @@ public class GlobalVariableTable {
 	 * force terminate if found duplicated var name
 	 * @param varName
 	 */
-	private static void checkEntryExistance(String varName) {
+	private static void checkEntryExistence(String varName) {
 		if(indexMap.containsKey(varName)) {
 			Utils.fatal(1, "already defined global variable: " + varName);
 		}
@@ -153,8 +153,8 @@ public class GlobalVariableTable {
 		checkVarClass(indexPair, double.class);
 		return doubleVarTable[indexPair.getLeft()];
 	}
-
-	public static boolean getBoolenaVar(String varName) {
+	
+	public static boolean getBooleanVar(String varName) {
 		GenericPair<Integer, Class<?>> indexPair = getIndexPair(varName);
 		checkVarClass(indexPair, boolean.class);
 		return booleanVarTable[indexPair.getLeft()];
@@ -184,7 +184,7 @@ public class GlobalVariableTable {
 		objectVarTable[newObjectVarEntry(varName)] = value;
 	}
 
-	public static boolean checkVarExistance(String varName) {
+	public static boolean checkVarExistence(String varName) {
 		return indexMap.containsKey(varName);
 	}
 }

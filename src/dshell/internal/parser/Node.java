@@ -88,6 +88,23 @@ public abstract class Node {
 		return this.parentNode;
 	}
 
+	/**
+	 * get first found ancestor node 
+	 * @param targetClass
+	 * @return
+	 * return null, if not found
+	 */
+	public Node getFirstFoundAncestor(Class<? extends Node> targetClass) {
+		Node node = this.getParentNode();
+		if(node == null) {
+			return null;
+		}
+		if(targetClass.isAssignableFrom(node.getClass())) {
+			return node;
+		}
+		return node.getFirstFoundAncestor(targetClass);
+	}
+
 	@Override
 	public String toString() {
 		return this.getClass().getSimpleName() + ":void";
@@ -1509,16 +1526,17 @@ public abstract class Node {
 	public static class TryNode extends Node {
 		private final BlockNode tryBlockNode;
 		private final List<CatchNode> catchNodeList;
-		/**
-		 * May be EmptyBlockNode.
-		 */
-		private final BlockNode finallyBlockNode;
 
-		public TryNode(Token token, Node tryBlockNode, Node finallyBlockNode) {
+		/**
+		 * May be EmptyNode.
+		 */
+		private final Node finallyNode;
+
+		public TryNode(Token token, Node tryBlockNode, Node finallyNode) {
 			super(token);
 			this.tryBlockNode = (BlockNode) this.setNodeAsChild(tryBlockNode);
 			this.catchNodeList = new ArrayList<>();
-			this.finallyBlockNode = (BlockNode) this.setNodeAsChild(finallyBlockNode);
+			this.finallyNode = this.setNodeAsChild(finallyNode);
 		}
 
 		public BlockNode getTryBlockNode() {
@@ -1538,8 +1556,8 @@ public abstract class Node {
 			return this.catchNodeList;
 		}
 
-		public BlockNode getFinallyBlockNode() {
-			return this.finallyBlockNode;
+		public Node getFinallyNode() {
+			return this.finallyNode;
 		}
 
 		@Override
@@ -1598,6 +1616,23 @@ public abstract class Node {
 		}
 	}
 
+	public static class FinallyNode extends Node {
+		private final BlockNode blockNode;
+
+		public FinallyNode(Token token, Node blockNode) {
+			super(token);
+			this.blockNode = (BlockNode) this.setNodeAsChild(blockNode);
+		}
+
+		public BlockNode getBlockNode() {
+			return this.blockNode;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
 	/**
 	 * This node represents variable declaration.
 	 * It requires initial value.

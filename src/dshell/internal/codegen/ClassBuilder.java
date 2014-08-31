@@ -1,5 +1,7 @@
 package dshell.internal.codegen;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -8,9 +10,11 @@ import org.antlr.v4.runtime.Token;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.commons.Method;
 
 import dshell.internal.lib.DShellClassLoader;
@@ -89,12 +93,12 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	public MethodBuilder createNewMethodBuilder(MethodHandle handle) {
 		if(handle == null) {
 			Method methodDesc = Method.getMethod("void invoke()");
-			return new MethodBuilder(ACC_PUBLIC | ACC_FINAL | ACC_STATIC, methodDesc, null, null, this);
+			return new MethodBuilder(ACC_PUBLIC | ACC_FINAL | ACC_STATIC, methodDesc, this);
 		}
 		if(handle instanceof StaticFunctionHandle) {
-			return new MethodBuilder(ACC_PUBLIC | ACC_STATIC, handle.getMethodDesc(), null, null, this);
+			return new MethodBuilder(ACC_PUBLIC | ACC_STATIC, handle.getMethodDesc(), this);
 		}
-		return new MethodBuilder(ACC_PUBLIC, handle.getMethodDesc(), null, null, this);
+		return new MethodBuilder(ACC_PUBLIC, handle.getMethodDesc(), this);
 	}
 
 	/**
@@ -129,7 +133,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		/**
 		 * used for try catch statement.
 		 */
-		protected final Stack<TryBlockLabels> tryLabels;
+		protected final Deque<TryCatchLabel> tryLabels;
 
 		/**
 		 * contains variable scope
@@ -142,15 +146,31 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 */
 		protected int currentLineNum = -1;
 
-		protected MethodBuilder(int access, Method method, String signature, Type[] exceptions, ClassVisitor cv) {
-			super(access, method, signature, exceptions, cv);
+		protected MethodBuilder(int access, Method method, ClassVisitor cv) {
+			super(Opcodes.ASM4, toMethodVisitor(access, method, cv),
+					access, method.getName(), method.getDescriptor());
 			this.loopLabels = new Stack<>();
-			this.tryLabels = new Stack<>();
+			this.tryLabels = new ArrayDeque<>();
 			int startIndex = 0;
 			if((access & ACC_STATIC) != ACC_STATIC) {
 				startIndex = 1;
 			}
 			this.varScopes = new VarScopes(startIndex);
+		}
+
+		/**
+		 * helper method for method visitor generation
+		 * @param access
+		 * @param method
+		 * @param cv
+		 * @return
+		 */
+		private static MethodVisitor toMethodVisitor(int access, Method method, ClassVisitor cv) {
+			MethodVisitor visitor = 
+					cv.visitMethod(access, method.getName(), method.getDescriptor(), null, null);
+			JSRInlinerAdapter inlinerAdapter = 
+					new JSRInlinerAdapter(visitor, access, method.getName(), method.getDescriptor(), null, null);
+			return inlinerAdapter;
 		}
 
 		/**
@@ -162,12 +182,49 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 			return this.loopLabels;
 		}
 
-		public Stack<TryBlockLabels> getTryLabels() {
+		public Deque<TryCatchLabel> getTryLabels() {
 			return this.tryLabels;
 		}
 
-		public TryBlockLabels createNewTryLabel() {
-			return new TryBlockLabels(this);
+		public TryCatchLabel createNewTryLabel(boolean existFinally) {
+			Label startLabel = this.newLabel();
+			Label endLabel = this.newLabel();
+			Label finallyLabel = null;
+			if(existFinally) {
+				finallyLabel = this.newLabel();
+			}
+			return new TryCatchLabel(startLabel, endLabel, finallyLabel);
+		}
+
+		/**
+		 * create new ret adrr entry and store return address
+		 */
+		public void storeReturnAddr() {
+			VarEntry entry = this.varScopes.addRetAddressEntry();
+			this.visitVarInsn(ASTORE, entry.getVarIndex());
+			this.tryLabels.peek().retAddrEntry = entry;
+		}
+
+		public void returnFromFinally() {
+			VarEntry entry = this.tryLabels.peek().retAddrEntry;
+			this.visitVarInsn(RET, entry.getVarIndex());
+		}
+
+		public void jumpToFinally() {
+			this.jumpToFinally(this.tryLabels.peek());
+		}
+
+		private void jumpToFinally(TryCatchLabel label) {
+			Label finallyLabel = label.getFinallyLabel();
+			if(finallyLabel != null) {
+				this.visitJumpInsn(JSR, finallyLabel);
+			}
+		}
+
+		public void jumpToMultipleFinally() {
+			for(TryCatchLabel label : this.tryLabels) {
+				this.jumpToFinally(label);
+			}
 		}
 
 		/**
@@ -334,19 +391,47 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		}
 	}
 
-	public static class TryBlockLabels {
-		public final Label startLabel;
-		public final Label endLabel;
-		public final Label finallyLabel;
+	public static class TryCatchLabel {
+		private final Label startLabel;
+		private final Label endLabel;
+		private final Label finallyLabel;
 
-		private TryBlockLabels(GeneratorAdapter adapter) {
-			this.startLabel = adapter.newLabel();
-			this.endLabel = adapter.newLabel();
-			this.finallyLabel = adapter.newLabel();
+		private VarEntry retAddrEntry;
+
+		/**
+		 * 
+		 * @param startLabel
+		 * @param endLabel
+		 * @param finallyLabel
+		 * if not found finally, null
+		 */
+		private TryCatchLabel(Label startLabel, Label endLabel, Label finallyLabel) {
+			this.startLabel = startLabel;
+			this.endLabel = endLabel;
+			this.finallyLabel = finallyLabel;
+		}
+
+		public Label getStartLabel() {
+			return this.startLabel;
+		}
+
+		public Label getEndLabel() {
+			return this.endLabel;
+		}
+
+		/**
+		 * 
+		 * @return
+		 * may be null
+		 */
+		public Label getFinallyLabel() {
+			return this.finallyLabel;
 		}
 	}
 
 	private static class VarScopes {
+		private int retAddrNameSuffix = -1;
+
 		/**
 		 * contains local variable scopes
 		 */
@@ -361,7 +446,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 
 		private VarScopes(int startIndex) {
 			this.scopes = new Stack<>();
-			this.scopes.push(GlobalVarScope.getInstance());
+			this.scopes.push(new GlobalVarScope());
 			this.startVarIndex = startIndex;
 		}
 
@@ -378,6 +463,10 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 */
 		public VarEntry addVarEntry(String varName, DSType type) {
 			return this.scopes.peek().addVarEntry(varName, type);
+		}
+
+		public VarEntry addRetAddressEntry() {
+			return this.scopes.peek().addRetAddressEntry("$RetAddr$_" + ++this.retAddrNameSuffix);
 		}
 
 		/**
@@ -425,6 +514,20 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		public VarEntry addVarEntry(String varName, DSType type);
 
 		/**
+		 * add local variable which contains return address. 
+		 * for jsr/ret instruction
+		 * @return
+		 */
+
+		/**
+		 * add local variable which contains return address. 
+		 * for jsr/ret instruction
+		 * @param varName
+		 * @return
+		 */
+		public VarEntry addRetAddressEntry(String varName);
+
+		/**
 		 * get local variable index.
 		 * @param varName
 		 * - variable index.
@@ -466,9 +569,9 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		/**
 		 * contain var entry. key is variable name.
 		 */
-		private final Map<String, VarEntry> varEntryMap;
+		protected final Map<String, VarEntry> varEntryMap;
 
-		private LocalVarScope(VarScope parentScope, int localVarBaseIndex) {
+		protected LocalVarScope(VarScope parentScope, int localVarBaseIndex) {
 			this.parentScope = parentScope;
 			this.varEntryMap = new HashMap<>();
 			this.localVarBaseIndex = localVarBaseIndex;
@@ -477,8 +580,24 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 
 		@Override
 		public VarEntry addVarEntry(String varName, DSType type) {
-			assert !this.varEntryMap.containsKey(varName) : varName + " is already defined";
 			int valueSize = TypeUtils.toTypeDescriptor(type).getSize();
+			return this.addVarEntry(varName, valueSize);
+		}
+
+		@Override
+		public VarEntry addRetAddressEntry(String varName) {
+			return this.addVarEntry(varName, 1);
+		}
+
+		/**
+		 * 
+		 * @param varName
+		 * @param valueSize
+		 * size of variable, long, double is 2, otherwise 1
+		 * @return
+		 */
+		protected VarEntry addVarEntry(String varName, int valueSize) {
+			assert !this.varEntryMap.containsKey(varName) : varName + " is already defined";
 			assert valueSize > 0;
 			int index = this.currentLocalVarIndex;
 			VarEntry entry = new VarEntry(index, false);
@@ -512,8 +631,9 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	private static class GlobalVarScope implements VarScope {
+	private static class GlobalVarScope extends LocalVarScope {
 		private GlobalVarScope() {
+			super(null, 0);
 		}
 
 		@Override
@@ -541,24 +661,6 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		@Override
 		public VarEntry getVarEntry(String varName) {
 			return new VarEntry(GlobalVariableTable.getVarIndex(varName), true);
-		}
-
-		@Override
-		public int getStartIndex() {
-			return 0;
-		}
-
-		@Override
-		public int getEndIndex() {
-			return 0;
-		}
-
-		private static class Holder {
-			private final static GlobalVarScope INSTANCE = new GlobalVarScope();
-		}
-
-		public static GlobalVarScope getInstance() {
-			return Holder.INSTANCE;
 		}
 	}
 

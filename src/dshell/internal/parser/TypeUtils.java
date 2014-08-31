@@ -48,6 +48,7 @@ public class TypeUtils {
 	 * used for JavaByteCodeGen#visitCatchNode.
 	 * @param exceptionType
 	 * @return
+	 * if exception type is Exception, return type descriptor of java.lang.Throwable
 	 */
 	public static Type toExceptionTypeDescriptor(DSType exceptionType) {
 		if(exceptionType.getTypeName().equals("Exception")) {

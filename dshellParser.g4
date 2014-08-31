@@ -421,7 +421,7 @@ doWhileStatement returns [Node node]
 	;
 
 tryCatchStatement returns [Node node] locals [Node.TryNode tryNode]
-	: Try block c+=catchStatement+ finallyBlock
+	: Try block c+=catchStatement* finallyBlock
 		{
 			$tryNode = new Node.TryNode($Try, $block.node, $finallyBlock.node);
 			for(int i = 0; i < $c.size(); i++) {
@@ -432,8 +432,8 @@ tryCatchStatement returns [Node node] locals [Node.TryNode tryNode]
 	;
 
 finallyBlock returns [Node node]
-	: Finally block {$node = $block.node;}
-	| {$node = Node.EmptyBlockNode.INSTANCE;}
+	: Finally block {$node = new Node.FinallyNode($Finally, $block.node);}
+	| {$node = new Node.EmptyNode();}
 	;
 
 catchStatement returns [Node.CatchNode node]

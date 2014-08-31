@@ -247,7 +247,7 @@ public class Utils {
 
 	public static GenericArray getArgs() {
 		String varName = "$ARGS";
-		if(!GlobalVariableTable.checkVarExistance(varName)) {
+		if(!GlobalVariableTable.checkVarExistence(varName)) {
 			return new GenericArray();
 		}
 		return GlobalVariableTable.getObjectVar(varName, GenericArray.class);

@@ -39,3 +39,18 @@ assert(f(true) == -100)
 assert(flag)
 assert(f(false) == 100)
 assert(flag)
+
+# nested finally
+function g() {
+	try {
+		try {
+			return
+		} finally {
+			log "in first finally"
+		}
+	} finally {
+		log "in second finally"
+	}
+}
+
+g()

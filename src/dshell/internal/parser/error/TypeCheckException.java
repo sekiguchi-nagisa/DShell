@@ -30,6 +30,7 @@ public class TypeCheckException extends RuntimeException {
 		Assignable     ("require assignable node"),
 		ReadOnly       ("read only value"),
 		Unacceptable   ("unacceptable type: %s"),
+		InsideFinally  ("unavailable inside finally block"),
 
 		Unimplemented  ("unimplemented type checker api: %s");
 

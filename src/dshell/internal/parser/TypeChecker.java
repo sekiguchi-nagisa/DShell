@@ -17,6 +17,7 @@ import dshell.internal.parser.Node.BreakNode;
 import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.CatchNode;
 import dshell.internal.parser.Node.ClassNode;
+import dshell.internal.parser.Node.FinallyNode;
 import dshell.internal.parser.Node.ProcessNode;
 import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
@@ -78,13 +79,24 @@ public class TypeChecker implements NodeVisitor<Node> {
 	private final TypePool typePool;
 	private final SymbolTable symbolTable;
 	private final AbstractOperatorTable opTable;
+
+	/**
+	 * contains return type of current function
+	 */
 	private final Stack<DSType> returnTypeStack;
+
+	/**
+	 * contains state which represents for within finaly block
+	 */
+	private final Stack<Boolean> finallyContextStack;
 
 	public TypeChecker(TypePool typePool) {
 		this.typePool = typePool;
 		this.symbolTable = new SymbolTable();
 		this.opTable = new OperatorTable(this.typePool);
+
 		this.returnTypeStack = new Stack<>();
+		this.finallyContextStack = new Stack<>();
 	}
 
 	/**
@@ -312,19 +324,25 @@ public class TypeChecker implements NodeVisitor<Node> {
 		}
 	}
 
-	public void pushReturnType(DSType returnType) {
+	private void pushReturnType(DSType returnType) {
 		this.returnTypeStack.push(returnType);
 	}
 
-	public void popReturnType() {
+	private void popReturnType() {
 		this.returnTypeStack.pop();
 	}
 
-	public DSType getCurrentReturnType() {
+	private DSType getCurrentReturnType() {
 		if(this.returnTypeStack.isEmpty()) {
 			return TypePool.unresolvedType;
 		}
 		return this.returnTypeStack.peek();
+	}
+
+	private void checkAndThrowIfInsideFinally(BlockEndNode node) {
+		if(!this.finallyContextStack.empty() && this.finallyContextStack.peek()) {
+			this.reportTypeError(node, TypeErrorKind.InsideFinally);
+		}
 	}
 
 	/**
@@ -333,7 +351,9 @@ public class TypeChecker implements NodeVisitor<Node> {
 	public void recover() {
 		this.symbolTable.popAllLocal();
 		this.symbolTable.removeCachedEntries();
+
 		this.returnTypeStack.clear();
+		this.finallyContextStack.clear();
 	}
 
 	/**
@@ -798,12 +818,14 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(BreakNode node) {
+		this.checkAndThrowIfInsideFinally(node);
 		this.checkAndThrowIfOutOfLoop(node);
 		return node;
 	}
 
 	@Override
 	public Node visit(ContinueNode node) {
+		this.checkAndThrowIfInsideFinally(node);
 		this.checkAndThrowIfOutOfLoop(node);
 		return node;
 	}
@@ -884,6 +906,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ReturnNode node) {
+		this.checkAndThrowIfInsideFinally(node);
 		DSType returnType = this.getCurrentReturnType();
 		if(returnType instanceof UnresolvedType) {
 			this.reportTypeError(node, TypeErrorKind.InsideFunc);
@@ -899,6 +922,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ThrowNode node) {
+		this.checkAndThrowIfInsideFinally(node);
 		this.checkType(this.typePool.exceptionType, node.getExprNode());
 		return node;
 	}
@@ -906,10 +930,13 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(TryNode node) {
 		this.checkTypeWithNewBlockScope(node.getTryBlockNode());
+		// check type catch block
 		for(CatchNode catchNode : node.getCatchNodeList()) {
 			this.checkType(catchNode);
 		}
-		this.checkTypeWithNewBlockScope(node.getFinallyBlockNode());
+
+		// check type finally block, may be empty node
+		this.checkTypeAcceptingVoidType(node.getFinallyNode());
 
 		/**
 		 * verify catch block order.
@@ -947,6 +974,14 @@ public class TypeChecker implements NodeVisitor<Node> {
 		this.addEntryAndThrowIfDefined(node, node.getExceptionVarName(), exceptionType, true);
 		this.checkTypeWithCurrentBlockScope(node.getCatchBlockNode());
 		this.symbolTable.popCurrentTable();
+		return node;
+	}
+
+	@Override
+	public Node visit(FinallyNode node) {
+		this.finallyContextStack.push(true);
+		this.checkTypeWithNewBlockScope(node.getBlockNode());
+		this.finallyContextStack.pop();
 		return node;
 	}
 

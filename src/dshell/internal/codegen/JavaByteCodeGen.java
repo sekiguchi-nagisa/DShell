@@ -1,6 +1,7 @@
 package dshell.internal.codegen;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 import org.antlr.v4.runtime.Token;
@@ -12,19 +13,21 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import dshell.internal.codegen.ClassBuilder.MethodBuilder;
-import dshell.internal.codegen.ClassBuilder.TryBlockLabels;
+import dshell.internal.codegen.ClassBuilder.TryCatchLabel;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.ArrayNode;
 import dshell.internal.parser.Node.AssertNode;
 import dshell.internal.parser.Node.AssignNode;
+import dshell.internal.parser.Node.BlockEndNode;
 import dshell.internal.parser.Node.BlockNode;
 import dshell.internal.parser.Node.BooleanValueNode;
 import dshell.internal.parser.Node.BreakNode;
 import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.CatchNode;
 import dshell.internal.parser.Node.ClassNode;
+import dshell.internal.parser.Node.FinallyNode;
 import dshell.internal.parser.Node.ProcessNode;
 import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
@@ -617,15 +620,19 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	@Override
 	public Void visit(BreakNode node) {
-		Label label = this.getCurrentMethodBuilder().getLoopLabels().peek().getLeft();
-		this.getCurrentMethodBuilder().goTo(label);
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Label label = mBuilder.getLoopLabels().peek().getLeft();
+		mBuilder.jumpToMultipleFinally();
+		mBuilder.goTo(label);
 		return null;
 	}
 
 	@Override
 	public Void visit(ContinueNode node) {
-		Label label = this.getCurrentMethodBuilder().getLoopLabels().peek().getRight();
-		this.getCurrentMethodBuilder().goTo(label);
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Label label = mBuilder.getLoopLabels().peek().getRight();
+		mBuilder.jumpToMultipleFinally();
+		mBuilder.goTo(label);
 		return null;
 	}
 
@@ -782,15 +789,19 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	@Override
 	public Void visit(ReturnNode node) {
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		this.generateCode(node.getExprNode());
-		this.getCurrentMethodBuilder().returnValue();
+		mBuilder.jumpToMultipleFinally();
+		mBuilder.returnValue();
 		return null;
 	}
 
 	@Override
 	public Void visit(ThrowNode node) {
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		this.generateCode(node.getExprNode());
-		this.getCurrentMethodBuilder().throwException();
+		mBuilder.jumpToMultipleFinally();
+		mBuilder.throwException();
 		return null;
 	}
 
@@ -798,39 +809,74 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	public Void visit(TryNode node) {
 		// init labels
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		TryBlockLabels labels = mBuilder.createNewTryLabel();
+		TryCatchLabel labels = 
+				mBuilder.createNewTryLabel(node.getFinallyNode() instanceof FinallyNode);
 		mBuilder.getTryLabels().push(labels);
+		Label mergeLabel = mBuilder.newLabel();
+
 		// try block
-		mBuilder.mark(labels.startLabel);
+		mBuilder.mark(labels.getStartLabel());
 		this.generateBlockWithNewScope(node.getTryBlockNode());
-		mBuilder.mark(labels.endLabel);
-		mBuilder.goTo(labels.finallyLabel);
+		mBuilder.mark(labels.getEndLabel());
+
+		List<Node> nodeList = node.getTryBlockNode().getNodeList();
+		if(!(nodeList.get(nodeList.size() - 1) instanceof BlockEndNode)) {
+			mBuilder.jumpToFinally();
+		}
+		mBuilder.goTo(mergeLabel);
+
 		// catch block
 		for(CatchNode catchNode : node.getCatchNodeList()) {
 			this.generateCode(catchNode);
+			mBuilder.goTo(mergeLabel);
 		}
+
 		// finally block
-		mBuilder.mark(labels.finallyLabel);
-		this.generateBlockWithNewScope(node.getFinallyBlockNode());
+		this.generateCode(node.getFinallyNode());
 		mBuilder.getTryLabels().pop();
+
+		// merge
+		mBuilder.mark(mergeLabel);
 		return null;
 	}
 
 	@Override
 	public Void visit(CatchNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		TryBlockLabels labels = mBuilder.getTryLabels().peek();
+		TryCatchLabel labels = mBuilder.getTryLabels().peek();
 		mBuilder.createNewLocalScope();
+
 		DSType exceptionType = node.getExceptionType();
 		Type exceptionTypeDesc = TypeUtils.toExceptionTypeDescriptor(exceptionType);
-		mBuilder.catchException(labels.startLabel, labels.endLabel, exceptionTypeDesc);
+		mBuilder.catchException(labels.getStartLabel(), labels.getEndLabel(), exceptionTypeDesc);
+
+		// catch and wrap all kind of exception (include java native exception)
 		if(exceptionType.getTypeName().equals("Exception")) {
 			Method methodDesc = TypeUtils.toExceptionWrapperDescriptor();
 			mBuilder.invokeStatic(TypeUtils.toTypeDescriptor(exceptionType), methodDesc);
 		}
 		mBuilder.createNewVarAndStoreValue(node.getExceptionVarName(), exceptionType);
 		this.generateBlockWithCurrentScope(node.getCatchBlockNode());
-		mBuilder.goTo(labels.finallyLabel);
+
+		// jump to finally
+		List<Node> nodeList = node.getCatchBlockNode().getNodeList();
+		if(!(nodeList.get(nodeList.size() - 1) instanceof BlockEndNode)) {
+			mBuilder.jumpToFinally();
+		}
+
+		mBuilder.removeCurrentLocalScope();
+		return null;
+	}
+
+	@Override
+	public Void visit(FinallyNode node) {
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		mBuilder.mark(mBuilder.getTryLabels().peek().getFinallyLabel());
+		mBuilder.createNewLocalScope();
+		mBuilder.storeReturnAddr();
+		this.generateBlockWithCurrentScope(node.getBlockNode());
+		mBuilder.returnFromFinally();
+
 		mBuilder.removeCurrentLocalScope();
 		return null;
 	}

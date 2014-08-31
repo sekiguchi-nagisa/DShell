@@ -193,6 +193,9 @@ public class DShellEngineFactory implements EngineFactory {
 			} catch(TypeCheckException e) {
 				this.checker.recover();
 				this.listener.displayTypeError(e, this.parser);
+				if(RuntimeContext.getInstance().isDebugMode()) {
+					e.printStackTrace();
+				}
 				return false;
 			}
 
