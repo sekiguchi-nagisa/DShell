@@ -12,7 +12,6 @@ import dshell.internal.type.DSType.UnresolvedType;
 import dshell.internal.type.DSType.VoidType;
 import dshell.internal.type.ParametricType;
 import dshell.internal.type.ParametricType.ParametricGenericType;
-import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
 
 /**
@@ -43,14 +42,12 @@ interface SymbolTableOp {
 	public boolean addEntry(String symbolName, DSType type, boolean isReadOnly);
 }
 
-public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
+public class SymbolTable implements SymbolTableOp {
 	private final Stack<SymbolTableOp> tableStack;
-	private final Stack<DSType> returnTypetaStack;
 
 	public SymbolTable() {
 		this.tableStack = new Stack<>();
 		this.tableStack.push((new RootTable()));
-		this.returnTypetaStack = new Stack<>();
 	}
 
 	@Override
@@ -93,21 +90,6 @@ public class SymbolTable implements SymbolTableOp {	// TODO: remove entry.
 		for(int i = 0; i < size; i++) {
 			this.popCurrentTable();
 		}
-	}
-
-	public void pushReturnType(DSType returnType) {
-		this.returnTypetaStack.push(returnType);
-	}
-
-	public void popReturnType() {
-		this.returnTypetaStack.pop();
-	}
-
-	public DSType getCurrentReturnType() {
-		if(this.returnTypetaStack.isEmpty()) {
-			return TypePool.unresolvedType;
-		}
-		return this.returnTypetaStack.peek();
 	}
 
 	public void clearEntryCache() {

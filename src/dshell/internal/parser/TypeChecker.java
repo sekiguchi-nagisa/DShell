@@ -2,6 +2,7 @@ package dshell.internal.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.Node.ArgumentNode;
@@ -77,11 +78,13 @@ public class TypeChecker implements NodeVisitor<Node> {
 	private final TypePool typePool;
 	private final SymbolTable symbolTable;
 	private final AbstractOperatorTable opTable;
+	private final Stack<DSType> returnTypeStack;
 
 	public TypeChecker(TypePool typePool) {
 		this.typePool = typePool;
 		this.symbolTable = new SymbolTable();
 		this.opTable = new OperatorTable(this.typePool);
+		this.returnTypeStack = new Stack<>();
 	}
 
 	/**
@@ -309,12 +312,28 @@ public class TypeChecker implements NodeVisitor<Node> {
 		}
 	}
 
+	public void pushReturnType(DSType returnType) {
+		this.returnTypeStack.push(returnType);
+	}
+
+	public void popReturnType() {
+		this.returnTypeStack.pop();
+	}
+
+	public DSType getCurrentReturnType() {
+		if(this.returnTypeStack.isEmpty()) {
+			return TypePool.unresolvedType;
+		}
+		return this.returnTypeStack.peek();
+	}
+
 	/**
 	 * reset symbol table when error happened.
 	 */
 	public void recover() {
 		this.symbolTable.popAllLocal();
 		this.symbolTable.removeCachedEntries();
+		this.returnTypeStack.clear();
 	}
 
 	/**
@@ -330,7 +349,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), args));
 	}
 
-	// visitotr api
+	// visitor api
 	@Override
 	public Node visit(IntValueNode node) {
 		node.setType(this.typePool.intType);
@@ -865,7 +884,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ReturnNode node) {
-		DSType returnType = this.symbolTable.getCurrentReturnType();
+		DSType returnType = this.getCurrentReturnType();
 		if(returnType instanceof UnresolvedType) {
 			this.reportTypeError(node, TypeErrorKind.InsideFunc);
 		}
@@ -1048,7 +1067,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		this.addEntryAndThrowIfDefined(node, funcName, holderType, true);
 
 		// check type func body
-		this.symbolTable.pushReturnType(returnType);
+		this.pushReturnType(returnType);
 		this.symbolTable.createAndPushNewTable();
 
 		int size = paramTypeList.size();
@@ -1057,7 +1076,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		}
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
 		this.symbolTable.popCurrentTable();
-		this.symbolTable.popReturnType();
+		this.popReturnType();
 		node.setHolderType(holderType);
 		// check control structure
 		this.checkBlockEndExistence(node.getBlockNode(), returnType);
