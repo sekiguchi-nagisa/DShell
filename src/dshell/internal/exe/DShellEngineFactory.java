@@ -85,6 +85,13 @@ public class DShellEngineFactory implements EngineFactory {
 		@Override
 		public void setArg(String[] scriptArgs) {
 			RootNode rootNode = new RootNode(null);
+
+			final int size = scriptArgs.length - 1;
+			String[] args = new String[size];
+			if(size > 0) {
+				System.arraycopy(scriptArgs, 1, args, 0, size);
+			}
+			rootNode.addNode(new Node.GlobalVarNode("$ARGS", "Array<String>", new GenericArray(args)));
 			rootNode.addNode(new Node.GlobalVarNode("ARGV", "Array<String>", new GenericArray(scriptArgs)));
 
 			RootNode checkedNode = this.checker.checkTypeRootNode(rootNode);

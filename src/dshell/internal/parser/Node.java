@@ -940,6 +940,38 @@ public abstract class Node {
 	}
 
 	/**
+	 * represent for special parameters to which they shall expand
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
+	public static class SpecialCharNode extends ExprNode {
+		public final static int dollar_at = 1;	// $@
+
+		private final int expandType;
+
+		protected SpecialCharNode(Token token) {
+			super(token);
+			String tokenText = token.getText();
+			switch(tokenText) {
+			case "$@":
+				this.expandType = dollar_at;
+				break;
+			default:
+				throw new RuntimeException("unsupported special parameter: " + tokenText);
+			}
+		}
+
+		public int getExpandType() {
+			return this.expandType;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	/**
 	 * represent for (piped) command expression
 	 * @author skgchxngsxyz-osx
 	 *

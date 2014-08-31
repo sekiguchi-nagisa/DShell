@@ -325,6 +325,10 @@ public class ParserUtils {
 				flushTokenBuffer(node, tokenBuffer);
 				node.addArgSegment(parseBackquotedLiteral(curToken, parser));
 				break;
+			case dshellParser.Dollar_At:
+				flushTokenBuffer(node, tokenBuffer);
+				node.addArgSegment(new Node.SpecialCharNode(curToken));
+				break;
 			default:
 				tokenBuffer.add(curToken);
 				break;

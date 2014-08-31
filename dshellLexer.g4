@@ -181,11 +181,16 @@ BackquotedChar
 	| ~['`']
 	;
 
+Dollar_At
+	: '$@'
+	;
+
 // unicode character
 UTF8Chars
 	: UTF8Char+
 	;
 
+fragment
 UTF8Char
 	: [\u0080-\u07FF]
 	| [\u0800-\uFFFF]

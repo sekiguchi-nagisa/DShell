@@ -52,6 +52,7 @@ import dshell.internal.parser.Node.PairNode;
 import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
+import dshell.internal.parser.Node.SpecialCharNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.Node.TaskNode;
@@ -63,7 +64,7 @@ import dshell.internal.parser.Node;
 import dshell.internal.parser.NodeVisitor;
 import dshell.internal.parser.TypeUtils;
 import dshell.internal.process.AbstractProcessContext;
-import dshell.internal.process.ArgumentBuffer;
+import dshell.internal.process.ArgumentBuilder;
 import dshell.internal.process.TaskContext;
 import dshell.internal.type.DSType;
 import dshell.internal.type.GenericType;
@@ -448,6 +449,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		Type taskCtxDesc = Type.getType(TaskContext.class);
 		Type procCtxDesc = Type.getType(AbstractProcessContext.class);
+		Type argDesc = Type.getType(ArgumentBuilder.class);
 
 		int argSize = node.getArgNodeList().size();
 		mBuilder.push(node.getCommandPath());
@@ -456,17 +458,17 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.invokeStatic(taskCtxDesc, methodDesc);
 
 		// set arguments
+		methodDesc = new Method("addArg", procCtxDesc, 
+				new Type[]{argDesc});
 		for(int i = 0; i < argSize; i++) {
-			ExprNode argNode = node.getArgNodeList().get(i);	// string type or string array type
-			methodDesc = new Method("addArg", procCtxDesc, 
-					new Type[]{TypeUtils.toTypeDescriptor(argNode.getType())});
+			ExprNode argNode = node.getArgNodeList().get(i);
 			this.generateCode(argNode);
 			mBuilder.invokeVirtual(procCtxDesc, methodDesc);
 		}
 
 		// set redirect options
 		Method redirDesc = new Method("setRedirOption", procCtxDesc, 
-				new Type[]{Type.getType(int.class), Type.getType(String.class)});
+				new Type[]{Type.getType(int.class), argDesc});
 		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
 			mBuilder.push(pair.getLeft());
 			this.generateCode(pair.getRight());
@@ -481,28 +483,31 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(ArgumentNode node) {	//TODO: refactoring
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		Type bufferTypeDesc = Type.getType(ArgumentBuffer.class);
-		Type stringTypeDesc = Type.getType(String.class);
-		Method methodDesc = new Method("newBuffer", bufferTypeDesc, new Type[]{});
+		Type bufferTypeDesc = Type.getType(ArgumentBuilder.class);
+		Method methodDesc = new Method("newArgumentBuilder", bufferTypeDesc, new Type[]{});
 
 		mBuilder.invokeStatic(bufferTypeDesc, methodDesc);
 
-		// add argument segment
-		methodDesc = new Method("append", bufferTypeDesc, new Type[]{stringTypeDesc});
+		// add argument segment, string or array
 		for(ExprNode exprNode : node.getSegmentNodeList()) {
+			methodDesc = new Method("append", bufferTypeDesc, 
+					new Type[]{TypeUtils.toTypeDescriptor(exprNode.getType())});
 			this.generateCode(exprNode);
 			mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
 		}
+		return null;
+	}
 
-		// get joined argument
-		DSType type = node.getType();
-		Type returnTypeDesc = TypeUtils.toTypeDescriptor(type);
-		if(type.getTypeName().equals("String")) {
-			methodDesc = new Method("getAsString", returnTypeDesc, new Type[]{});
-		} else {
-			methodDesc = new Method("getAsArray", returnTypeDesc, new Type[]{});
+	@Override
+	public Void visit(SpecialCharNode node) {	//TODO: refactoring
+		switch(node.getExpandType()) {
+		case SpecialCharNode.dollar_at: {
+			Method methodDesc = 
+					new Method("getArgs", TypeUtils.toTypeDescriptor(node.getType()), new Type[]{});
+			this.getCurrentMethodBuilder().invokeStatic(Type.getType(Utils.class), methodDesc);
+			break;
 		}
-		mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
+		}
 		return null;
 	}
 

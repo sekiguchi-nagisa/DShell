@@ -7,7 +7,6 @@ import java.util.List;
 
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.ParserUtils.RedirOption;
-import dshell.lang.GenericArray;
 
 /**
  * represents process.
@@ -80,32 +79,10 @@ public abstract class AbstractProcessContext {
 		this.cmdBuilder.append(commandPath);
 	}
 
-	/**
-	 * add command argument.
-	 * @param arg
-	 * - argument string.
-	 * @return
-	 * - this.
-	 */
-	public AbstractProcessContext addArg(String arg) {
-		String resolvedArg = Utils.resolveHome(arg);
-		this.argList.add(resolvedArg);
-		this.cmdBuilder.append(' ');
-		this.cmdBuilder.append(resolvedArg);
-		return this;
-	}
-
-	/**
-	 * add arguments.
-	 * @param argArray
-	 * - must be string array.
-	 * @return
-	 * - this.
-	 */
-	public AbstractProcessContext addArg(GenericArray argArray) {
-		long size = argArray.size();
-		for(long i = 0; i < size; i++) {
-			String resolvedArg = Utils.resolveHome((String) argArray.get(i));
+	public AbstractProcessContext addArg(ArgumentBuilder argBuilder) {
+		LinkedList<String> argList = argBuilder.getArgList();
+		for(String arg : argList) {
+			String resolvedArg = Utils.resolveHome(arg);
 			this.argList.add(resolvedArg);
 			this.cmdBuilder.append(' ');
 			this.cmdBuilder.append(resolvedArg);
@@ -124,11 +101,17 @@ public abstract class AbstractProcessContext {
 	 * @param option
 	 * - must be RedirectOption's element
 	 * @param targetFileName
-	 * - not null
+	 * - not null. if option is not require target file name, contains empty string
 	 * @return
 	 * - this
 	 */
-	public final AbstractProcessContext setRedirOption(int option, String targetFileName) {
+	public final AbstractProcessContext setRedirOption(int option, ArgumentBuilder targetArg) {
+		LinkedList<String> argList = targetArg.getArgList();
+		String targetFileName = argList.removeFirst();
+		for(String arg : argList) {
+			this.argList.add(arg);
+		}
+
 		switch(option) {
 		case RedirOption.FromFile:
 			this.setInputRedirect(targetFileName);

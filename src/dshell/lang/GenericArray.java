@@ -177,6 +177,19 @@ public class GenericArray implements Cloneable {
 	}
 
 	@Shared
+	public String flat() {
+		StringBuilder sBuilder = new StringBuilder();
+		final int size = this.size;
+		for(int i = 0; i < size; i++) {
+			if(i > 0) {
+				sBuilder.append(' ');
+			}
+			sBuilder.append(this.values[i]);
+		}
+		return sBuilder.toString();
+	}
+
+	@Shared
 	@Override
 	public String toString() {
 		StringBuilder sBuilder = new StringBuilder();

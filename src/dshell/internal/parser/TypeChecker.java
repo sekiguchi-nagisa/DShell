@@ -44,6 +44,7 @@ import dshell.internal.parser.Node.PairNode;
 import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
+import dshell.internal.parser.Node.SpecialCharNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.Node.TaskNode;
@@ -634,36 +635,43 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(ProcessNode node) {
 		for(ExprNode argNode : node.getArgNodeList()) {
-			this.checkType(argNode);
+			this.checkTypeAcceptingVoidType(argNode);	//FIXME: accept void type
 		}
 		// check type redirect options
 		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
-			this.checkType(pair.getRight());
+			this.checkTypeAcceptingVoidType(pair.getRight());	//FIXME: accept void type
 		}
-		node.setType(TypePool.voidType);	// ProcessNode is always void type
+		node.setType(TypePool.voidType);	//FIXME: ProcessNode is always void type
 		return node;
 	}
 
 	@Override
 	public Node visit(ArgumentNode node) {
 		for(ExprNode exprNode : node.getSegmentNodeList()) {
-			this.checkType(this.typePool.stringType, exprNode);
+			this.checkType(exprNode);
 		}
-		DSType nodeType = this.typePool.stringType;
-		if(node.hasQuotedTaskNode()) {
-			String baseTypeName = this.typePool.baseArrayType.getTypeName();
+		node.setType(TypePool.voidType);	//FIXME: ArgumentNode is always void type
+		return node;
+	}
+
+	@Override
+	public Node visit(SpecialCharNode node) {	//TODO:
+		switch(node.getExpandType()) {
+		case SpecialCharNode.dollar_at: {
 			List<DSType> typeList = new ArrayList<>(1);
 			typeList.add(this.typePool.stringType);
-			nodeType = this.typePool.createAndGetReifiedTypeIfUndefined(baseTypeName, typeList);
+			String baseTypeName = this.typePool.baseArrayType.getTypeName();
+			node.setType(this.typePool.createAndGetReifiedTypeIfUndefined(baseTypeName, typeList));
+			break;
 		}
-		node.setType(nodeType);
+		}
 		return node;
 	}
 
 	@Override
 	public Node visit(TaskNode node) {
 		for(ProcessNode procNode : node.getProcNodeList()) {
-			this.checkTypeAcceptingVoidType(procNode);	// accept void type
+			this.checkTypeAcceptingVoidType(procNode);	//FIXME: accept void type
 		}
 
 		/**
@@ -722,7 +730,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 		// resolve node type
 		Node parentNode = node.getParentNode();
-		if(parentNode instanceof ForInNode) {
+		if((parentNode instanceof ForInNode) || (parentNode instanceof ArgumentNode)) {
 			List<DSType> elementTypeList = new ArrayList<>(1);
 			elementTypeList.add(this.typePool.stringType);
 			String baseTypeName = this.typePool.baseArrayType.getTypeName();

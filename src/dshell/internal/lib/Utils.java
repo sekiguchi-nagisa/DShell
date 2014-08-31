@@ -10,6 +10,8 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import dshell.lang.GenericArray;
+
 /**
  * some utilities.
  * @author skgchxngsxyz-opensuse
@@ -241,5 +243,13 @@ public class Utils {
 		sBuilder.append('_');
 		sBuilder.append(rnd.nextInt());
 		return sBuilder.toString();
+	}
+
+	public static GenericArray getArgs() {
+		String varName = "$ARGS";
+		if(!GlobalVariableTable.checkVarExistance(varName)) {
+			return new GenericArray();
+		}
+		return GlobalVariableTable.getObjectVar(varName, GenericArray.class);
 	}
 }

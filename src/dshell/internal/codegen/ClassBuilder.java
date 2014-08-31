@@ -508,46 +508,39 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 	}
 
 	/**
-	 * contains global variable entry
+	 * wrapper class of global variable table
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
 	private static class GlobalVarScope implements VarScope {
-		private final Map<String, VarEntry> globalVarEntryMap;
-
 		private GlobalVarScope() {
-			this.globalVarEntryMap = new HashMap<>();
 		}
 
 		@Override
 		public VarEntry addVarEntry(String varName, DSType type) {
-			assert !this.globalVarEntryMap.containsKey(varName) : varName + " is already defined";
 			int varIndex = -1;
 			switch(TypeUtils.toTypeDescriptor(type).getSort()) {
 			case Type.LONG:
-				varIndex = GlobalVariableTable.reserveLongVarTable();
+				varIndex = GlobalVariableTable.newLongVarEntry(varName);
 				break;
 			case Type.DOUBLE:
-				varIndex = GlobalVariableTable.reserveDoubleVarTable();
+				varIndex = GlobalVariableTable.newDoubleVarEntry(varName);
 				break;
 			case Type.BOOLEAN:
-				varIndex = GlobalVariableTable.reserveBooleanVarTable();
+				varIndex = GlobalVariableTable.newBooleanVarEntry(varName);
 				break;
 			case Type.OBJECT:
-				varIndex = GlobalVariableTable.reserveObjectVarTable();
+				varIndex = GlobalVariableTable.newObjectVarEntry(varName);
 				break;
 			default:
 				throw new RuntimeException("illegal type: " + type);
 			}
-			assert varIndex != -1;
-			VarEntry entry = new VarEntry(varIndex, true);
-			this.globalVarEntryMap.put(varName, entry);
-			return entry;
+			return new VarEntry(varIndex, true);
 		}
 
 		@Override
 		public VarEntry getVarEntry(String varName) {
-			return this.globalVarEntryMap.get(varName);
+			return new VarEntry(GlobalVariableTable.getVarIndex(varName), true);
 		}
 
 		@Override
