@@ -71,7 +71,7 @@ public class ParserUtils {
 
 		public IfElseBlock(Node node) {
 			this.thenBlockNode = (BlockNode) node;
-			this.elseBlockNode = Node.EmptyBlockNode.INSTANCE;
+			this.elseBlockNode = new Node.EmptyBlockNode();
 		}
 
 		public void setElseBlockNode(Node node) {

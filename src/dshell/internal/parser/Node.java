@@ -1135,9 +1135,9 @@ public abstract class Node {
 
 		public BlockNode(Block block) {
 			super(null);
-			this.nodeList = new ArrayList<>();
-			for(Node node : block.getNodeList()) {
-				this.nodeList.add(this.setNodeAsChild(node));
+			this.nodeList = block.getNodeList();
+			for(Node node : nodeList) {
+				this.setNodeAsChild(node);
 			}
 		}
 
@@ -1433,7 +1433,7 @@ public abstract class Node {
 	public static class IfNode extends Node {
 		private final ExprNode condNode;
 		private final BlockNode thenBlockNode;
-		
+
 		/**
 		 * may be EmptyblockNode
 		 */
@@ -1989,9 +1989,7 @@ public abstract class Node {
 	 *
 	 */
 	public static class EmptyBlockNode extends BlockNode {
-		public final static EmptyBlockNode INSTANCE = new EmptyBlockNode();
-
-		private EmptyBlockNode() {
+		public EmptyBlockNode() {
 			super(new Block());
 		}
 
