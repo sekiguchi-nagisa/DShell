@@ -1,9 +1,10 @@
 package dshell.internal.parser;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 import dshell.internal.lib.Utils;
 import dshell.internal.process.BuiltinSymbol;
@@ -14,10 +15,10 @@ import dshell.internal.process.BuiltinSymbol;
  *
  */
 public class CommandScope {
-	private final Stack<LocalScope> scopeStack;
+	private final Deque<LocalScope> scopeStack;
 
 	public CommandScope() {
-		this.scopeStack = new Stack<>();
+		this.scopeStack = new ArrayDeque<>();
 		this.scopeStack.push(new GlobalScope());
 	}
 

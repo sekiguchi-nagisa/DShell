@@ -1,8 +1,9 @@
 package dshell.internal.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.Node.ArgumentNode;
@@ -83,20 +84,20 @@ public class TypeChecker implements NodeVisitor<Node> {
 	/**
 	 * contains return type of current function
 	 */
-	private final Stack<DSType> returnTypeStack;
+	private final Deque<DSType> returnTypeStack;
 
 	/**
 	 * contains state which represents for within finaly block
 	 */
-	private final Stack<Boolean> finallyContextStack;
+	private final Deque<Boolean> finallyContextStack;
 
 	public TypeChecker(TypePool typePool) {
 		this.typePool = typePool;
 		this.symbolTable = new SymbolTable();
 		this.opTable = new OperatorTable(this.typePool);
 
-		this.returnTypeStack = new Stack<>();
-		this.finallyContextStack = new Stack<>();
+		this.returnTypeStack = new ArrayDeque<>();
+		this.finallyContextStack = new ArrayDeque<>();
 	}
 
 	/**
@@ -340,7 +341,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	private void checkAndThrowIfInsideFinally(BlockEndNode node) {
-		if(!this.finallyContextStack.empty() && this.finallyContextStack.peek()) {
+		if(!this.finallyContextStack.isEmpty() && this.finallyContextStack.peek()) {
 			this.reportTypeError(node, TypeErrorKind.InsideFinally);
 		}
 	}

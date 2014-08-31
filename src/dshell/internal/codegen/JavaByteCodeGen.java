@@ -1,8 +1,9 @@
 package dshell.internal.codegen;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 import org.antlr.v4.runtime.Token;
 import org.objectweb.asm.ClassWriter;
@@ -86,11 +87,11 @@ import dshell.lang.GenericPair;
  */
 public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	protected final DShellClassLoader classLoader;
-	protected final Stack<MethodBuilder> methodBuilders;
+	protected final Deque<MethodBuilder> methodBuilders;
 
 	public JavaByteCodeGen(DShellClassLoader classLoader) {
 		this.classLoader = classLoader;
-		this.methodBuilders = new Stack<>();
+		this.methodBuilders = new ArrayDeque<>();
 	}
 
 	public static byte[] generateFuncTypeInterface(FunctionType funcType) {

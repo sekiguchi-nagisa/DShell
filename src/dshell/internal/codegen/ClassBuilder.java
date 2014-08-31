@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 
 import org.antlr.v4.runtime.Token;
 import org.objectweb.asm.ClassVisitor;
@@ -128,7 +127,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 * contains loop statement label(break, continue).
 		 * left is break label and right is continue label.
 		 */
-		protected final Stack<GenericPair<Label, Label>> loopLabels;
+		protected final Deque<GenericPair<Label, Label>> loopLabels;
 
 		/**
 		 * used for try catch statement.
@@ -149,7 +148,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		protected MethodBuilder(int access, Method method, ClassVisitor cv) {
 			super(Opcodes.ASM4, toMethodVisitor(access, method, cv),
 					access, method.getName(), method.getDescriptor());
-			this.loopLabels = new Stack<>();
+			this.loopLabels = new ArrayDeque<>();
 			this.tryLabels = new ArrayDeque<>();
 			int startIndex = 0;
 			if((access & ACC_STATIC) != ACC_STATIC) {
@@ -178,7 +177,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		 * @return
 		 * - stack of label pair. pair's left value is break label, right value is continue label.
 		 */
-		public Stack<GenericPair<Label, Label>> getLoopLabels() {
+		public Deque<GenericPair<Label, Label>> getLoopLabels() {
 			return this.loopLabels;
 		}
 
@@ -435,7 +434,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		/**
 		 * contains local variable scopes
 		 */
-		private final Stack<VarScope> scopes;
+		private final Deque<VarScope> scopes;
 
 		/**
 		 * local variable start index.
@@ -445,7 +444,7 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 		protected final int startVarIndex;
 
 		private VarScopes(int startIndex) {
-			this.scopes = new Stack<>();
+			this.scopes = new ArrayDeque<>();
 			this.scopes.push(new GlobalVarScope());
 			this.startVarIndex = startIndex;
 		}

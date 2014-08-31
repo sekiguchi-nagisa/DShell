@@ -1,10 +1,11 @@
 package dshell.internal.parser;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.SymbolTable.SymbolEntry;
@@ -43,10 +44,10 @@ interface SymbolTableOp {
 }
 
 public class SymbolTable implements SymbolTableOp {
-	private final Stack<SymbolTableOp> tableStack;
+	private final Deque<SymbolTableOp> tableStack;
 
 	public SymbolTable() {
-		this.tableStack = new Stack<>();
+		this.tableStack = new ArrayDeque<>();
 		this.tableStack.push((new RootTable()));
 	}
 
