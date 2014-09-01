@@ -7,24 +7,24 @@ var c = 3.23
 assert(c instanceof float)
 
 # class tyep
-class Hoge {
-	var name = "hey"
-	var id = 12
-}
+#class Hoge {
+#	var name = "hey"
+#	var id = 12
+#}
 
-class Huga extends Hoge {
-	var isMan = false
-}
+#class Huga extends Hoge {
+#	var isMan = false
+#}
 
-var d = new Hoge()
-assert(d instanceof Hoge)
-assert(!(d instanceof Huga))
-var e = new Huga()
-assert(e instanceof Huga)
-assert(e instanceof Hoge)
+#var d = new Hoge()
+#assert(d instanceof Hoge)
+#assert(!(d instanceof Huga))
+#var e = new Huga()
+#assert(e instanceof Huga)
+#assert(e instanceof Hoge)
 
 # func type
-var f = function(a : int, b : Exception) {
+function f(a : int, b : Exception) {
 	var c = a + 12
 	log $a
 	throw b
@@ -35,10 +35,10 @@ assert(f instanceof Func<void, [int, Exception]>)
 # generic type
 var g1 = [1, 2, 3]
 var g2 = ["a", "b", "c"]
-var g3 = [new Hoge(), new Huga()]
+#var g3 = [new Hoge(), new Huga()]
 assert(g1 instanceof Array<int>)
 assert(g2 instanceof Array<String>)
-assert(g3 instanceof Array<Hoge>)
+#assert(g3 instanceof Array<Hoge>)
 
 var g4 = {"a" : 1, "b" : 2}
 var g5 = {"a" : "aa", "b" : "bb"}
@@ -49,23 +49,22 @@ assert(!(g5 instanceof Map<int>))
 # Exception type
 var h1 = new Exception()
 var h2 = new DShellException()
-var h3 = new FileNotFoundException()
+var h3 = new OutOfIndexException()
 assert(h1 instanceof Exception)
 assert(!(h1 instanceof DShellException))
 assert(h2 instanceof DShellException)
 assert(h2 instanceof Exception)
-assert(h3 instanceof FileNotFoundException)
-assert(h3 instanceof DShellException)
+assert(h3 instanceof OutOfIndexException)
 assert(h3 instanceof Exception)
 
 try {
 	1 / 0
 } catch(e) {
-	assert(e instanceof NativeException)
+	assert(e instanceof ArithmeticException)
 	assert(e instanceof Exception)
 }
 
 # IOStream
-assert(stdin instanceof InputStream)
-assert(stdout instanceof OutputStream)
-assert(stderr instanceof OutputStream)
+assert(STDIN instanceof InputStream)
+assert(STDOUT instanceof OutputStream)
+assert(STDERR instanceof OutputStream)
