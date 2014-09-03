@@ -1,4 +1,4 @@
-package testable;
+package dshell.main;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -13,7 +13,6 @@ import dshell.internal.exe.DShellEngineFactory.DShellExecutionEngine;
 import dshell.internal.exe.EngineFactory;
 import dshell.internal.exe.ExecutionEngine;
 import dshell.internal.lib.RuntimeContext;
-import dshell.main.DShell;
 
 public class DShellTest extends DShell {
 	public DShellTest(String[] args) {

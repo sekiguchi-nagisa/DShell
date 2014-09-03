@@ -3,7 +3,15 @@
 	<property name="dshell_source_dir" value="src" />
 	<property name="build_dir"  value="build" />
 	<property name="anno_dir" value="annotation" />
+	<property name="processor_jar" value="${anno_dir}/processor.jar" />
 	<property name="dshell_jar" value="dshell.jar" />
+
+	<!-- external library definition -->
+	<property name="asm_jar"   value="lib/asm-all-4.0.jar" />
+	<property name="jline_jar" value="lib/jline-1.0.jar" />
+	<property name="jna_jar" value="lib/jna-4.0.0.jar" />
+	<property name="log4j_jar" value="lib/log4j-1.2.17.jar" />
+	<property name="antlr4_jar" value="lib/antlr-runtime-4.3.jar" />
 
 	<!-- ================================== -->
 	<!--             PRE-BUILD              -->
@@ -18,12 +26,12 @@
 	<target name="build" depends="pre-build">
 		<mkdir dir="${build_dir}" />
 		<javac srcdir="${dshell_source_dir}; ./gensrc; ./generated-array" destdir="${build_dir}" debug="on" target="1.7" source="1.7" includeantruntime="false" >
-			<classpath path="lib/asm-all-4.0.jar" />
-			<classpath path="lib/jline-1.0.jar" />
-			<classpath path="lib/jna-4.0.0.jar" />
-			<classpath path="lib/log4j-1.2.17.jar" />
-			<classpath path="lib/antlr-runtime-4.3.jar" />
-			<classpath path="${anno_dir}/processor.jar" />
+			<classpath path="${asm_jar}" />
+			<classpath path="${jline_jar}" />
+			<classpath path="${jna_jar}" />
+			<classpath path="${log4j_jar}" />
+			<classpath path="${antlr4_jar}" />
+			<classpath path="${processor_jar}" />
 			<include name="**/*.java" />
 			<compilerarg value="-Xlint:deprecation" />
 			<compilerarg value="-Xlint:unchecked" />
@@ -36,17 +44,16 @@
 	<target name="jar" depends="build">
 		<jar jarfile="${dshell_jar}" filesetmanifest="merge">
 			<fileset dir="${build_dir}" includes="**/*.class" />
-			<fileset dir="." includes="lib/jvm/*" />
-			<exclude name="**/*Test.class" />
+			<!-- <exclude name="**/*Test.class" /> -->
 			<manifest>
 				<attribute name="Main-Class" value="dshell.main.DShell" />
 			</manifest>
-			<zipfileset src="lib/asm-all-4.0.jar" />
-			<zipfileset src="lib/jline-1.0.jar" />
-			<zipfileset src="lib/jna-4.0.0.jar" />
-			<zipfileset src="lib/log4j-1.2.17.jar" />
-			<zipfileset src="lib/antlr-runtime-4.3.jar" />
-			<zipfileset src="${anno_dir}/processor.jar" />
+			<zipfileset src="${asm_jar}" />
+			<zipfileset src="${jline_jar}" />
+			<zipfileset src="${jna_jar}" />
+			<zipfileset src="${log4j_jar}" />
+			<zipfileset src="${antlr4_jar}" />
+			<zipfileset src="${processor_jar}" />
 		</jar>
 	</target>
 

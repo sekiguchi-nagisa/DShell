@@ -35,10 +35,6 @@ test:
 	TEST_DIR=./test ./test/test_all.sh
 
 self-test:
-	cd ./tools/test-dshell/; ant clean; ant; cp ./test-dshell.jar ../../
 	TEST_DIR=./test dshell ./test/run_test.ds
 
-test-rec:
-	#USAGE: make test-rec URL=http://www.ubicg.ynu.ac.jp/Rec/api/3.0
-	TEST_DIR=./test ./test/test_all.sh $(URL)
-.PHONY: all build clean install test
+.PHONY: all build clean install test self-test

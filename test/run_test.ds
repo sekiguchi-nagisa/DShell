@@ -2,8 +2,8 @@ import env TEST_DIR
 import command echo
 
 let LOG = "./test-result.log"
-let jar = "./test-dshell.jar"
-let JVM_OPTION = "-Xbootclasspath/a:${jar} -XX:+TieredCompilation -XX:TieredStopAtLevel=1 testable.DShellTest"
+let jar = "./dshell.jar"
+let JVM_OPTION = "-Xbootclasspath/a:${jar} -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.main.DShellTest"
 
 function test(test_dir : String, test_file : String, option : String) {
 	import command java
