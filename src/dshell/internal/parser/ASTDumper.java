@@ -114,12 +114,13 @@ public class ASTDumper {
 			case '"':
 			case '\\':
 			case '/':
-			case '\b':
-			case '\f':
-			case '\n':
-			case '\r':
-			case '\t':
 				sBuilder.append('\\');
+				break;
+			case '\b': ch = 'b'; sBuilder.append('\\'); break;
+			case '\f': ch = 'f'; sBuilder.append('\\'); break;
+			case '\n': ch = 'n'; sBuilder.append('\\'); break;
+			case '\r': ch = 'r'; sBuilder.append('\\'); break;
+			case '\t': ch = 't'; sBuilder.append('\\'); break;
 			}
 			sBuilder.append(ch);
 		}

@@ -1,16 +1,16 @@
 <project name="dshell" default="jar">
 	<!-- directory / file definition -->
 	<property name="dshell_source_dir" value="src" />
-	<property name="build_dir"  value="build" />
-	<property name="anno_dir" value="annotation" />
-	<property name="processor_jar" value="${anno_dir}/processor.jar" />
-	<property name="dshell_jar" value="dshell.jar" />
+	<property name="build_dir"         value="build" />
+	<property name="anno_dir"          value="annotation" />
+	<property name="processor_jar"     value="${anno_dir}/processor.jar" />
+	<property name="dshell_jar"        value="dshell.jar" />
 
 	<!-- external library definition -->
-	<property name="asm_jar"   value="lib/asm-all-4.0.jar" />
-	<property name="jline_jar" value="lib/jline-1.0.jar" />
-	<property name="jna_jar" value="lib/jna-4.0.0.jar" />
-	<property name="log4j_jar" value="lib/log4j-1.2.17.jar" />
+	<property name="asm_jar"    value="lib/asm-all-4.0.jar" />
+	<property name="jline_jar"  value="lib/jline-1.0.jar" />
+	<property name="jna_jar"    value="lib/jna-4.0.0.jar" />
+	<property name="log4j_jar"  value="lib/log4j-1.2.17.jar" />
 	<property name="antlr4_jar" value="lib/antlr-runtime-4.3.jar" />
 
 	<!-- ================================== -->
