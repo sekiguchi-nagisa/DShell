@@ -244,9 +244,9 @@ public class TypeChecker implements NodeVisitor<Node> {
 	 * @param blockNode
 	 */
 	private void checkTypeWithNewBlockScope(BlockNode blockNode) {
-		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.enterScope();
 		this.checkTypeWithCurrentBlockScope(blockNode);
-		this.symbolTable.popCurrentTable();
+		this.symbolTable.exitScope();
 	}
 
 	/**
@@ -858,12 +858,12 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ForNode node) {
-		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.enterScope();
 		this.checkTypeAcceptingVoidType(node.getInitNode());
 		this.checkType(this.typePool.booleanType, node.getCondNode());
 		this.checkTypeAcceptingVoidType(node.getIterNode());
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
-		this.symbolTable.popCurrentTable();
+		this.symbolTable.exitScope();
 		return node;
 	}
 
@@ -883,10 +883,10 @@ public class TypeChecker implements NodeVisitor<Node> {
 		node.setIteratorHandles(reset, next, hasNext);
 
 		// add symbol entry
-		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.enterScope();
 		this.addEntryAndThrowIfDefined(node, node.getInitName(), next.getReturnType(), false);
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
-		this.symbolTable.popCurrentTable();
+		this.symbolTable.exitScope();
 		return node;
 	}
 
@@ -971,10 +971,10 @@ public class TypeChecker implements NodeVisitor<Node> {
 		/**
 		 * check type catch block.
 		 */
-		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.enterScope();
 		this.addEntryAndThrowIfDefined(node, node.getExceptionVarName(), exceptionType, true);
 		this.checkTypeWithCurrentBlockScope(node.getCatchBlockNode());
-		this.symbolTable.popCurrentTable();
+		this.symbolTable.exitScope();
 		return node;
 	}
 
@@ -1104,14 +1104,14 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 		// check type func body
 		this.pushReturnType(returnType);
-		this.symbolTable.createAndPushNewTable();
+		this.symbolTable.enterScope();
 
 		int size = paramTypeList.size();
 		for(int i = 0; i < size; i++) {
 			this.visitParamDecl(node.getArgDeclNodeList().get(i), paramTypeList.get(i));
 		}
 		this.checkTypeWithCurrentBlockScope(node.getBlockNode());
-		this.symbolTable.popCurrentTable();
+		this.symbolTable.exitScope();
 		this.popReturnType();
 		node.setHolderType(holderType);
 		// check control structure

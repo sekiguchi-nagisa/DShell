@@ -121,9 +121,9 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	private void generateBlockWithNewScope(BlockNode blockNode) {
-		this.getCurrentMethodBuilder().createNewLocalScope();
+		this.getCurrentMethodBuilder().enterScope();
 		this.generateBlockWithCurrentScope(blockNode);
-		this.getCurrentMethodBuilder().removeCurrentLocalScope();
+		this.getCurrentMethodBuilder().exitScope();
 	}
 
 	private void createPopInsIfExprNode(Node node) {
@@ -565,7 +565,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(QuotedTaskNode node) {	//FIXME: refactoring
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 
 		GenericPair<String, DSType> bufferEntry = node.getEntry();
 		DSType bufferType = bufferEntry.getRight();
@@ -599,7 +599,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 			Utils.fatal(1, "unsupported type: " + type);
 			break;
 		}
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		return null;
 	}
 
@@ -664,7 +664,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		Label breakLabel = mBuilder.newLabel();
 		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 		// init
 		this.generateCode(node.getInitNode());
 		this.createPopInsIfExprNode(node.getInitNode());
@@ -681,7 +681,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.goTo(continueLabel);
 		mBuilder.mark(breakLabel);
 
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		// remove label
 		mBuilder.getLoopLabels().pop();
 		return null;
@@ -695,7 +695,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		Label breakLabel = mBuilder.newLabel();
 		mBuilder.getLoopLabels().push(new GenericPair<Label, Label>(breakLabel, continueLabel));
 
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 		// init
 		this.generateCode(node.getExprNode());
 		mBuilder.dup();
@@ -716,7 +716,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		mBuilder.goTo(continueLabel);
 		mBuilder.mark(breakLabel);
 
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		mBuilder.pop();
 		// remove label
 		mBuilder.getLoopLabels().pop();
@@ -845,7 +845,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	public Void visit(CatchNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		TryCatchLabel labels = mBuilder.getTryLabels().peek();
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 
 		DSType exceptionType = node.getExceptionType();
 		Type exceptionTypeDesc = TypeUtils.toExceptionTypeDescriptor(exceptionType);
@@ -865,7 +865,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 			mBuilder.jumpToFinally();
 		}
 
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		return null;
 	}
 
@@ -873,12 +873,12 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	public Void visit(FinallyNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		mBuilder.mark(mBuilder.getTryLabels().peek().getFinallyLabel());
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 		mBuilder.storeReturnAddr();
 		this.generateBlockWithCurrentScope(node.getBlockNode());
 		mBuilder.returnFromFinally();
 
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		return null;
 	}
 
@@ -970,7 +970,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		// generate static method.
 		MethodBuilder mBuilder = classBuilder.createNewMethodBuilder(node.getHolderType().getFuncHandle());
 		this.methodBuilders.push(mBuilder);
-		mBuilder.createNewLocalScope();
+		mBuilder.enterScope();
 		// set argument decl
 		int size = node.getArgDeclNodeList().size();
 		for(int i = 0; i < size; i++) {
@@ -979,7 +979,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 			mBuilder.defineArgument(argNode.getSymbolName(), argType);
 		}
 		this.generateBlockWithCurrentScope(node.getBlockNode());
-		mBuilder.removeCurrentLocalScope();
+		mBuilder.exitScope();
 		this.methodBuilders.pop().endMethod();
 
 		// generate interface method

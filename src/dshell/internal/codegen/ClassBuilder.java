@@ -240,11 +240,11 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 			}
 		}
 
-		public void createNewLocalScope() {
+		public void enterScope() {
 			this.varScopes.createNewScope();
 		}
 
-		public void removeCurrentLocalScope() {
+		public void exitScope() {
 			this.varScopes.removeCurrentScope();
 		}
 

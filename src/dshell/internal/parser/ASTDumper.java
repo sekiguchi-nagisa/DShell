@@ -228,21 +228,21 @@ public class ASTDumper {
 			sBuilder.append(",\n");
 
 			// encode fields
-			List<Field> instanceFileds = new ArrayList<>();
+			List<Field> instanceFields = new ArrayList<>();
 			Class<?> clazz = value.getClass();
 			while(clazz != null) {
 				Field[] fields = clazz.getDeclaredFields();
 				for(Field field : fields) {
 					if(!Modifier.isStatic(field.getModifiers())) {
-						instanceFileds.add(field);
+						instanceFields.add(field);
 					}
 				}
 				clazz = clazz.getSuperclass();
 			}
-			int size = instanceFileds.size();
+			int size = instanceFields.size();
 			for(int i = 0; i < size; i++) {
 				appendIndent();
-				appendField(value, instanceFileds.get(i));
+				appendField(value, instanceFields.get(i));
 				if(i != size - 1) {
 					sBuilder.append(',');
 				}

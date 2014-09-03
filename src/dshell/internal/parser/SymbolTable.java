@@ -70,14 +70,14 @@ public class SymbolTable implements SymbolTableOp {
 	 * child table contains reference of this table.
 	 * @return
 	 */
-	public void createAndPushNewTable() {
+	public void enterScope() {
 		this.tableStack.push(new ChildTable(this.tableStack.peek()));
 	}
 
 	/**
 	 * remove current symbol table.
 	 */
-	public void popCurrentTable() {
+	public void exitScope() {
 		if(this.tableStack.size() > 1) {
 			this.tableStack.pop();
 		}
@@ -89,7 +89,7 @@ public class SymbolTable implements SymbolTableOp {
 	public void popAllLocal() {
 		int size = this.tableStack.size();
 		for(int i = 0; i < size; i++) {
-			this.popCurrentTable();
+			this.exitScope();
 		}
 	}
 
