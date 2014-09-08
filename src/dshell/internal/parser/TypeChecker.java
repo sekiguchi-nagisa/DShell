@@ -872,7 +872,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		// look up iterator op.
 		DSType exprType = ((ExprNode)this.checkType(node.getExprNode())).getType();
 		if(!exprType.getTypeName().startsWith("Array<")) {
-			this.reportTypeError(node.getExprNode(), TypeErrorKind.Required, "Array type");
+			this.reportTypeError(node.getExprNode(), TypeErrorKind.Required, "Array type", exprType);
 		}
 		MethodHandle reset = exprType.lookupMethodHandle("$iter$Reset");
 		MethodHandle next = exprType.lookupMethodHandle("$iter$Next");

@@ -18,7 +18,7 @@
 	<!-- ================================== -->
 
 	<target name="pre-build">
-		<ant antfile="build.xml" dir="${anno_dir}" target="jar" />
+		<ant antfile="build.xml" dir="${anno_dir}" target="jar" inheritAll="false" />
 	</target>
 	<!-- ================================== -->
 	<!--                BUILD               -->
@@ -61,7 +61,7 @@
 	<!--               CLEAN                -->
 	<!-- ================================== -->
 	<target name="clean">
-		<ant antfile="build.xml" dir="${anno_dir}" target="clean" />
+		<ant antfile="build.xml" dir="${anno_dir}" target="clean" inheritAll="false" />
 		<delete dir="${build_dir}"/>
 		<delete file="${dshell_jar}" />
 	</target>
