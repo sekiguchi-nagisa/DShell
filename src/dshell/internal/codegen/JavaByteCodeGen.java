@@ -16,6 +16,7 @@ import org.objectweb.asm.commons.Method;
 import dshell.internal.codegen.ClassBuilder.MethodBuilder;
 import dshell.internal.codegen.ClassBuilder.TryCatchLabel;
 import dshell.internal.lib.DShellClassLoader;
+import dshell.internal.lib.StringContext;
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.ArrayNode;
@@ -57,6 +58,7 @@ import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.SpecialCharNode;
+import dshell.internal.parser.Node.StringExprNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.Node.TaskNode;
@@ -205,6 +207,29 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
+	public Void visit(StringExprNode node) {	//FIXME
+		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		Type ctxTypeDesc = Type.getType(StringContext.class);
+		Type stringTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
+		Method methodDesc = new Method("newContext", ctxTypeDesc, new Type[]{});
+
+		// create new string context
+		mBuilder.invokeStatic(ctxTypeDesc, methodDesc);
+
+		// append string element
+		methodDesc = new Method("append", ctxTypeDesc, new Type[]{stringTypeDesc});
+		for(ExprNode exprNode : node.getElementList()) {
+			this.generateCode(exprNode);
+			mBuilder.invokeVirtual(ctxTypeDesc, methodDesc);
+		}
+
+		// string context to string
+		methodDesc = new Method("toString", stringTypeDesc, new Type[]{});
+		mBuilder.invokeVirtual(ctxTypeDesc, methodDesc);
+		return null;
+	}
+
+	@Override
 	public Void visit(ArrayNode node) {
 		int size = node.getNodeList().size();
 		DSType elementType = ((GenericType) node.getType()).getElementTypeList().get(0);
@@ -309,7 +334,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(CastNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		Type targetTypeDesc = TypeUtils.toTypeDescriptor(node.getTargetType());
+		Type targetTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
 		this.generateCode(node.getExprNode());
 		switch(node.getCastOp()) {
 		case CastNode.NOP:
@@ -326,7 +351,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		case CastNode.TO_STRING:
 			mBuilder.box(TypeUtils.toTypeDescriptor(node.getExprNode().getType()));
 			mBuilder.invokeVirtual(Type.getType(Object.class), 
-					TypeUtils.toMethodDescriptor(node.getTargetType(), "toString", new ArrayList<DSType>(0)));
+					TypeUtils.toMethodDescriptor(node.getType(), "toString", new ArrayList<DSType>(0)));
 			break;
 		case CastNode.CHECK_CAST:
 			mBuilder.checkCast(targetTypeDesc);

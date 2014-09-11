@@ -240,10 +240,13 @@ public abstract class Node {
 		private final String value;
 
 		public StringValueNode(Token token) {
-			super(token);
-			this.value = parseTokenText(this.token);
+			this(token, true);
 		}
 
+		public StringValueNode(Token token, boolean isSingleQuoteStr) {
+			super(token);
+			this.value = parseTokenText(this.token, isSingleQuoteStr);
+		}
 		/**
 		 * used for CommandNode
 		 * @param value
@@ -253,11 +256,11 @@ public abstract class Node {
 			this.value = value;
 		}
 
-		public static String parseTokenText(Token token) {
+		public static String parseTokenText(Token token, boolean isSingleQuoteStr) {
 			StringBuilder sBuilder = new StringBuilder();
 			String text = token.getText();
-			int startIndex = 1;
-			int endIndex = text.length() - 1;
+			int startIndex = isSingleQuoteStr ? 1 : 0;
+			int endIndex = isSingleQuoteStr ? text.length() - 1 : text.length();
 			for(int i = startIndex; i < endIndex; i++) {
 				char ch = text.charAt(i);
 				if(ch == '\\') {
@@ -271,6 +274,8 @@ public abstract class Node {
 					case '\'': ch = '\''; break;
 					case '"' : ch = '"' ; break;
 					case '\\': ch = '\\'; break;
+					case '`' : ch = '`' ; break;
+					case '$' : ch = '$' ; break;
 					}
 				}
 				sBuilder.append(ch);
@@ -280,6 +285,33 @@ public abstract class Node {
 
 		public String getValue() {
 			return this.value;
+		}
+
+		@Override
+		public <T> T accept(NodeVisitor<T> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	/**
+	 * for string interpolation
+	 * @author skgchxngsxyz-opensuse
+	 *
+	 */
+	public static class StringExprNode extends ExprNode {
+		private final List<ExprNode> elementList;
+
+		protected StringExprNode(Token token) {
+			super(token);
+			this.elementList = new ArrayList<>();
+		}
+
+		public void addElementNode(ExprNode exprNode) {
+			this.elementList.add(this.setExprNodeAsChild(exprNode));
+		}
+
+		public List<ExprNode> getElementList() {
+			return this.elementList;
 		}
 
 		@Override
@@ -544,6 +576,7 @@ public abstract class Node {
 		public final static int CHECK_CAST  = 5;
 
 		private final TypeSymbol targetTypeSymbol;
+		private String targetTypeName;	// used for string cast
 		private final ExprNode exprNode;
 		private int castOp = NOP;
 
@@ -553,16 +586,15 @@ public abstract class Node {
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 		}
 
-		public TypeSymbol getTypeSymbol() {
-			return this.targetTypeSymbol;
+		private CastNode(ExprNode exprNode) {
+			this(null, exprNode);
 		}
 
-		/**
-		 * equivalent to getType()
-		 * @return
-		 */
-		public DSType getTargetType() {
-			return this.getType();
+		public DSType resolveTargteType(TypePool pool) {
+			if(this.targetTypeSymbol != null) {
+				return this.targetTypeSymbol.toType(pool);
+			}
+			return pool.parseTypeName(this.targetTypeName);
 		}
 
 		public ExprNode getExprNode() {
@@ -581,24 +613,45 @@ public abstract class Node {
 		 * used for checkType
 		 * @param exprNode
 		 * @return
+		 * typed cast node
 		 */
 		public static CastNode wrapPrimitive(ExprNode exprNode) {
 			assert exprNode.getType() instanceof PrimitiveType;
 			Node parentNode = exprNode.getParentNode();
-			CastNode castNode = new CastNode(null, exprNode);
+			CastNode castNode = new CastNode(exprNode);
 			castNode.setParentNode(parentNode);
 			castNode.resolveCastOp(BOX);
 			castNode.setType(exprNode.getType());
 			return castNode;
 		}
 
+		/**
+		 * used for checkType
+		 * @param pool
+		 * @param exprNode
+		 * typed cast node
+		 * @return
+		 */
 		public static CastNode intToFloat(TypePool pool, ExprNode exprNode) {
 			assert exprNode.getType() instanceof PrimitiveType;
 			Node parentNode = exprNode.getParentNode();
-			CastNode castNode = new CastNode(null, exprNode);
+			CastNode castNode = new CastNode(exprNode);
 			castNode.setParentNode(parentNode);
 			castNode.resolveCastOp(INT_2_FLOAT);
 			castNode.setType(pool.floatType);
+			return castNode;
+		}
+
+		/**
+		 * used for string interpolation
+		 * must require type check
+		 * @param exprNode
+		 * @return
+		 * untyped cast node
+		 */
+		public static CastNode toString(ExprNode exprNode) {
+			CastNode castNode = new CastNode(exprNode);
+			castNode.targetTypeName = "String";
 			return castNode;
 		}
 
@@ -702,10 +755,6 @@ public abstract class Node {
 			this.argNodeList = new ArrayList<>(2);
 			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
 			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
-		}
-
-		public static OperatorCallNode createAddNode(ExprNode leftNode, ExprNode rightNode) {
-			return new OperatorCallNode("+", leftNode, rightNode);
 		}
 
 		public String getFuncName() {
@@ -915,6 +964,11 @@ public abstract class Node {
 			this.segmentNodeList = new ArrayList<>();
 		}
 
+		protected ArgumentNode(ExprNode node) {
+			this(node.getToken());
+			this.addArgSegment(node);
+		}
+
 		public void addTokenAsArgSegment(Token segmentToken) {
 			String tokenText = segmentToken.getText();
 			StringBuilder sBuilder = new StringBuilder();
@@ -933,7 +987,19 @@ public abstract class Node {
 			this.addArgSegment(new StringValueNode(sBuilder.toString()));
 		}
 
+		/**
+		 * 
+		 * @param segmentNode
+		 * if ArgumentNode, merge to it.
+		 */
 		public void addArgSegment(ExprNode segmentNode) {
+			if(segmentNode instanceof ArgumentNode) {
+				List<ExprNode> nodes = ((ArgumentNode) segmentNode).getSegmentNodeList();
+				for(ExprNode node : nodes) {
+					this.segmentNodeList.add((ExprNode) this.setNodeAsChild(node));
+				}
+				return;
+			}
 			this.segmentNodeList.add((ExprNode) this.setNodeAsChild(segmentNode));
 		}
 

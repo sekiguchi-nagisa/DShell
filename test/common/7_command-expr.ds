@@ -16,7 +16,7 @@ assert(c2 == "hello world")
 
 # command substitution
 import-command ls
-var d = `ls`/replace("\n", " ").split(" ")
+var d = `ls`.replace("\n", " ").split(" ")
 var i = 0;
 for(file in $(ls)) {
 	assert(file == d[i])

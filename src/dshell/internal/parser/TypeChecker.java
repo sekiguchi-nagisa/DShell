@@ -48,6 +48,7 @@ import dshell.internal.parser.Node.QuotedTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.SpecialCharNode;
+import dshell.internal.parser.Node.StringExprNode;
 import dshell.internal.parser.Node.StringValueNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.Node.TaskNode;
@@ -438,6 +439,15 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	@Override
+	public Node visit(StringExprNode node) {
+		for(ExprNode exprNode : node.getElementList()) {
+			this.checkType(this.typePool.stringType, exprNode);
+		}
+		node.setType(this.typePool.stringType);
+		return node;
+	}
+
+	@Override
 	public Node visit(ArrayNode node) {
 		int elementSize = node.getNodeList().size();
 		assert elementSize != 0;
@@ -530,7 +540,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	public Node visit(CastNode node) {
 		this.checkType(node.getExprNode());
 		DSType type = node.getExprNode().getType();
-		DSType targetType = node.getTypeSymbol().toType(this.typePool);
+		DSType targetType = node.resolveTargteType(this.typePool);
 		node.setType(targetType);
 
 		// resolve cast op

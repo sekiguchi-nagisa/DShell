@@ -13,9 +13,9 @@ import org.antlr.v4.runtime.misc.Pair;
 
 import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.BlockNode;
+import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
-import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
 import dshell.internal.parser.error.ParserErrorListener;
@@ -293,8 +293,39 @@ public class ParserUtils {
 		return new Node.QuotedTaskNode(childParser.commandListExpression().node);
 	}
 
+	public static ExprNode resolveInterpolation(Token token, dshellParser parser) {
+		String tokenText = token.getText();
+
+		// init child parser
+		dshellLexer childLexer = new dshellLexer(null);
+		childLexer.removeErrorListeners();
+		childLexer.addErrorListener(ParserErrorListener.getInstance());
+		dshellParser childParser = new dshellParser(null);
+		childParser.removeErrorListeners();
+		childParser.addErrorListener(ParserErrorListener.getInstance());
+		childParser.setCmdScope(parser.getCmdScope());
+
+		// prepare lexer, parser
+		ANTLRInputStream input = new ANTLRInputStream(tokenText);
+		input.name = token.getInputStream().getSourceName();
+
+		childLexer.setLine(token.getLine());
+		childLexer.setInputStream(input);
+		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
+		childParser.setTokenStream(tokenStream);
+
+		// start parsing
+		if(tokenText.startsWith("$(")) {
+			return childParser.substitutedCommand().node;
+		}
+		else if(tokenText.startsWith("${")) {
+			return childParser.interpolation().node;
+		}
+		throw new RuntimeException("unsupported interpolation: " + tokenText);
+	}
+
 	/**
-	 * concate tokens and create argument node
+	 * connect tokens and create argument node
 	 * @param tokenList
 	 * @return
 	 */
@@ -310,9 +341,7 @@ public class ParserUtils {
 				if(nextIndex < size && tokenList.get(nextIndex).getType() == dshellParser.Identifier) {
 					flushTokenBuffer(node, tokenBuffer);
 					Token nextToken = tokenList.get(++i);
-					ExprNode symbolNode = new SymbolNode(nextToken);
-					ExprNode stringNode = new Node.StringValueNode("");
-					node.addArgSegment(OperatorCallNode.createAddNode(stringNode, symbolNode));
+					node.addArgSegment(CastNode.toString(new SymbolNode(nextToken)));
 				} else {
 					tokenBuffer.add(curToken);
 				}

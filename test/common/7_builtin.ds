@@ -1,13 +1,13 @@
 import-command pwd
 
 ## test cd
-var a = pwd
+var a = "$(pwd)"
 cd ./
 assert(a == $(pwd))
 assert(a == `pwd`)
 
 cd ~
-import env HOME
+import-env HOME
 assert(HOME == $(pwd))
 assert(HOME == `pwd`)
 
@@ -17,7 +17,7 @@ assert(HOME == $(pwd))
 assert(HOME == `pwd`)
 
 cd /
-a = $(pwd)
+a = "$(pwd)"
 cd
 cd ../
 cd /

@@ -29,7 +29,7 @@ public CommandScope getCmdScope() {
 	return this.cmdScope;
 }
 
-// ';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
+// ';' | '\'' | '"' | '`' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
 private boolean matchCmdEnd(Token token) {
 	switch(token.getType()) {
 	case EOF:
@@ -38,6 +38,9 @@ private boolean matchCmdEnd(Token token) {
 	case LeftBrace:
 	case RightBrace:
 	case Semicolon:
+	case SingleQuote:
+	case DoubleQuote:
+	case BackQuote:
 	case LT:
 	case GT:
 	case AND:
@@ -495,7 +498,7 @@ commandName returns [Token token]
 	;
 
 commandSymbol returns [List<Token> tokenList]
-	: a+=~(';' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
+	: a+=~(';' | '$(' | '\'' | DoubleQuote | '`' | '|' | '&' | '>' | '<' | '(' | ')' | '{' | '}' | '&&' | '||' | WhiteSpace | LineEnd | Comment)+
 		{ $tokenList = $a; }
 	;
 
@@ -524,7 +527,20 @@ singleCommandExpr returns [Node.ProcessNode node]
 	;
 
 commandArg returns [Node.ArgumentNode node]
+	: a+=commandArgSeg+
+		{
+			$node = new Node.ArgumentNode($a.get(0).node);
+			for(int i = 1; i < $a.size(); i++) {
+				$node.addArgSegment($a.get(i).node);
+			}
+		}
+	;
+
+commandArgSeg returns [Node.ExprNode node]
 	: commandSymbol {$node = ParserUtils.toCommandArg($commandSymbol.tokenList, this);}
+	| substitutedCommand {$node = $substitutedCommand.node;}
+	| interpolation {$node = $interpolation.node;}
+	| stringExpr {$node = $stringExpr.node;}
 	;
 
 redirOption returns [ParserUtils.RedirOption option]
@@ -595,6 +611,7 @@ primaryExpression returns [Node.ExprNode node]
 	| symbol {$node = $symbol.node;}
 	| substitutedCommand {$node = $substitutedCommand.node;}
 	| lParenthese expression rParenthese {$node = $expression.node;}
+	| stringExpr {$node = $stringExpr.node;}
 	;
 
 symbol returns [Node.ExprNode node]
@@ -613,6 +630,7 @@ literal returns [Node.ExprNode node]
 
 substitutedCommand returns [Node.ExprNode node]
 	: BackquotedLiteral {$node = ParserUtils.parseBackquotedLiteral($BackquotedLiteral, this);}
+	| StartSubCmd commandListExpression rParenthese { $node = new Node.QuotedTaskNode($commandListExpression.node);}
 	;
 
 arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]
@@ -665,5 +683,28 @@ argumentList returns [ParserUtils.Arguments args]
 				$args.addNode($a.get(i).node);
 			}
 		}
+	;
+
+interpolation returns [Node.ExprNode node]
+	: StartInterp expression rBrace {$node = Node.CastNode.toString($expression.node);}
+	;
+
+stringExpr returns [Node.StringExprNode node]
+	: DoubleQuote a+=stringElement* CloseString
+		{
+			$node = new Node.StringExprNode($DoubleQuote);
+			if($a.size() > 0) {
+				for(int i = 0; i < $a.size(); i++) {
+					$node.addElementNode($a.get(i).node);
+				}
+			}
+		}
+	;
+
+stringElement returns [Node.ExprNode node]
+	: StringElement { $node = new Node.StringValueNode($StringElement, false);}
+	| InnerCmd { $node = ParserUtils.resolveInterpolation($InnerCmd, this);}
+	| InnerExpr { $node = ParserUtils.resolveInterpolation($InnerExpr, this);}
+	| InnerCmdBackQuote { $node = ParserUtils.parseBackquotedLiteral($InnerCmdBackQuote, this);}
 	;
 

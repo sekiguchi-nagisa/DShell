@@ -76,6 +76,10 @@ BackSlash       : '\\';
 Dollar          : '$';
 At              : '@';
 
+SingleQuote     : '\'';
+DoubleQuote     : '"' -> pushMode(InString);
+BackQuote       : '`';
+
 // operator
 // binary op
 ADD           : '+';
@@ -143,28 +147,22 @@ BooleanLiteral
 	| 'false'
 	;
 
-// String literal	//TODO: interpolation
+// String literal
 StringLiteral
-	: '"' DoubleQuoteStringChar* '"'
-	| '\'' SingleQuoteStringChar* '\''
-	;
-
-fragment
-DoubleQuoteStringChar
-	: ~["\\]
-	| EscapeSequence
+	: '\'' SingleQuoteStringChar* '\''
 	;
 
 fragment
 SingleQuoteStringChar
 	: ~['\\]
-	| EscapeSequence
+	| SingleEscapeSequence
 	;
 
 fragment
-EscapeSequence	// TODO: unicode escape
-	: '\\' [btnfr"'\\]
+SingleEscapeSequence	// TODO: unicode escape
+	: '\\' [btnfr'\\]
 	;
+
 
 // symbol , class and command name
 Identifier
@@ -224,4 +222,55 @@ EscapedSymbol
 	: '\\' '#'
 	| '\\' LineEndFragment
 	| '\\' WhiteSpaceFragment
+	| '\\' '`'
+	| '\\' '$'
 	;
+
+StartSubCmd
+	: '$('
+	;
+
+StartInterp
+	: '${'
+	;
+
+mode InString;
+CloseString : '"' -> popMode;
+
+StringElement
+	: DoubleQuoteStringChar+
+	;
+
+fragment
+DoubleQuoteStringChar
+	: ~[`$"\\]
+	| DoubleEscapeSequence
+	;
+
+fragment
+DoubleEscapeSequence	// TODO: unicode escape
+	: '\\' [$btnfr"`\\]
+	;
+
+InnerCmd
+	: '$' InnerCmdBody
+	;
+
+fragment
+InnerCmdBody
+	: '(' ( ~[()] | InnerCmdBody)+ ')'
+	;
+
+InnerExpr
+	: '$' InnerExprBody
+	;
+
+fragment
+InnerExprBody
+	: '{' ( ~[{}] | InnerExprBody)+ '}'
+	;
+
+InnerCmdBackQuote
+	: BackquotedLiteral
+	;
+
