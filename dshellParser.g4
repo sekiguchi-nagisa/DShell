@@ -314,9 +314,9 @@ statement returns [Node node]
 	| doWhileStatement { $node = $doWhileStatement.node;}
 	| tryCatchStatement {$node = $tryCatchStatement.node;}
 	| variableDeclaration statementEnd {$node = $variableDeclaration.node;}
+	| commandListExpression statementEnd {$node = $commandListExpression.node;}
 	| assignStatement statementEnd {$node = $assignStatement.node;}
 	| suffixStatement statementEnd {$node = $suffixStatement.node;}
-	| commandListExpression statementEnd {$node = $commandListExpression.node;}
 	| expression statementEnd {$node = $expression.node;}
 	;
 
