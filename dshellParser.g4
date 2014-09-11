@@ -168,12 +168,12 @@ condOr      returns [Token token] : ws? t='||' ws? {$token = $t;};
 // statement definition
 toplevel returns [Node.RootNode node]
 	: ws? (ws? a+=toplevelStatement)* ws? EOF
-	 {
-	 	$node = new Node.RootNode(_input.get(0));
-	 	for(int i = 0; i < $a.size(); i++) {
-	 		$node.addNode($a.get(i).node);
-	 	}
-	 }
+		{
+			$node = new Node.RootNode(_input.get(0));
+			for(int i = 0; i < $a.size(); i++) {
+				$node.addNode($a.get(i).node);
+			}
+		}
 	;
 
 toplevelStatement returns [Node node]

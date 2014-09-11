@@ -121,6 +121,7 @@ Number
 	: '0'
 	| [1-9] [0-9]*
 	;
+
 IntLiteral
 	: Number
 	;
@@ -178,7 +179,7 @@ BackquotedLiteral
 fragment
 BackquotedChar
 	: '\\' '`'
-	| ~['`']
+	| ~'`'
 	;
 
 Dollar_At
@@ -198,7 +199,7 @@ UTF8Char
 
 // comment & space
 Comment
-	: '#' ~[\r\n\u2028\u2029]* -> skip
+	: '#' ~[\r\n]* -> skip
 	;
 
 fragment
@@ -212,7 +213,7 @@ WhiteSpace
 
 fragment
 LineEndFragment
-	:[\r\n\u2028\u2029]
+	: [\r\n]
 	;
 
 LineEnd
