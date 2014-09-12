@@ -17,11 +17,10 @@ import dshell.internal.parser.error.ParserErrorListener.LexerException;
 import dshell.internal.parser.error.ParserErrorListener.ParserException;
 
 public class DShellErrorListener {
-
 	public void displayTokenError(LexerException e) {
 		System.err.println(this.formatTokenError(e));
 	}
-	
+
 	public void displayParseError(ParserException e) {
 		System.err.println(this.formatParseError(e));
 	}

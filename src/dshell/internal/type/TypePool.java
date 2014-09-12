@@ -7,6 +7,8 @@ import java.util.List;
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
+import dshell.internal.parser.error.TypeCheckException.TypeErrorKind_OneArg;
+import dshell.internal.parser.error.TypeCheckException.TypeErrorKind_ThreeArg;
 import dshell.internal.parser.error.TypeCheckException.TypeLookupException;
 import dshell.internal.type.DSType.BoxedPrimitiveType;
 import dshell.internal.type.DSType.FuncHolderType;
@@ -149,7 +151,7 @@ public class TypePool {
 
 	private DSType setTypeAndThrowIfDefined(DSType type) {
 		if(this.typeMap.containsKey(type.getTypeName())) {
-			throw new TypeLookupException(type.getTypeName() + " is already defined");
+			Utils.fatal(1, type.getTypeName() + " is already defined");
 		}
 		this.typeMap.put(type.getTypeName(), type);
 		return type;
@@ -166,7 +168,7 @@ public class TypePool {
 	public DSType getType(String typeName) {
 		DSType type = this.typeMap.get(typeName);
 		if(type instanceof GenericBaseType) {
-			throw new TypeLookupException("cannot directly use generic type: " + type.getTypeName());
+			throw new TypeLookupException(TypeErrorKind_OneArg.NotUseGeneric, type.getTypeName());
 		}
 		return type == null ? TypePool.unresolvedType : type;
 	}
@@ -180,7 +182,7 @@ public class TypePool {
 	public DSType getTypeAndThrowIfUndefined(String typeName) {
 		DSType type = this.getType(typeName);
 		if(type instanceof UnresolvedType) {
-			throw new TypeLookupException("undefined type: " + typeName);
+			throw new TypeLookupException(TypeErrorKind_OneArg.UndefinedType, typeName);
 		}
 		return type;
 	}
@@ -195,13 +197,14 @@ public class TypePool {
 		DSType type = this.typeMap.get(typeName);
 		if(type instanceof GenericBaseType) {
 			GenericBaseType baseType = (GenericBaseType) type;
-			if(baseType.getElementSize() != elementSize) {
-				throw new TypeLookupException(
-						typeName + " requires " + baseType.getElementSize() + " element, but element size is " + elementSize);
+			final int requireElementSize = baseType.getElementSize();
+			if(requireElementSize != elementSize) {
+				throw new TypeLookupException(TypeErrorKind_ThreeArg.UnmatchElement, 
+						typeName, requireElementSize, elementSize);
 			}
 			return (GenericBaseType) type;
 		}
-		throw new TypeLookupException(typeName + " is not generic base type");
+		throw new TypeLookupException(TypeErrorKind_OneArg.NotGenericBase, typeName);
 	}
 
 	/**
@@ -215,7 +218,7 @@ public class TypePool {
 		if(type instanceof PrimitiveType) {
 			return (PrimitiveType) type;
 		}
-		throw new TypeLookupException(typeName + " is not primitive type");
+		throw new TypeLookupException(TypeErrorKind_OneArg.NotPrimitive, typeName);
 	}
 
 	/**
@@ -248,7 +251,7 @@ public class TypePool {
 		if(type instanceof ClassType) {
 			return (ClassType) type;
 		}
-		throw new TypeLookupException(typeName + " is not class type");
+		throw new TypeLookupException(TypeErrorKind_OneArg.NotClass, typeName);
 	}
 
 	// type creator api
@@ -262,10 +265,10 @@ public class TypePool {
 	 */
 	public ClassType createAndSetClassType(String className, DSType superType) {
 		if(!superType.allowExtends()) {
-			throw new TypeLookupException(superType.getTypeName() + " is not inheritable");
+			throw new TypeLookupException(TypeErrorKind_OneArg.Nonheritable, superType.getTypeName());
 		}
 		if(!(this.getType(className) instanceof UnresolvedType)) {
-			throw new TypeLookupException(className + " is already defined.");
+			throw new TypeLookupException(TypeErrorKind_OneArg.DefinedType, className);
 		}
 		ClassType classType = new UserDefinedClassType(className, 
 				Utils.genUniqueClassName(generatedClassPackage, className, 0), superType, true);

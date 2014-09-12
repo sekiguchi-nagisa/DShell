@@ -175,7 +175,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		 */
 		DSType type = exprNode.getType();
 		if(type instanceof UnresolvedType) {
-			this.reportTypeError(exprNode, TypeErrorKind_ZeroArg.Unresolved);
+			throw new TypeCheckException(exprNode, TypeErrorKind_ZeroArg.Unresolved);
 		}
 
 		/**	
@@ -183,7 +183,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		 */
 		if(requiredType == null) {
 			if(unacceptableType != null && unacceptableType.isAssignableFrom(type)) {
-				this.reportTypeError(exprNode, TypeErrorKind_OneArg.Unacceptable, type);
+				throw new TypeCheckException(exprNode, TypeErrorKind_OneArg.Unacceptable, type);
 			}
 			return exprNode;
 		}
@@ -215,16 +215,14 @@ public class TypeChecker implements NodeVisitor<Node> {
 		if(requiredType.equals(this.typePool.floatType) && type.equals(this.typePool.intType)) {
 			return CastNode.intToFloat(this.typePool, exprNode);
 		}
-		this.reportTypeError(exprNode, TypeErrorKind_TwoArg.Required, requiredType, type);
-		return null;
+		throw new TypeCheckException(exprNode, TypeErrorKind_TwoArg.Required, requiredType, type);
 	}
 
 	private ClassType checkAndGetClassType(ExprNode recvNode) {
 		this.checkType(this.typePool.objectType, recvNode);
 		DSType resolvedType = recvNode.getType();
 		if(!(resolvedType instanceof ClassType)) {
-			this.reportTypeError(recvNode, TypeErrorKind_TwoArg.Required, this.typePool.objectType, resolvedType);
-			return null;
+			throw new TypeCheckException(recvNode, TypeErrorKind_TwoArg.Required, this.typePool.objectType, resolvedType);
 		}
 		return (ClassType) resolvedType;
 	}
@@ -263,7 +261,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	private void addEntryAndThrowIfDefined(Node node, String symbolName, DSType type, boolean isReadOnly) {
 		if(!this.symbolTable.addEntry(symbolName, type, isReadOnly)) {
-			this.reportTypeError(node, TypeErrorKind_OneArg.DefinedSymbol, symbolName);
+			throw new TypeCheckException(node, TypeErrorKind_OneArg.DefinedSymbol, symbolName);
 		}
 	}
 
@@ -287,7 +285,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			}
 			parentNode = parentNode.getParentNode();
 		}
-		this.reportTypeError(node, TypeErrorKind_ZeroArg.InsideLoop);
+		throw new TypeCheckException(node, TypeErrorKind_ZeroArg.InsideLoop);
 	}
 
 	private boolean findBlockEnd(BlockNode blockNode) {
@@ -325,7 +323,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			return;
 		}
 		if(!this.findBlockEnd(blockNode)) {
-			this.reportTypeError(endNode, TypeErrorKind_ZeroArg.UnfoundReturn);
+			throw new TypeCheckException(endNode, TypeErrorKind_ZeroArg.UnfoundReturn);
 		}
 	}
 
@@ -346,7 +344,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	private void checkAndThrowIfInsideFinally(BlockEndNode node) {
 		if(!this.finallyContextStack.isEmpty() && this.finallyContextStack.peek()) {
-			this.reportTypeError(node, TypeErrorKind_ZeroArg.InsideFinally);
+			throw new TypeCheckException(node, TypeErrorKind_ZeroArg.InsideFinally);
 		}
 	}
 
@@ -359,58 +357,6 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 		this.returnTypeStack.clear();
 		this.finallyContextStack.clear();
-	}
-
-	/**
-	 * report type error and throw exception.
-	 * @param node
-	 * the node having type error
-	 * @param kind
-	 */
-	private void reportTypeError(Node node, TypeErrorKind_ZeroArg kind) {
-		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate()));
-	}
-
-	/**
-	 * report type error and throw exception.
-	 * @param node
-	 * the node having type error
-	 * @param kind
-	 * @param arg
-	 * not null
-	 */
-	private void reportTypeError(Node node, TypeErrorKind_OneArg kind, Object arg) {
-		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), arg));
-	}
-
-	/**
-	 * report type error and throw exception.
-	 * @param node
-	 * the node having type error
-	 * @param kind
-	 * @param arg1
-	 * not null
-	 * @param arg2
-	 * not null
-	 */
-	private void reportTypeError(Node node, TypeErrorKind_TwoArg kind, Object arg1, Object arg2) {
-		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), arg1, arg2));
-	}
-
-	/**
-	 * report type error and throw exception.
-	 * @param node
-	 * the node having type error
-	 * @param kind
-	 * @param arg1
-	 * not null
-	 * @param arg2
-	 * not null
-	 * @param arg3
-	 * not null
-	 */
-	private void reportTypeError(Node node, TypeErrorKind_ThreeArg kind, Object arg1, Object arg2, Object arg3) {
-		throw new TypeCheckException(node.getToken(), String.format(kind.getTemplate(), arg1, arg2, arg3));
 	}
 
 	// visitor api
@@ -498,7 +444,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	public Node visit(SymbolNode node) {
 		SymbolEntry entry = this.symbolTable.getEntry(node.getSymbolName());
 		if(entry == null) {
-			this.reportTypeError(node, TypeErrorKind_OneArg.UndefinedSymbol, node.getSymbolName());
+			throw new TypeCheckException(node, TypeErrorKind_OneArg.UndefinedSymbol, node.getSymbolName());
 		}
 		node.setSymbolEntry(entry);	// call ExprNode#setType
 		return node;
@@ -511,7 +457,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		String typeName = recvType.getTypeName();
 		if(!typeName.startsWith("Array<") && 
 				!typeName.startsWith("Map<") && !typeName.equals("String")) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.Required, "Map, Array or String type", recvType);
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.Required, "Map, Array or String type", recvType);
 		}
 		MethodHandle handle = recvType.lookupMethodHandle("get");
 		if(handle == null || handle.getParamTypeList().size() != 1) {
@@ -528,8 +474,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		ClassType recvType = this.checkAndGetClassType(node.getRecvNode());
 		FieldHandle handle = recvType.lookupFieldHandle(node.getFieldName());
 		if(handle == null) {
-			this.reportTypeError(node, TypeErrorKind_OneArg.UndefinedField, node.getFieldName());
-			return null;
+			throw new TypeCheckException(node, TypeErrorKind_OneArg.UndefinedField, node.getFieldName());
 		}
 		node.setHandle(handle);
 		node.setType(handle.getFieldType());
@@ -548,7 +493,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			return node;
 		}
 		if(targetType instanceof VoidType) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.CastOp, type, targetType);
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.CastOp, type, targetType);
 		}
 		if(type.equals(this.typePool.intType) && targetType.equals(this.typePool.floatType)) {
 			node.resolveCastOp(CastNode.INT_2_FLOAT);
@@ -561,7 +506,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 				!(type instanceof FunctionType) && !(targetType instanceof FunctionType)) {
 			node.resolveCastOp(CastNode.CHECK_CAST);
 		} else {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.CastOp, type, targetType);
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.CastOp, type, targetType);
 		}
 		return node;
 	}
@@ -598,14 +543,14 @@ public class TypeChecker implements NodeVisitor<Node> {
 			DSType rightType = paramNodeList.get(0).getType();
 			handle = this.opTable.getOperatorHandle(node.getFuncName(), rightType);
 			if(handle == null) {
-				this.reportTypeError(node, TypeErrorKind_TwoArg.UnaryOp, node.getFuncName(), rightType);
+				throw new TypeCheckException(node, TypeErrorKind_TwoArg.UnaryOp, node.getFuncName(), rightType);
 			}
 		} else {
 			DSType leftType = paramNodeList.get(0).getType();
 			DSType rightType = paramNodeList.get(1).getType();
 			handle = this.opTable.getOperatorHandle(node.getFuncName(), leftType, rightType);
 			if(handle == null) {
-				this.reportTypeError(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, node.getFuncName(), rightType);
+				throw new TypeCheckException(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, node.getFuncName(), rightType);
 			}
 		}
 		node.setHandle(handle);
@@ -625,7 +570,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		// check param type
 		int paramSize = handle.getParamTypeList().size();
 		if(handle.getParamTypeList().size() != node.getArgList().size()) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.UnmatchParam, paramSize, node.getArgList().size());
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.UnmatchParam, paramSize, node.getArgList().size());
 		}
 		for(int i = 0; i < paramSize; i++) {
 			this.checkParamTypeAt(handle.getParamTypeList(), node.getArgList(), i);
@@ -660,12 +605,11 @@ public class TypeChecker implements NodeVisitor<Node> {
 		ClassType recvType = this.checkAndGetClassType(getterNode.getRecvNode());
 		MethodHandle handle = recvType.lookupMethodHandle(methodName);
 		if(handle == null) {
-			this.reportTypeError(node, TypeErrorKind_OneArg.UndefinedMethod, methodName);
-			return null;
+			throw new TypeCheckException(node, TypeErrorKind_OneArg.UndefinedMethod, methodName);
 		}
 		int paramSize = handle.getParamTypeList().size();
 		if(handle.getParamTypeList().size() != node.getArgList().size()) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.UnmatchParam, paramSize, node.getArgList().size());
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.UnmatchParam, paramSize, node.getArgList().size());
 		}
 		for(int i = 0; i < paramSize; i++) {
 			this.checkParamTypeAt(handle.getParamTypeList(), node.getArgList(), i);
@@ -699,8 +643,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 				sBuilder.append(" ");
 				sBuilder.append(paramType.toString());
 			}
-			this.reportTypeError(node, TypeErrorKind_OneArg.UndefinedInit, sBuilder.toString());
-			return null;
+			throw new TypeCheckException(node, TypeErrorKind_OneArg.UndefinedInit, sBuilder.toString());
 		}
 		int size = handle.getParamTypeList().size();
 		for(int i = 0; i < size; i++) {
@@ -716,7 +659,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		String condOp = node.getConditionalOp();
 		DSType booleanType = this.typePool.booleanType;
 		if(!condOp.equals("&&") && !condOp.equals("||")) {
-			this.reportTypeError(node, TypeErrorKind_ThreeArg.BinaryOp, booleanType, condOp, booleanType);
+			throw new TypeCheckException(node, TypeErrorKind_ThreeArg.BinaryOp, booleanType, condOp, booleanType);
 		}
 		this.checkType(booleanType, node.getLeftNode());
 		this.checkType(booleanType, node.getRightNode());
@@ -841,7 +784,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			this.setEntryToTaskNode(entry, condOpNode.getLeftNode());
 			this.setEntryToTaskNode(entry, condOpNode.getRightNode());
 		} else {
-			Utils.fatal(1, "illeagal node type: " + targetNode.getClass());
+			Utils.fatal(1, "illegal node type: " + targetNode.getClass());
 		}
 	}
 
@@ -850,7 +793,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		this.checkType(this.typePool.booleanType, node.getExprNode());
 		OperatorHandle handle = this.opTable.getOperatorHandle(AssertNode.opName, this.typePool.booleanType);
 		if(handle == null) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.UnaryOp, AssertNode.opName, this.typePool.booleanType);
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.UnaryOp, AssertNode.opName, this.typePool.booleanType);
 		}
 		node.setHandle(handle);
 		return node;
@@ -863,7 +806,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			Node targetNode = node.getNodeList().get(i);
 			this.checkTypeAcceptingVoidType(targetNode);
 			if((targetNode instanceof BlockEndNode) && (i != size - 1)) {
-				this.reportTypeError(node.getNodeList().get(i + 1), TypeErrorKind_ZeroArg.Unreachable);
+				throw new TypeCheckException(node.getNodeList().get(i + 1), TypeErrorKind_ZeroArg.Unreachable);
 			}
 		}
 		return node;
@@ -924,7 +867,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		// look up iterator op.
 		DSType exprType = ((ExprNode)this.checkType(node.getExprNode())).getType();
 		if(!exprType.getTypeName().startsWith("Array<")) {
-			this.reportTypeError(node.getExprNode(), TypeErrorKind_TwoArg.Required, "Array type", exprType);
+			throw new TypeCheckException(node.getExprNode(), TypeErrorKind_TwoArg.Required, "Array type", exprType);
 		}
 		MethodHandle reset = exprType.lookupMethodHandle("$iter$Reset");
 		MethodHandle next = exprType.lookupMethodHandle("$iter$Next");
@@ -962,12 +905,12 @@ public class TypeChecker implements NodeVisitor<Node> {
 		this.checkAndThrowIfInsideFinally(node);
 		DSType returnType = this.getCurrentReturnType();
 		if(returnType instanceof UnresolvedType) {
-			this.reportTypeError(node, TypeErrorKind_ZeroArg.InsideFunc);
+			throw new TypeCheckException(node, TypeErrorKind_ZeroArg.InsideFunc);
 		}
 		this.checkType(returnType, node.getExprNode());
 		if(node.getExprNode().getType() instanceof VoidType) {
 			if(!(node.getExprNode() instanceof EmptyNode)) {
-				this.reportTypeError(node, TypeErrorKind_ZeroArg.NotNeedExpr);
+				throw new TypeCheckException(node, TypeErrorKind_ZeroArg.NotNeedExpr);
 			}
 		}
 		return node;
@@ -1000,7 +943,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			CatchNode nextNode = node.getCatchNodeList().get(i + 1);
 			DSType nextType = nextNode.getExceptionType();
 			if(curType.isAssignableFrom(nextType)) {
-				this.reportTypeError(nextNode, TypeErrorKind_ZeroArg.Unreachable);
+				throw new TypeCheckException(nextNode, TypeErrorKind_ZeroArg.Unreachable);
 			}
 		}
 		return node;
@@ -1017,7 +960,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 			exceptionType = typeSymbol.toType(this.typePool);
 		}
 		if(!this.typePool.exceptionType.isAssignableFrom(exceptionType)) {
-			this.reportTypeError(node, TypeErrorKind_TwoArg.Required, this.typePool.exceptionType, exceptionType);
+			throw new TypeCheckException(node, TypeErrorKind_TwoArg.Required, this.typePool.exceptionType, exceptionType);
 		}
 		node.setExceptionType((ClassType) exceptionType);
 		/**
@@ -1048,11 +991,11 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	private void checkIsAssignable(ExprNode leftNode) {
 		if(!(leftNode instanceof AssignableNode)) {
-			this.reportTypeError(leftNode, TypeErrorKind_ZeroArg.Assignable);
+			throw new TypeCheckException(leftNode, TypeErrorKind_ZeroArg.Assignable);
 		}
 		AssignableNode assignableNode = (AssignableNode) leftNode;
 		if(assignableNode.isReadOnly()) {
-			this.reportTypeError(assignableNode, TypeErrorKind_ZeroArg.ReadOnly);
+			throw new TypeCheckException(assignableNode, TypeErrorKind_ZeroArg.ReadOnly);
 		}
 	}
 
@@ -1064,7 +1007,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		DSType recvType = getterNode.getRecvNode().getType();
 		String recvTypeName = recvType.getTypeName();
 		if(!recvTypeName.startsWith("Array<") && !recvTypeName.startsWith("Map<")) {
-			this.reportTypeError(getterNode, TypeErrorKind_TwoArg.Required, "Array or Map type", recvType);
+			throw new TypeCheckException(getterNode, TypeErrorKind_TwoArg.Required, "Array or Map type", recvType);
 		}
 		MethodHandle handle = recvType.lookupMethodHandle("set");
 		if(handle == null || handle.getParamTypeList().size() != 2) {
@@ -1081,10 +1024,10 @@ public class TypeChecker implements NodeVisitor<Node> {
 			DSType rightType = ((ExprNode) this.checkType(node.getRightNode())).getType();
 			MethodHandle opHandle = this.opTable.getOperatorHandle(opPrefix, leftType, rightType);
 			if(opHandle == null) {
-				this.reportTypeError(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, opPrefix, rightType);
+				throw new TypeCheckException(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, opPrefix, rightType);
 			}
 			if(!leftType.isAssignableFrom(opHandle.getReturnType())) {
-				this.reportTypeError(getterNode, TypeErrorKind_TwoArg.Required, leftType, opHandle.getReturnType());
+				throw new TypeCheckException(getterNode, TypeErrorKind_TwoArg.Required, leftType, opHandle.getReturnType());
 			}
 			node.setHandle(this.checkMethodHandleReturnType(opHandle, handle.getParamTypeList().get(1)));
 		}
@@ -1130,10 +1073,10 @@ public class TypeChecker implements NodeVisitor<Node> {
 			DSType rightType = node.getRightNode().getType();
 			OperatorHandle handle = this.opTable.getOperatorHandle(opPrefix, leftType, rightType);
 			if(handle == null) {
-				this.reportTypeError(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, opPrefix, rightType);
+				throw new TypeCheckException(node, TypeErrorKind_ThreeArg.BinaryOp, leftType, opPrefix, rightType);
 			}
 			if(!leftType.isAssignableFrom(handle.getReturnType())) {
-				this.reportTypeError(leftNode, TypeErrorKind_TwoArg.Required, leftType, handle.getReturnType());
+				throw new TypeCheckException(leftNode, TypeErrorKind_TwoArg.Required, leftType, handle.getReturnType());
 			}
 			node.setHandle(handle);
 		}
@@ -1178,15 +1121,13 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(ClassNode node) {
 		//TODO
-		this.reportTypeError(node, TypeErrorKind_OneArg.Unimplemented, node.getClass().getSimpleName());
-		return null;
+		throw new TypeCheckException(node, TypeErrorKind_OneArg.Unimplemented, node.getClass().getSimpleName());
 	}
 
 	@Override
 	public Node visit(ConstructorNode node) {
 		// TODO 
-		this.reportTypeError(node, TypeErrorKind_OneArg.Unimplemented, node.getClass().getSimpleName());
-		return null;
+		throw new TypeCheckException(node, TypeErrorKind_OneArg.Unimplemented, node.getClass().getSimpleName());
 	}
 
 	@Override

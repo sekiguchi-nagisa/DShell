@@ -147,7 +147,7 @@ public abstract class DSType {
 	 */
 	public final static class RootClassType extends DSType {
 		RootClassType() {
-			super("$Super$", "java/lang/Object");
+			super("$Object$", "java/lang/Object");
 		}
 
 		@Override

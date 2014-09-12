@@ -2,6 +2,8 @@ package dshell.internal.parser.error;
 
 import org.antlr.v4.runtime.Token;
 
+import dshell.internal.parser.Node;
+
 /**
  * report type error.
  * @author skgchxngsxyz-osx
@@ -46,6 +48,13 @@ public class TypeCheckException extends RuntimeException {
 		UndefinedMethod("undefined method: %s"),
 		UndefinedInit  ("undefined constructor: %s"),
 		Unacceptable   ("unacceptable type: %s"),
+		NotUseGeneric  ("not directly use generic base type: %s"),
+		UndefinedType  ("undefined type: %s"),
+		NotGenericBase ("not generic base type: %s"),
+		NotPrimitive   ("not primitive type: %s"),
+		NotClass       ("not class type: %s"),
+		Nonheritable   ("nonheritable type: %s"),
+		DefinedType    ("already defined type: %s"),
 		Unimplemented  ("unimplemented type checker api: %s"),
 		;
 
@@ -82,6 +91,7 @@ public class TypeCheckException extends RuntimeException {
 
 	public static enum TypeErrorKind_ThreeArg implements TypeErrorKind {
 		BinaryOp       ("undefined operator: %s %s %s"),
+		UnmatchElement ("not match type element, %s requires %s type element, but is %s"),
 		;
 
 		private final String template;
@@ -102,23 +112,95 @@ public class TypeCheckException extends RuntimeException {
 	 */
 	protected final Token errorPointToken;
 
-	public TypeCheckException(Token errorPointToken, String message) {
+	/**
+	 * report type error
+	 * @param errorPointToken
+	 * may be null
+	 * @param message
+	 * reporting error message
+	 */
+	protected TypeCheckException(Token errorPointToken, String message) {
 		super(message);
 		this.errorPointToken = errorPointToken;
+	}
+
+	/**
+	 * report type error
+	 * @param node
+	 * the node having type error
+	 * @param kind
+	 */
+	public TypeCheckException(Node node, TypeErrorKind_ZeroArg kind) {
+		this(node.getToken(), String.format(kind.template));
+	}
+
+	/**
+	 * report type error
+	 * @param node
+	 * the node having type error
+	 * @param kind
+	 * @param arg
+	 * not null
+	 */
+	public TypeCheckException(Node node, TypeErrorKind_OneArg kind, Object arg) {
+		this(node.getToken(), String.format(kind.getTemplate(), arg));
+	}
+
+	/**
+	 * report type error
+	 * @param node
+	 * the node having type error
+	 * @param kind
+	 * @param arg1
+	 * not null
+	 * @param arg2
+	 * not null
+	 */
+	public TypeCheckException(Node node, TypeErrorKind_TwoArg kind, Object arg1, Object arg2) {
+		this(node.getToken(), String.format(kind.getTemplate(), arg1, arg2));
+	}
+
+	/**
+	 * report type error
+	 * @param node
+	 * the node having type error
+	 * @param kind
+	 * @param arg1
+	 * not null
+	 * @param arg2
+	 * not null
+	 * @param arg3
+	 * not null
+	 */
+	public TypeCheckException(Node node, TypeErrorKind_ThreeArg kind, Object arg1, Object arg2, Object arg3) {
+		this(node.getToken(), String.format(kind.getTemplate(), arg1, arg2, arg3));
 	}
 
 	public Token getErrorToken() {
 		return this.errorPointToken;
 	}
 
+	/**
+	 * called from TypePool
+	 * @author skgchxngsxyz-osx
+	 *
+	 */
 	public static class TypeLookupException extends TypeCheckException {
 		private static final long serialVersionUID = -2757004654976764776L;
 
 		private final String message;
 
-		public TypeLookupException(String message) {
+		private TypeLookupException(String message) {
 			super(null, message);
 			this.message = message;
+		}
+
+		public TypeLookupException(TypeErrorKind_OneArg kind, Object arg) {
+			this(String.format(kind.getTemplate(), arg));
+		}
+
+		public TypeLookupException(TypeErrorKind_ThreeArg kind, Object arg1, Object arg2, Object arg3) {
+			this(String.format(kind.getTemplate(), arg1, arg2, arg3));
 		}
 
 		private String getSourceMessage() {
