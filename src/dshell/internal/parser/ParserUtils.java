@@ -290,7 +290,7 @@ public class ParserUtils {
 		childLexer.setInputStream(input);
 		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
 		childParser.setTokenStream(tokenStream);
-		return new Node.QuotedTaskNode(childParser.commandListExpression().node);
+		return new Node.InnerTaskNode(childParser.commandListExpression().node);
 	}
 
 	public static ExprNode resolveInterpolation(Token token, dshellParser parser) {

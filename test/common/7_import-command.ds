@@ -1,10 +1,10 @@
 import-command echo
 
 echo "hello world"
-var a = `echo hello world`
+var a = "`echo hello world`"
 assert(a == "hello world")
 
-a = $(echo hello world)
+a = "$(echo hello world)"
 assert(a == "hello world")
 
 var b = echo hello wolrd

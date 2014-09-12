@@ -54,7 +54,7 @@ import dshell.internal.parser.Node.ApplyNode;
 import dshell.internal.parser.Node.MapNode;
 import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.PairNode;
-import dshell.internal.parser.Node.QuotedTaskNode;
+import dshell.internal.parser.Node.InnerTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.SpecialCharNode;
@@ -209,6 +209,15 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(StringExprNode node) {	//FIXME
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
+		switch(node.getElementList().size()) {
+		case 0:
+			mBuilder.push("");
+			return null;
+		case 1:
+			this.generateCode(node.getElementList().get(0));
+			return null;
+		}
+
 		Type ctxTypeDesc = Type.getType(StringContext.class);
 		Type stringTypeDesc = TypeUtils.toTypeDescriptor(node.getType());
 		Method methodDesc = new Method("newContext", ctxTypeDesc, new Type[]{});
@@ -588,7 +597,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(QuotedTaskNode node) {	//FIXME: refactoring
+	public Void visit(InnerTaskNode node) {	//FIXME: refactoring
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
 		mBuilder.enterScope();
 

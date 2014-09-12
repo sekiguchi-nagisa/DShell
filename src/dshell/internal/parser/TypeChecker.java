@@ -44,7 +44,7 @@ import dshell.internal.parser.Node.LoopNode;
 import dshell.internal.parser.Node.MapNode;
 import dshell.internal.parser.Node.OperatorCallNode;
 import dshell.internal.parser.Node.PairNode;
-import dshell.internal.parser.Node.QuotedTaskNode;
+import dshell.internal.parser.Node.InnerTaskNode;
 import dshell.internal.parser.Node.ReturnNode;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.Node.SpecialCharNode;
@@ -91,7 +91,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	private final Deque<DSType> returnTypeStack;
 
 	/**
-	 * contains state which represents for within finaly block
+	 * contains state which represents for within finally block
 	 */
 	private final Deque<Boolean> finallyContextStack;
 
@@ -807,7 +807,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	@Override
-	public Node visit(QuotedTaskNode node) {
+	public Node visit(InnerTaskNode node) {
 		ExprNode exprNode = (ExprNode) this.checkType(node.getExprNode());
 		// generate var entry of output buffer
 		String internalName = OutputBuffer.class.getCanonicalName().replace('.', '/');
@@ -822,13 +822,13 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 		// resolve node type
 		Node parentNode = node.getParentNode();
-		if((parentNode instanceof ForInNode) || (parentNode instanceof ArgumentNode)) {
+		if(parentNode instanceof StringExprNode) {
+			node.setType(this.typePool.stringType);
+		} else {
 			List<DSType> elementTypeList = new ArrayList<>(1);
 			elementTypeList.add(this.typePool.stringType);
 			String baseTypeName = this.typePool.baseArrayType.getTypeName();
 			node.setType(this.typePool.createAndGetReifiedTypeIfUndefined(baseTypeName, elementTypeList));
-		} else {
-			node.setType(this.typePool.stringType);
 		}
 		return node;
 	}

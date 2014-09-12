@@ -630,7 +630,7 @@ literal returns [Node.ExprNode node]
 
 substitutedCommand returns [Node.ExprNode node]
 	: BackquotedLiteral {$node = ParserUtils.parseBackquotedLiteral($BackquotedLiteral, this);}
-	| StartSubCmd commandListExpression rParenthese { $node = new Node.QuotedTaskNode($commandListExpression.node);}
+	| StartSubCmd commandListExpression rParenthese { $node = new Node.InnerTaskNode($commandListExpression.node);}
 	;
 
 arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]

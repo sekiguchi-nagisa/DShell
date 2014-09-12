@@ -8,30 +8,30 @@ assert(b == '西暦${1900 + 114}年')
 # variable expand
 import-command echo
 
-var c1 = `echo $a`
+var c1 = "`echo $a`"
 assert(a == c1)
 
-var c2 = $(echo "he${"ll" + "o"} world")
+var c2 = "$(echo "he${"ll" + "o"} world")"
 assert(c2 == "hello world")
 
 # command substitution
 import-command ls
-var d = `ls`.replace("\n", " ").split(" ")
+var d = `ls`
 var i = 0;
 for(file in $(ls)) {
 	assert(file == d[i])
 	i++
 }
 
-var d2 = `echo $(echo hello   world    )`
+var d2 = "`echo $(echo hello   world    )`"
 assert(d2 == "hello world")
 
 
-d2 = `echo \`echo hello   world    \``
-assert(d2 == "hello world")
+d2 = "`echo \`echo hello   world    \``"
+assert(d2 == 'hello world')
 
-d2 = $(echo $(echo hello   world    ))
-assert(d2 == "hello world")
+d2 = "$(echo $(echo hello   world    ))"
+assert(d2 == 'hello world')
 
-d2 = $(echo `echo hello   world    `)
-assert(d2 == "hello world")
+d2 = "$(echo `echo hello   world    `)"
+assert(d2 == 'hello world')

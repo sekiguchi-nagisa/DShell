@@ -1009,7 +1009,7 @@ public abstract class Node {
 
 		public boolean hasQuotedTaskNode() {
 			for(ExprNode node : this.segmentNodeList) {
-				if(node instanceof QuotedTaskNode) {
+				if(node instanceof InnerTaskNode) {
 					return true;
 				}
 			}
@@ -1059,7 +1059,7 @@ public abstract class Node {
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	public static class TaskNode extends ExprNode {	//TODO: timeout
+	public static class TaskNode extends ExprNode {	//TODO: timeout, trace
 		private final List<ProcessNode> procNodeList;
 		private final boolean isBackGround;
 
@@ -1105,11 +1105,11 @@ public abstract class Node {
 	}
 
 	/**
-	 * represent for quoted command expression (command substitution).
+	 * represent for inner command expression (command substitution).
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	public static class QuotedTaskNode extends ExprNode {
+	public static class InnerTaskNode extends ExprNode {
 		private static int nameSuffixCount = -1;
 		/**
 		 * task node or cond op node.
@@ -1121,7 +1121,7 @@ public abstract class Node {
 		 */
 		private GenericPair<String, DSType> bufferEntry;
 
-		protected QuotedTaskNode(ExprNode exprNode) {
+		protected InnerTaskNode(ExprNode exprNode) {
 			super(exprNode.getToken());
 			assert (exprNode instanceof TaskNode) || (exprNode instanceof CondOpNode);
 			this.exprNode = this.setExprNodeAsChild(exprNode);
