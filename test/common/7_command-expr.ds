@@ -28,7 +28,7 @@ assert(d2 == "hello world")
 
 
 d2 = "`echo \`echo hello   world    \``"
-assert(d2 == 'hello world')
+assert(d2 == '`echo hello world `')
 
 d2 = "$(echo $(echo hello   world    ))"
 assert(d2 == 'hello world')

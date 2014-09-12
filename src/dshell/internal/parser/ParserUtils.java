@@ -256,33 +256,8 @@ public class ParserUtils {
 		childParser.setCmdScope(parser.getCmdScope());
 
 		// init intput
-		StringBuilder sBuilder = new StringBuilder();
 		String tokenText = token.getText();
-		final int size = tokenText.length();
-		int startIndex = 1;
-		for(int i = 1; i < size; i++) {
-			char ch = tokenText.charAt(i);
-			if(ch == ' ' || ch == '\t')  {
-				continue;
-			}
-			startIndex = i;
-			break;
-		}
-		for(int i = startIndex; i < size - 1; i++) {
-			char ch = tokenText.charAt(i);
-			switch(ch) {
-			case '\\': {
-				char nextCh = tokenText.charAt(i + 1);
-				if(nextCh == '`') {
-					ch = nextCh;
-					i++;
-				}
-				break;
-			}
-			}
-			sBuilder.append(ch);
-		}
-		ANTLRInputStream input = new ANTLRInputStream(sBuilder.toString());
+		ANTLRInputStream input = new ANTLRInputStream(tokenText.substring(1, tokenText.length() - 1));
 		input.name = token.getInputStream().getSourceName();
 
 		// start parsing

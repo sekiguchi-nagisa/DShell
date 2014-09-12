@@ -503,7 +503,7 @@ commandSymbol returns [List<Token> tokenList]
 	;
 
 commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> procList]
-	: a+=singleCommandExpr (WhiteSpace? '|' WhiteSpace? a+=singleCommandExpr)*  WhiteSpace? b+='&'?
+	: ws? a+=singleCommandExpr (WhiteSpace? '|' WhiteSpace? a+=singleCommandExpr)*  WhiteSpace? b+='&'?
 		{
 			$procList = new ArrayList<Node.ProcessNode>($a.size());
 			for(int i = 0; i < $a.size(); i++) {
@@ -630,7 +630,7 @@ literal returns [Node.ExprNode node]
 
 substitutedCommand returns [Node.ExprNode node]
 	: BackquotedLiteral {$node = ParserUtils.parseBackquotedLiteral($BackquotedLiteral, this);}
-	| StartSubCmd commandListExpression rParenthese { $node = new Node.InnerTaskNode($commandListExpression.node);}
+	| StartSubCmd ws? commandListExpression rParenthese { $node = new Node.InnerTaskNode($commandListExpression.node);}
 	;
 
 arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]
@@ -686,7 +686,7 @@ argumentList returns [ParserUtils.Arguments args]
 	;
 
 interpolation returns [Node.ExprNode node]
-	: StartInterp expression rBrace {$node = Node.CastNode.toString($expression.node);}
+	: StartInterp ws? expression rBrace {$node = Node.CastNode.toString($expression.node);}
 	;
 
 stringExpr returns [Node.StringExprNode node]
