@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -17,6 +16,7 @@ import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
 import dshell.internal.parser.Node.SymbolNode;
+import dshell.internal.parser.SourceStream.ChildStream;
 import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
 import dshell.internal.parser.error.ParserErrorListener;
 import dshell.lang.GenericPair;
@@ -255,12 +255,8 @@ public class ParserUtils {
 		childParser.addErrorListener(ParserErrorListener.getInstance());
 		childParser.setCmdScope(parser.getCmdScope());
 
-		// init intput
-		String tokenText = token.getText();
-		ANTLRInputStream input = new ANTLRInputStream(tokenText.substring(1, tokenText.length() - 1));
-		input.name = token.getInputStream().getSourceName();
-
 		// start parsing
+		ChildStream input = new ChildStream(token, 1, 1);
 		childLexer.setLine(token.getLine());
 		childLexer.setInputStream(input);
 		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
@@ -269,8 +265,6 @@ public class ParserUtils {
 	}
 
 	public static ExprNode resolveInterpolation(Token token, dshellParser parser) {
-		String tokenText = token.getText();
-
 		// init child parser
 		dshellLexer childLexer = new dshellLexer(null);
 		childLexer.removeErrorListeners();
@@ -281,15 +275,14 @@ public class ParserUtils {
 		childParser.setCmdScope(parser.getCmdScope());
 
 		// prepare lexer, parser
-		ANTLRInputStream input = new ANTLRInputStream(tokenText);
-		input.name = token.getInputStream().getSourceName();
-
+		ChildStream input = new ChildStream(token, 0, 0);
 		childLexer.setLine(token.getLine());
 		childLexer.setInputStream(input);
 		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
 		childParser.setTokenStream(tokenStream);
 
 		// start parsing
+		String tokenText = token.getText();
 		if(tokenText.startsWith("$(")) {
 			return childParser.substitutedCommand().node;
 		}

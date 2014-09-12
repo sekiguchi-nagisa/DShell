@@ -6,13 +6,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-
 import dshell.internal.console.AbstractConsole;
 import dshell.internal.exe.DShellEngineFactory.DShellExecutionEngine;
 import dshell.internal.exe.EngineFactory;
 import dshell.internal.exe.ExecutionEngine;
 import dshell.internal.lib.RuntimeContext;
+import dshell.internal.parser.SourceStream;
 
 public class DShellTest extends DShell {
 	public DShellTest(String[] args) {
@@ -75,9 +74,7 @@ class TestableEngineFactory implements EngineFactory {
 	private static class TestableEngine extends DShellExecutionEngine {
 		@Override
 		public boolean eval(String source, int lineNum) {
-			ANTLRInputStream input = new ANTLRInputStream(source);
-			input.name = "(stdin)";
-			if(!this.eval(input, lineNum, true)) {
+			if(!this.eval(new SourceStream("(stdin)", source), lineNum, true)) {
 				/**
 				 * if evaluation failed, terminates immediately.
 				 */

@@ -1,12 +1,9 @@
 package dshell.internal.exe;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.TreeSet;
 
-import org.antlr.v4.runtime.ANTLRFileStream;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import dshell.internal.codegen.JavaByteCodeGen;
@@ -16,6 +13,7 @@ import dshell.internal.lib.Utils;
 import dshell.internal.parser.ASTDumper;
 import dshell.internal.parser.CommandScope;
 import dshell.internal.parser.Node;
+import dshell.internal.parser.SourceStream;
 import dshell.internal.parser.TypeChecker;
 import dshell.internal.parser.dshellLexer;
 import dshell.internal.parser.dshellParser;
@@ -100,40 +98,23 @@ public class DShellEngineFactory implements EngineFactory {
 
 		@Override
 		public boolean eval(String scriptName) {
-			ANTLRFileStream input = null;
-			try {
-				input = new ANTLRFileStream(scriptName);
-			} catch(IOException e) {
-				System.err.println("cannot load file: " + scriptName);
-				return false;
-			}
-			return this.eval(input, 1, false);
+			return this.eval(new SourceStream(scriptName), 1, false);
 		}
 
 		@Override
 		public boolean eval(String scriptName, String source) {
-			ANTLRInputStream input = new ANTLRInputStream(source);
-			input.name = scriptName;
-			return this.eval(input, 1, false);
+			return this.eval(new SourceStream(scriptName, source), 1, false);
 		}
 
 		@Override
 		public boolean eval(String source, int lineNum) {
-			ANTLRInputStream input = new ANTLRInputStream(source);
-			input.name = "(stdin)";
-			return this.eval(input, lineNum, true);
+			return this.eval(new SourceStream("(stdin)", source), lineNum, true);
 		}
 
 		@Override
 		public void loadDShellRC() {
 			String dshellrcPath = Utils.getEnv("HOME") + "/.dshellrc";
-			ANTLRFileStream input = null;
-			try {
-				input = new ANTLRFileStream(dshellrcPath);
-			} catch(IOException e) {
-				return;
-			}
-			this.eval(input, 1, false);
+			this.eval(new SourceStream(dshellrcPath), 1, false);
 		}
 
 		@Override
@@ -156,7 +137,7 @@ public class DShellEngineFactory implements EngineFactory {
 		 * @return
 		 * - return true, if evaluation success.
 		 */
-		protected boolean eval(ANTLRInputStream input, int lineNum, boolean enableResultPrint) {
+		protected boolean eval(SourceStream input, int lineNum, boolean enableResultPrint) {
 			/**
 			 * set input stream.
 			 */
