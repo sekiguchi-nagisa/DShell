@@ -154,7 +154,7 @@ StringLiteral
 
 fragment
 SingleQuoteStringChar
-	: ~['\\]
+	: ~[\r\n'\\]
 	| SingleEscapeSequence
 	;
 
@@ -177,7 +177,7 @@ BackquotedLiteral
 fragment
 BackquotedChar
 	: '\\' '`'
-	| ~'`'
+	| ~[`\n\r]
 	;
 
 Dollar_At
@@ -243,7 +243,7 @@ StringElement
 
 fragment
 DoubleQuoteStringChar
-	: ~[`$"\\]
+	: ~[\r\n`$"\\]
 	| DoubleEscapeSequence
 	;
 
