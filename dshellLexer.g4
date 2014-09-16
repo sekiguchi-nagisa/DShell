@@ -75,6 +75,7 @@ Period          : '.';
 BackSlash       : '\\';
 Dollar          : '$';
 At              : '@';
+Question        : '?';
 
 SingleQuote     : '\'';
 DoubleQuote     : '"' -> pushMode(InString);
