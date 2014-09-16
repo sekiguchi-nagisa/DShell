@@ -590,7 +590,7 @@ public abstract class Node {
 			this(null, exprNode);
 		}
 
-		public DSType resolveTargteType(TypePool pool) {
+		public DSType resolveTargetType(TypePool pool) {
 			if(this.targetTypeSymbol != null) {
 				return this.targetTypeSymbol.toType(pool);
 			}

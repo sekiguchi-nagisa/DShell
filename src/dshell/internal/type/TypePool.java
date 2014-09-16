@@ -433,7 +433,8 @@ public class TypePool {
 					break;
 				}
 			}
-			throw new RuntimeException("illeagal type name: " + this.source);
+			Utils.fatal(1, "illegal type name: " + this.source);
+			return null;
 		}
 
 		/**
@@ -461,12 +462,12 @@ public class TypePool {
 					break;
 				default:
 					if(separatorCount != 0) {
-						throw new RuntimeException("illegal separator count: " + separatorCount + ", " + this.source);
+						Utils.fatal(1, "illegal separator count: " + separatorCount + ", " + this.source);
 					}
 					return;
 				}
 			}
-			throw new RuntimeException("found problem: " + this.source);
+			Utils.fatal(1, "found problem: " + this.source);
 		}
 
 		/**

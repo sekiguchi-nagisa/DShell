@@ -1,6 +1,7 @@
 package dshell.internal.parser.error;
 
 import org.antlr.v4.runtime.FailedPredicateException;
+import org.antlr.v4.runtime.InputMismatchException;
 import org.antlr.v4.runtime.LexerNoViableAltException;
 import org.antlr.v4.runtime.NoViableAltException;
 import org.antlr.v4.runtime.RecognitionException;
@@ -63,6 +64,12 @@ public class DShellErrorListener {
 			String predicate = ((FailedPredicateException) e).getPredicate();
 			if(predicate.equals("isCommand()")) {
 				sBuilder.append(", expect for command");
+			}
+		} else if(e instanceof InputMismatchException) {
+			IntervalSet expectedTokens = e.getExpectedTokens();
+			if(expectedTokens != null) {
+				sBuilder.append(", expect for: ");
+				sBuilder.append(expectedTokens.toString(parser.getTokenNames()));
 			}
 		}
 		Token token = e.getOffendingToken();

@@ -485,7 +485,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	public Node visit(CastNode node) {
 		this.checkType(node.getExprNode());
 		DSType type = node.getExprNode().getType();
-		DSType targetType = node.resolveTargteType(this.typePool);
+		DSType targetType = node.resolveTargetType(this.typePool);
 		node.setType(targetType);
 
 		// resolve cast op
