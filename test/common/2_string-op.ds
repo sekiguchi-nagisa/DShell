@@ -15,3 +15,11 @@ assert(a.endsWith("rld"))
 assert(a.indexOf("q") == -1)
 assert(a.lastIndexOf("l") == 9)
 assert(a.clone() == a)
+
+var b = "aaa"
+var c = 'ccc'
+
+assert(b < c)
+assert(b <= c)
+assert(!(b > c))
+assert(!(b >= c))

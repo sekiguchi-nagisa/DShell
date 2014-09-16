@@ -92,24 +92,28 @@ public class Operator {
 	@Shared @OpType(OpName.LT) public static boolean lessThan(long left, double right)   { return left < right; }
 	@Shared @OpType(OpName.LT) public static boolean lessThan(double left, long right)   { return left < right; }
 	@Shared @OpType(OpName.LT) public static boolean lessThan(double left, double right) { return left < right; }
+	@Shared @OpType(OpName.LT) public static boolean lessThan(String left, String right) { return left.compareTo(right) < 0; }
 
 	// GT
 	@Shared @OpType(OpName.GT) public static boolean greaterThan(long left, long right)     { return left > right; }
 	@Shared @OpType(OpName.GT) public static boolean greaterThan(long left, double right)   { return left > right; }
 	@Shared @OpType(OpName.GT) public static boolean greaterThan(double left, long right)   { return left > right; }
 	@Shared @OpType(OpName.GT) public static boolean greaterThan(double left, double right) { return left > right; }
+	@Shared @OpType(OpName.GT) public static boolean greaterThan(String left, String right) { return left.compareTo(right) > 0; }
 
 	// LE
 	@Shared @OpType(OpName.LE) public static boolean lessEqualsThan(long left, long right)     { return left <= right; }
 	@Shared @OpType(OpName.LE) public static boolean lessEqualsThan(long left, double right)   { return left <= right; }
 	@Shared @OpType(OpName.LE) public static boolean lessEqualsThan(double left, long right)   { return left <= right; }
 	@Shared @OpType(OpName.LE) public static boolean lessEqualsThan(double left, double right) { return left <= right; }
+	@Shared @OpType(OpName.LE) public static boolean lessEqualsThan(String left, String right) { return left.compareTo(right) <= 0; }
 
 	// GE
 	@Shared @OpType(OpName.GE) public static boolean greaterEqualsThan(long left, long right)     { return left >= right; }
 	@Shared @OpType(OpName.GE) public static boolean greaterEqualsThan(long left, double right)   { return left >= right; }
 	@Shared @OpType(OpName.GE) public static boolean greaterEqualsThan(double left, long right)   { return left >= right; }
 	@Shared @OpType(OpName.GE) public static boolean greaterEqualsThan(double left, double right) { return left >= right; }
+	@Shared @OpType(OpName.GE) public static boolean greaterEqualsThan(String left, String right) { return left.compareTo(right) >= 0; }
 
 	// EQ
 	@Shared @OpType(OpName.EQ) public static boolean equals(long left, long right)       { return left == right; }
@@ -154,8 +158,8 @@ public class Operator {
 	@Shared @OpType(OpName.REGEX_UNMATCH) public static boolean unmatchRegex(String target, String regex) {
 		return !matchRegex(target, regex);
 	}
-	
-	
+
+
 	// additional operator
 	// ASSERT
 	@Shared @OpType(OpName.ASSERT) public static void assertDShell(boolean result) {

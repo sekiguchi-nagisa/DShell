@@ -1007,15 +1007,6 @@ public abstract class Node {
 			return this.segmentNodeList;
 		}
 
-		public boolean hasQuotedTaskNode() {
-			for(ExprNode node : this.segmentNodeList) {
-				if(node instanceof InnerTaskNode) {
-					return true;
-				}
-			}
-			return false;
-		}
-
 		@Override
 		public <T> T accept(NodeVisitor<T> visitor) {
 			return visitor.visit(this);
