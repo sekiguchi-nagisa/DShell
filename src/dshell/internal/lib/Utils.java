@@ -8,7 +8,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 import dshell.lang.GenericArray;
 
@@ -31,35 +30,11 @@ public class Utils {
 		String[] paths = getEnv("PATH").split(":");
 		for(String path : paths) {
 			String fullPath = resolveHome(path + "/" + cmd);
-			if(isFileExecutable(fullPath)) {
+			if(new File(fullPath).canExecute()) {
 				return fullPath;
 			}
 		}
 		return null;
-	}
-
-	public final static boolean isFile(String path) {
-		return new File(path).isFile();
-	}
-
-	public final static boolean isDirectory(String path) {
-		return new File(path).isDirectory();
-	}
-
-	public final static boolean isFileExists(String path) {
-		return new File(path).exists();
-	}
-
-	public final static boolean isFileReadable(String path) {
-		return new File(path).canRead();
-	}
-
-	public final static boolean isFileWritable(String path) {
-		return new File(path).canWrite();
-	}
-
-	public final static boolean isFileExecutable(String path) {
-		return new File(path).canExecute();
 	}
 
 	public final static TreeSet<String> getCommandSetFromPath() {
@@ -165,9 +140,8 @@ public class Utils {
 		return path;
 	}
 
-	private final static Pattern defaultDelimPattern = Pattern.compile("[\n\t ]+", Pattern.UNIX_LINES);
 	public static String[] splitWithDelim(String targetValue) {	//TODO: support IFS variable
-		return defaultDelimPattern.matcher(targetValue).replaceAll(" ").split(" ");
+		return targetValue.replaceAll("^[\t\n ]+", "").split("[\t\n ]+");
 	}
 
 	public static long stringToLong(String value) {
