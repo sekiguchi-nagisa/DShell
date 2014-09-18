@@ -29,6 +29,7 @@ public void setTrace(boolean trace) {
 // ######################
 
 // reserved keyword
+As          : 'as';
 Assert      : 'assert';
 Break       : 'break';
 Boolean     : 'boolean';

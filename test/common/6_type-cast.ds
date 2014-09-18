@@ -1,19 +1,19 @@
 # int to float
 var a1 = 12
-var b1 = (float) a1
+var b1 = a1 as float
 assert(b1 == 12.0)
 
 # float to int 
 var a2 = 3.14
-var b2 = (int) a2
+var b2 = a2 as int
 assert(b2 == 3)
 
 # to string
 var a3 = 12
-var b3 = (String) a3
+var b3 = a3 as String
 assert(b3 == "12")
 
 # cast
 var a4 = new Exception()
 a4 = new OutOfIndexException()
-var b4 = (OutOfIndexException) a4
+var b4 = a4 as OutOfIndexException

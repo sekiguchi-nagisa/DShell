@@ -592,7 +592,7 @@ expression returns [Node.ExprNode node]
 	| r=expression lBracket i=expression rBracket {$node = new Node.ElementGetterNode($lBracket.token, $r.node, $i.node);}
 	| a=expression period Identifier {$node = new Node.FieldGetterNode($a.node, $Identifier);}
 	| New ws typeName arguments {$node = new Node.ConstructorCallNode($New, $typeName.type, $arguments.args);}
-	| lParenthese typeName rParenthese right=expression {$node = new Node.CastNode($typeName.type, $right.node);}
+	| left=expression ws As ws typeName {$node = new Node.CastNode($typeName.type, $left.node);}
 	| prefix_ops right=expression {$node = new Node.OperatorCallNode($prefix_ops.token, $right.node);}
 	| left=expression mul_ops right=expression {$node = new Node.OperatorCallNode($mul_ops.token, $left.node, $right.node);}
 	| left=expression add_ops right=expression {$node = new Node.OperatorCallNode($add_ops.token, $left.node, $right.node);}
