@@ -2,6 +2,8 @@ package dshell.internal.exe;
 
 import java.util.EnumSet;
 
+import dshell.internal.parser.error.ErrorListener;
+
 /**
  * definition of ExecutionEngine.
  * if you vreate your own engine, you must implement it.
@@ -20,6 +22,18 @@ public interface ExecutionEngine {
 	 * @param scriptArgs
 	 */
 	public void setArg(String[] scriptArgs);
+
+	/**
+	 * overwrite error listener
+	 * @param listener
+	 */
+	public void setErrorListener(ErrorListener listener);
+
+	/**
+	 * get error listener
+	 * @return
+	 */
+	public ErrorListener getErrorListener();
 
 	/**
 	 * evaluate script.

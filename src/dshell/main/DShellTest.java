@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import dshell.internal.console.AbstractConsole;
-import dshell.internal.exe.DShellEngineFactory.DShellExecutionEngine;
-import dshell.internal.exe.EngineFactory;
+import dshell.internal.exe.DShellEngineFactory;
 import dshell.internal.exe.ExecutionEngine;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.parser.SourceStream;
+import dshell.internal.parser.error.DShellErrorListener;
 
 public class DShellTest extends DShell {
 	public DShellTest(String[] args) {
@@ -64,7 +64,7 @@ public class DShellTest extends DShell {
 	}
 }
 
-class TestableEngineFactory implements EngineFactory {
+class TestableEngineFactory extends DShellEngineFactory {
 	@Override
 	public ExecutionEngine getEngine() {
 		return new TestableEngine();
@@ -118,4 +118,8 @@ class DummyConsole extends AbstractConsole {
 		}
 		return null;
 	}
+}
+
+class TestableErrorListener extends DShellErrorListener {
+	
 }

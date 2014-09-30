@@ -2,7 +2,6 @@ package dshell.internal.parser.error;
 
 import org.antlr.v4.runtime.FailedPredicateException;
 import org.antlr.v4.runtime.InputMismatchException;
-import org.antlr.v4.runtime.LexerNoViableAltException;
 import org.antlr.v4.runtime.NoViableAltException;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
@@ -13,57 +12,48 @@ import dshell.internal.parser.dshellParser;
 import dshell.internal.parser.error.ParserErrorListener.LexerException;
 import dshell.internal.parser.error.ParserErrorListener.ParserException;
 
-public class DShellErrorListener {
+public class DShellErrorListener implements ErrorListener {
+	// for parser error
+	@Override
 	public void displayTokenError(LexerException e) {
 		System.err.println(this.formatTokenError(e));
 	}
 
+	@Override
 	public void displayParseError(ParserException e) {
 		System.err.println(this.formatParseError(e));
 	}
 
-	protected String formatTokenError(LexerException cause) {
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(this.formatLocation(cause.getCause(), cause.getLineNum(), cause.getCharPosInLine()));
-
+	protected ErrorMessage formatTokenError(LexerException cause) {
 		String message = cause.getCause().toString();
 		int startIndex = message.indexOf('\'');
 		int stopIndex = message.lastIndexOf('\'');
 		String tokenText = message.substring(startIndex + 1, stopIndex);
-		sBuilder.append(" [SyntaxError] ");
-		sBuilder.append("unrecognized token: '" + tokenText + '\'');
-		return sBuilder.toString();
+		message = "unrecognized token: '" + tokenText + '\'';
+
+		return new ErrorMessage()
+			.setErrorLocation(cause.getCause().getInputStream().getSourceName(),
+				cause.getLineNum(), cause.getCharPosInLine())
+			.setErrorType(ErrorMessage.SYNTAX_ERROR)
+			.setMessage(message);
 	}
 
-	protected String formatLocation(LexerNoViableAltException e, int lineNum, int charPosInLine) {
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(e.getInputStream().getSourceName());
-		sBuilder.append(':');
-		sBuilder.append(lineNum);
-		sBuilder.append(':');
-		sBuilder.append(charPosInLine);
-		sBuilder.append(':');
-		return sBuilder.toString();
-	}
-
-	protected String formatParseError(ParserException cause) {
+	protected ErrorMessage formatParseError(ParserException cause) {
 		RecognitionException e = cause.getCause();
 		dshellParser parser = cause.getParser();
 
 		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(this.formatLocation(e.getOffendingToken()));
-		sBuilder.append(" [SyntaxError] ");
 		sBuilder.append("invalid syntax");
 		if(e instanceof NoViableAltException) {
 			IntervalSet expectedTokens = e.getExpectedTokens();
-			if(expectedTokens != null && expectedTokens.size() == 1) {
+			if(expectedTokens != null) {
 				sBuilder.append(", expect for: ");
 				sBuilder.append(expectedTokens.toString(parser.getTokenNames()));
 			}
 		} else if(e instanceof FailedPredicateException) {
 			String predicate = ((FailedPredicateException) e).getPredicate();
-			if(predicate.equals("isCommand()")) {
-				sBuilder.append(", expect for command");
+			if(predicate.equals("!hasNewLine()")) {
+				sBuilder.append(", unexpected new line");
 			}
 		} else if(e instanceof InputMismatchException) {
 			IntervalSet expectedTokens = e.getExpectedTokens();
@@ -73,57 +63,26 @@ public class DShellErrorListener {
 			}
 		}
 		Token token = e.getOffendingToken();
-		if(token != null) {
-			sBuilder.append('\n');
-			sBuilder.append(this.formatLine(parser, token));
-		}
-		return sBuilder.toString();
-	}
 
-	/**
-	 * format error location from token.
-	 * @param token
-	 * - may be null
-	 * @return
-	 */
-	protected String formatLocation(Token token) {
-		StringBuilder sBuilder = new StringBuilder();
-		if(token == null) {
-			return "??:??:?:";
-		}
-
-		SourceStream input = (SourceStream) token.getInputStream();
-		sBuilder.append(token.getTokenSource().getSourceName());
-		sBuilder.append(':');
-		sBuilder.append(token.getLine());
-		sBuilder.append(':');
-		sBuilder.append(token.getCharPositionInLine() + input.getOffset());
-		sBuilder.append(':');
-		return sBuilder.toString();
+		return this.formatLine(new ErrorMessage()
+				.setErrorLocation(token)
+				.setErrorType(ErrorMessage.SYNTAX_ERROR)
+				.setMessage(sBuilder.toString()), token);
 	}
 
 	// for type error
-	/**
-	 * format and display type error.
-	 * @param e
-	 * @param parser
-	 * - for error location
-	 */
+	@Override
 	public void displayTypeError(TypeCheckException e, dshellParser parser) {
 		System.err.println(this.formatTypeError(e, parser));
 	}
 
-	protected String formatTypeError(TypeCheckException e, dshellParser parser) {
+	protected ErrorMessage formatTypeError(TypeCheckException e, dshellParser parser) {
 		Token token = e.getErrorToken();
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(this.formatLocation(token));
-		sBuilder.append(" [TypeError] ");
-		sBuilder.append(e.getMessage().trim());
-		if(token != null) {
-			sBuilder.append('\n');
-			sBuilder.append(this.formatLine(parser, token));
-		}
-		return sBuilder.toString();
+		return this.formatLine(
+			new ErrorMessage()
+				.setErrorLocation(token)
+				.setErrorType(ErrorMessage.TYPE_ERROR)
+				.setMessage(e.getMessage().trim()), token);
 	}
 
 	/**
@@ -133,14 +92,10 @@ public class DShellErrorListener {
 	 * not null
 	 * @return
 	 */
-	protected String formatLine(dshellParser parser, Token token) {
-		StringBuilder sBuilder = new StringBuilder();
+	protected ErrorMessage formatLine(ErrorMessage eMessage, Token token) {
 		SourceStream input = (SourceStream) token.getInputStream();
+		StringBuilder sBuilder = new StringBuilder();
 
-		sBuilder.append(input.getLineText(token));
-		sBuilder.append('\n');
-
-		// create marker
 		for(int i = 0; i < token.getCharPositionInLine() + input.getOffset(); i++) {
 			sBuilder.append(' ');
 		}
@@ -148,6 +103,9 @@ public class DShellErrorListener {
 		for(int i = 0; i < tokenSize; i++) {
 			sBuilder.append('^');
 		}
-		return sBuilder.toString();
+
+		return eMessage
+				.setLineText(input.getLineText(token))
+				.setLineMarker(sBuilder.toString());
 	}
 }

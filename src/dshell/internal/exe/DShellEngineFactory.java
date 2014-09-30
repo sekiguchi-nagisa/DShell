@@ -18,6 +18,7 @@ import dshell.internal.parser.dshellParser;
 import dshell.internal.parser.Node.RootNode;
 import dshell.internal.parser.dshellParser.ToplevelContext;
 import dshell.internal.parser.error.DShellErrorListener;
+import dshell.internal.parser.error.ErrorListener;
 import dshell.internal.parser.error.TypeCheckException;
 import dshell.internal.parser.error.ParserErrorListener;
 import dshell.internal.parser.error.ParserErrorListener.LexerException;
@@ -33,13 +34,13 @@ public class DShellEngineFactory implements EngineFactory {
 		return new DShellExecutionEngine();
 	}
 
-	public static class DShellExecutionEngine implements ExecutionEngine {
+	protected static class DShellExecutionEngine implements ExecutionEngine {
 		protected final dshellLexer lexer;
 		protected final dshellParser parser;
 		protected final DShellClassLoader classLoader;
 		protected final TypeChecker checker;
 		protected final JavaByteCodeGen codeGen;
-		protected final DShellErrorListener listener;
+		protected ErrorListener listener;
 		protected EngineConfig config;
 
 		protected DShellExecutionEngine() {
@@ -92,6 +93,16 @@ public class DShellEngineFactory implements EngineFactory {
 
 			RootNode checkedNode = this.checker.checkTypeRootNode(rootNode);
 			this.codeGen.generateTopLevelClass(checkedNode, false);
+		}
+
+		@Override
+		public void setErrorListener(ErrorListener listener) {
+			this.listener = listener;
+		}
+
+		@Override
+		public ErrorListener getErrorListener() {
+			return this.listener;
 		}
 
 		@Override

@@ -2,6 +2,7 @@ lexer grammar dshellLexer;
 
 @header {
 package dshell.internal.parser;
+import java.util.EmptyStackException;
 }
 
 @members {
@@ -27,6 +28,15 @@ private boolean enterStmt = false;
 
 private boolean isStmt() {
 	return this.stmtMode;
+}
+
+@Override
+public int popMode() {
+	try {
+		return super.popMode();
+	} catch(EmptyStackException e) {
+		return DEFAULT_MODE;
+	}
 }
 
 @Override

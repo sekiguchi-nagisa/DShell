@@ -8,7 +8,6 @@ package dshell.internal.parser;
 import dshell.internal.parser.Node;
 import dshell.internal.parser.ParserUtils;
 import dshell.internal.parser.TypeSymbol;
-import java.util.ArrayList;
 }
 
 @members {
@@ -27,6 +26,9 @@ private boolean hasNewLine() {
 // ######################
 // #        parse       #
 // ######################
+
+// separator definition
+comma: {!hasNewLine()}? ',';
 
 // statement definition
 toplevel returns [Node.RootNode node]
@@ -58,12 +60,15 @@ functionDeclaration returns [Node node]
 	;
 
 returnType returns [TypeSymbol type]
-	:  Colon  typeNameWithVoid {$type = $typeNameWithVoid.type;}
+	: typeAnnoPrefix typeNameWithVoid {$type = $typeNameWithVoid.type;}
 	| { $type = TypeSymbol.toVoid(); }
 	;
 
+typeAnnoPrefix: {!hasNewLine()}? ':' {!hasNewLine()}?;
+typeSep       : {!hasNewLine()}? ',' {!hasNewLine()}?;
+
 argumentsDeclaration returns [ParserUtils.ArgsDecl decl]
-	: a+=argumentDeclarationWithType (Comma a+=argumentDeclarationWithType)*
+	: a+=argumentDeclarationWithType (comma a+=argumentDeclarationWithType)*
 		{
 			$decl = new ParserUtils.ArgsDecl();
 			for(int i = 0; i < $a.size(); i++) {
@@ -74,17 +79,17 @@ argumentsDeclaration returns [ParserUtils.ArgsDecl decl]
 	;
 
 argumentDeclarationWithType returns [ParserUtils.ArgDecl arg]
-	: AppliedName Colon typeName {$arg = new ParserUtils.ArgDecl($AppliedName, $typeName.type);}
+	: AppliedName typeAnnoPrefix typeName {$arg = new ParserUtils.ArgDecl($AppliedName, $typeName.type);}
 	;
 
 typeName returns [TypeSymbol type] locals [TypeSymbol[] types]
-	: Int {$type = TypeSymbol.toPrimitive($Int);}
-	| Float {$type = TypeSymbol.toPrimitive($Float);}
-	| Boolean {$type = TypeSymbol.toPrimitive($Boolean);}
+	: Int        {$type = TypeSymbol.toPrimitive($Int);}
+	| Float      {$type = TypeSymbol.toPrimitive($Float);}
+	| Boolean    {$type = TypeSymbol.toPrimitive($Boolean);}
 	| Identifier {$type = TypeSymbol.toClass($Identifier);}
 	| Func openType aa=typeNameWithVoid paramTypes closeType
-		{$type = TypeSymbol.toFunc($Func, $aa.type, $paramTypes.types);}
-	| Identifier openType a+=typeName (typeSep a+=typeName)* closeType
+	             {$type = TypeSymbol.toFunc($Func, $aa.type, $paramTypes.types);}
+	| Identifier openType a+=typeName (comma a+=typeName)* closeType
 		{
 			$types = new TypeSymbol[$a.size()];
 			for(int i = 0; i < $types.length; i++) {
@@ -100,7 +105,7 @@ typeNameWithVoid returns [TypeSymbol type]
 	;
 
 paramTypes returns [TypeSymbol[] types] locals [ParserUtils.ParamTypeResolver resolver]
-	: typeSep openParamType a+=typeName (typeSep a+=typeName)* closeParamType
+	: typeSep openParamType a+=typeName ( typeSep a+=typeName)* closeParamType
 		{
 			$resolver = new ParserUtils.ParamTypeResolver();
 			for(int i = 0; i < $a.size(); i++) {
@@ -111,10 +116,9 @@ paramTypes returns [TypeSymbol[] types] locals [ParserUtils.ParamTypeResolver re
 	| { $resolver = new ParserUtils.ParamTypeResolver(); $types = $resolver.getTypeSymbols();}
 	;
 
-openType       : {!hasNewLine()}? LeftAngleBracket {!hasNewLine()}?;
+openType       : {!hasNewLine()}? LeftAngleBracket  {!hasNewLine()}?;
 closeType      : {!hasNewLine()}? RightAngleBracket;
-typeSep        : {!hasNewLine()}? Comma {!hasNewLine()}?;
-openParamType  :                  LeftBracket {!hasNewLine()}?;
+openParamType  :                  LeftBracket       {!hasNewLine()}?;
 closeParamType : {!hasNewLine()}? RightBracket;
 
 block returns [Node node] locals [ParserUtils.Block blockModel]
@@ -165,13 +169,12 @@ constructorDeclaration returns [Node node]	//FIXME:
 	;
 
 statement returns [Node node]
-	: assertStatement statementEnd {$node = $assertStatement.node;}
-	| emptyStatement {$node = $emptyStatement.node;}
+	: emptyStatement {$node = $emptyStatement.node;}
+	| assertStatement statementEnd {$node = $assertStatement.node;}
 	| breakStatement statementEnd {$node = $breakStatement.node;}
 	| continueStatement statementEnd {$node = $continueStatement.node;}
 	| exportEnvStatement statementEnd {$node = $exportEnvStatement.node;}
 	| forStatement {$node = $forStatement.node;}
-	| forInStatement {$node = $forInStatement.node;}
 	| ifStatement {$node = $ifStatement.node;}
 	| importEnvStatement statementEnd {$node = $importEnvStatement.node;}
 	| returnStatement statementEnd {$node = $returnStatement.node;}
@@ -182,8 +185,11 @@ statement returns [Node node]
 	| variableDeclaration statementEnd {$node = $variableDeclaration.node;}
 	| commandListExpression statementEnd {$node = $commandListExpression.node;}
 	| assignStatement statementEnd {$node = $assignStatement.node;}
-	| suffixStatement statementEnd {$node = $suffixStatement.node;}
 	| expression statementEnd {$node = $expression.node;}
+	;
+
+emptyStatement returns [Node node]
+	: LineEnd {$node = new Node.EmptyNode();}
 	;
 
 assertStatement returns [Node node]
@@ -200,19 +206,24 @@ continueStatement returns [Node node]
 	;
 
 exportEnvStatement returns [Node node]
-	: ExportEnv VarName '=' expression 
+	: ExportEnv VarName {!hasNewLine()}? '=' expression 
 		{$node = new Node.ExportEnvNode($ExportEnv, $VarName, $expression.node);}
 	;
 
 forStatement returns [Node node]
-	: For LeftParenthese forInit LineEnd forCond LineEnd forIter RightParenthese block 
-		{$node = new Node.ForNode($For, $forInit.node, $forCond.node, $forIter.node, $block.node);}
+	: For LeftParenthese
+		(
+			AppliedName {!hasNewLine()}? In expression RightParenthese block 
+				{$node = new Node.ForInNode($For, $AppliedName, $expression.node, $block.node);}
+		|	forInit LineEnd forCond LineEnd forIter RightParenthese block 
+				{$node = new Node.ForNode($For, $forInit.node, $forCond.node, $forIter.node, $block.node);}
+	 	)
 	;
 
 forInit returns [Node node]
 	: variableDeclaration {$node = $variableDeclaration.node;}
-	| expression {$node = $expression.node;}
 	| assignStatement {$node = $assignStatement.node;}
+	| expression {$node = $expression.node;}
 	| {$node = new Node.EmptyNode();}
 	;
 
@@ -222,15 +233,9 @@ forCond returns [Node.ExprNode node]
 	;
 
 forIter returns [Node node]
-	: expression {$node = $expression.node;}
-	| assignStatement {$node = $assignStatement.node;}
-	| suffixStatement {$node = $suffixStatement.node;}
+	: assignStatement {$node = $assignStatement.node;}
+	| expression {$node = $expression.node;}
 	| {$node = new Node.EmptyNode();}
-	;
-
-forInStatement returns [Node node]
-	: For LeftParenthese AppliedName  In  expression RightParenthese block 
-		{$node = new Node.ForInNode($For, $AppliedName, $expression.node, $block.node);}
 	;
 
 condExpression returns [Node.ExprNode node]
@@ -272,11 +277,13 @@ throwStatement returns [Node node]
 	;
 
 whileStatement returns [Node node]
-	: While LeftParenthese condExpression RightParenthese block {$node = new Node.WhileNode($While, $condExpression.node, $block.node);}
+	: While LeftParenthese condExpression RightParenthese block
+		{$node = new Node.WhileNode($While, $condExpression.node, $block.node);}
 	;
 
 doWhileStatement returns [Node node]
-	: Do block While LeftParenthese condExpression RightParenthese {$node = new Node.WhileNode($Do, $condExpression.node, $block.node, true);}
+	: Do block While LeftParenthese condExpression RightParenthese
+		{$node = new Node.WhileNode($Do, $condExpression.node, $block.node, true);}
 	;
 
 tryCatchStatement returns [Node node] locals [Node.TryNode tryNode]
@@ -298,12 +305,14 @@ finallyBlock returns [Node node]
 catchStatement returns [Node.CatchNode node]
 	: Catch LeftParenthese exceptDeclaration RightParenthese block
 		{
-			$node = new Node.CatchNode($Catch, $exceptDeclaration.except.getName(), $exceptDeclaration.except.getTypeSymbol(), $block.node);
+			$node = new Node.CatchNode($Catch, $exceptDeclaration.except.getName(), 
+				$exceptDeclaration.except.getTypeSymbol(), $block.node
+			);
 		}
 	;
 
 exceptDeclaration returns [ParserUtils.CatchedException except]
-	: AppliedName (Colon t+=typeName)?
+	: AppliedName (typeAnnoPrefix t+=typeName)?
 		{
 			$except = new ParserUtils.CatchedException($AppliedName);
 			if($t.size() == 1) {
@@ -312,31 +321,36 @@ exceptDeclaration returns [ParserUtils.CatchedException except]
 		}
 	;
 
-assingRightExpression returns [Node.ExprNode node]
-	: commandExpression {$node = $commandExpression.node;}
-	| expression {$node = $expression.node;}
-	;
-
 variableDeclaration returns [Node node]
-	: flag=(Let | Var) VarName '=' assingRightExpression
+	: flag=(Let | Var) VarName {!hasNewLine()}? '=' assingRightExpression
 		{
 			$node = new Node.VarDeclNode($flag, $VarName, $assingRightExpression.node);
 		}
 	;
 
+assingRightExpression returns [Node.ExprNode node]
+	: commandExpression {$node = $commandExpression.node;}
+	| expression {$node = $expression.node;}
+	;
+
 assignStatement returns [Node node]
-	: left=expression {!hasNewLine()}? op=('=' | '+=' | '-=' | '*=' | '/=' | '%=') right=assingRightExpression
-		{
-			$node = new Node.AssignNode($op, $left.node, $right.node);
-		}
+	: left=assignLeftExpression
+		({!hasNewLine()}? (
+			op=('=' | '+=' | '-=' | '*=' | '/=' | '%=') right=assingRightExpression
+				{$node = new Node.AssignNode($op, $left.node, $right.node);}
+		|	op=('++' | '--')
+				{$node = new Node.AssignNode($left.node, $op);}
+		))
 	;
 
-emptyStatement returns [Node node]
-	: LineEnd {$node = new Node.EmptyNode();}
-	;
-
-suffixStatement returns [Node node]
-	: expression {!hasNewLine()}? op=('++' | '--') {$node = new Node.AssignNode($expression.node, $op);}
+assignLeftExpression returns [Node.ExprNode node]
+	: symbol {$node = $symbol.node;}
+		({!hasNewLine()}? (
+			Accessor VarName 
+				{$node = new Node.FieldGetterNode($node, $VarName);}
+		|	LeftBracket i=expression RightBracket
+				{$node = new Node.ElementGetterNode($LeftBracket, $node, $i.node);}
+		))*
 	;
 
 
@@ -385,47 +399,162 @@ commandArgSeg returns [Node.ExprNode node]
 	;
 
 redirOption returns [ParserUtils.RedirOption option]
-	: CmdSep? RedirectOp CmdSep? commandArg { $option = new ParserUtils.RedirOption($RedirectOp, $commandArg.node); }
+	: CmdSep? RedirectOp CmdSep? commandArg
+		{ $option = new ParserUtils.RedirOption($RedirectOp, $commandArg.node); }
 	| CmdSep? RedirectOpNoArg { $option = new ParserUtils.RedirOption($RedirectOpNoArg); }
 	;
 
 commandListExpression returns [Node.ExprNode node]
 	: commandExpression { $node = $commandExpression.node; }
-	| left=commandListExpression CmdSep? AndList right=commandListExpression { $node = new Node.CondOpNode($AndList, $left.node, $right.node); }
-	| left=commandListExpression CmdSep? OrList right=commandListExpression { $node = new Node.CondOpNode($OrList, $left.node, $right.node); }
+	| left=commandListExpression CmdSep? AndList right=commandListExpression
+		{ $node = new Node.CondOpNode($AndList, $left.node, $right.node); }
+	| left=commandListExpression CmdSep? OrList right=commandListExpression
+		{ $node = new Node.CondOpNode($OrList, $left.node, $right.node); }
 	;
 
 // normal expression
 expression returns [Node.ExprNode node]
-	: primaryExpression {$node = $primaryExpression.node;}
-	| a=expression {!hasNewLine()}? arguments {$node = new Node.ApplyNode($a.node, $arguments.args);}
-	| r=expression {!hasNewLine()}? LeftBracket i=expression RightBracket {$node = new Node.ElementGetterNode($LeftBracket, $r.node, $i.node);}
-	| a=expression {!hasNewLine()}? Accessor VarName {$node = new Node.FieldGetterNode($a.node, $VarName);}
-	| New typeName arguments {$node = new Node.ConstructorCallNode($New, $typeName.type, $arguments.args);}
-	| left=expression {!hasNewLine()}? As typeName {$node = new Node.CastNode($typeName.type, $left.node);}
-	| prefix_ops=(PLUS | MINUS | Not) {!hasNewLine()}? right=expression {$node = new Node.OperatorCallNode($prefix_ops, $right.node);}
-	| left=expression {!hasNewLine()}? mul_ops=(MUL | DIV | MOD) right=expression {$node = new Node.OperatorCallNode($mul_ops, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? add_ops=(PLUS | MINUS) right=expression {$node = new Node.OperatorCallNode($add_ops, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? lt_ops=(LeftAngleBracket | RightAngleBracket | LE | GE) right=expression {$node = new Node.OperatorCallNode($lt_ops, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? Instanceof typeName {$node = new Node.InstanceofNode($Instanceof, $left.node, $typeName.type);}
-	| left=expression {!hasNewLine()}? eq_ops=('==' | '!=' | '=~' | '!~') right=expression {$node = new Node.OperatorCallNode($eq_ops, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? AND right=expression {$node = new Node.OperatorCallNode($AND, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? XOR right=expression {$node = new Node.OperatorCallNode($XOR, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? OR right=expression {$node = new Node.OperatorCallNode($OR, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? COND_AND right=expression {$node = new Node.CondOpNode($COND_AND, $left.node, $right.node);}
-	| left=expression {!hasNewLine()}? COND_OR right=expression {$node = new Node.CondOpNode($COND_OR, $left.node, $right.node);}
+	: condOrExpression {$node = $condOrExpression.node;}
+	;
+
+condOrExpression returns [Node.ExprNode node]
+	: l=condAndExpression ({!hasNewLine()}? op+=COND_OR e+=condAndExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.CondOpNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+condAndExpression returns [Node.ExprNode node]
+	: l=orExpression ({!hasNewLine()}? op+=COND_AND e+=orExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.CondOpNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+orExpression returns [Node.ExprNode node]
+	: l=xorExpression ({!hasNewLine()}? op+=OR e+=xorExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+xorExpression returns [Node.ExprNode node]
+	: l=andExpression ({!hasNewLine()}? op+=XOR e+=andExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+andExpression returns [Node.ExprNode node]
+	: l=equalityExpression ({!hasNewLine()}? op+=AND e+=equalityExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+equalityExpression returns [Node.ExprNode node]
+	: l=instanceofExpression ({!hasNewLine()}? op+=('==' | '!=' | '=~' | '!~') e+=instanceofExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+	
+instanceofExpression returns [Node.ExprNode node]
+	: l=relationalExpression ({!hasNewLine()}? op+=Instanceof t+=typeName)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $t.size(); i++) {
+				$node = new Node.InstanceofNode($op.get(i), $node, $t.get(i).type);
+			}
+		}
+	;
+
+relationalExpression returns [Node.ExprNode node]
+	: l=addExpression ({!hasNewLine()}? op+=(LeftAngleBracket | RightAngleBracket | LE | GE) e+=addExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+addExpression returns [Node.ExprNode node]
+	: l=mulExpression ({!hasNewLine()}? op+=(PLUS | MINUS) e+=mulExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+mulExpression returns [Node.ExprNode node]
+	: l=unaryExpression ({!hasNewLine()}? op+=(MUL | DIV | MOD) e+=unaryExpression)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $e.size(); i++) {
+				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
+			}
+		}
+	;
+
+unaryExpression returns [Node.ExprNode node]
+	: (op+=(PLUS | MINUS | Not) {!hasNewLine()}?)* r=castExpression
+		{
+			$node = $r.node;
+			for(int i = $op.size() - 1; i > -1; i--) {
+				$node = new Node.OperatorCallNode($op.get(i), $node);
+			}
+		}
+	;
+
+castExpression returns [Node.ExprNode node]
+	: l=applyOrGetExpression ({!hasNewLine()}? As t+=typeName)*
+		{
+			$node = $l.node;
+			for(int i = 0; i < $t.size(); i++) {
+				$node = new Node.CastNode($node, $t.get(i).type);
+			}
+		}
+	;
+
+applyOrGetExpression returns [Node.ExprNode node]
+	: l=primaryExpression {$node = $l.node;}
+		({!hasNewLine()}? (
+			Accessor VarName {$node = new Node.FieldGetterNode($node, $VarName);}
+		|	LeftBracket i=expression RightBracket
+				{$node = new Node.ElementGetterNode($LeftBracket, $node, $i.node);}
+		|	arguments {$node = new Node.ApplyNode($node, $arguments.args);}
+		))*
 	;
 
 primaryExpression returns [Node.ExprNode node]
 	: literal {$node = $literal.node;}
+	| New {!hasNewLine()}? typeName arguments
+		{$node = new Node.ConstructorCallNode($New, $typeName.type, $arguments.args);}
 	| symbol {$node = $symbol.node;}
 	| substitutedCommand {$node = $substitutedCommand.node;}
 	| LeftParenthese expression RightParenthese {$node = $expression.node;}
 	| stringExpr {$node = $stringExpr.node;}
-	;
-
-symbol returns [Node.ExprNode node]
-	: AppliedName { $node = new Node.SymbolNode($AppliedName);}
 	;
 
 literal returns [Node.ExprNode node]
@@ -439,13 +568,18 @@ literal returns [Node.ExprNode node]
 	| pairLiteral {$node = $pairLiteral.node;}
 	;
 
+symbol returns [Node.ExprNode node]
+	: AppliedName { $node = new Node.SymbolNode($AppliedName);}
+	;
+
 substitutedCommand returns [Node.ExprNode node]
 	: BackquoteLiteral {$node = ParserUtils.parseBackquotedLiteral($BackquoteLiteral, this);}
-	| StartSubCmd commandListExpression RightParenthese { $node = new Node.InnerTaskNode($commandListExpression.node);}
+	| StartSubCmd commandListExpression RightParenthese
+		{ $node = new Node.InnerTaskNode($commandListExpression.node);}
 	;
 
 arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]
-	: LeftBracket expr+=expression (Comma expr+=expression)* RightBracket
+	: LeftBracket expr+=expression (comma expr+=expression)* RightBracket
 		{	$arrayNode = new Node.ArrayNode($LeftBracket);
 			for(int i = 0; i < $expr.size(); i++) {
 				$arrayNode.addNode($expr.get(i).node);
@@ -455,7 +589,7 @@ arrayLiteral returns [Node.ExprNode node] locals [Node.ArrayNode arrayNode]
 	;
 
 mapLiteral returns [Node.ExprNode node] locals [Node.MapNode mapNode]
-	: LeftBrace entrys+=mapEntry (Comma entrys+=mapEntry)* RightBrace
+	: LeftBrace entrys+=mapEntry (comma entrys+=mapEntry)* RightBrace
 		{
 			$mapNode = new Node.MapNode($LeftBrace);
 			for(int i = 0; i < $entrys.size(); i++) {
@@ -466,11 +600,12 @@ mapLiteral returns [Node.ExprNode node] locals [Node.MapNode mapNode]
 	;
 
 mapEntry returns [ParserUtils.MapEntry entry]
-	: key=expression {!hasNewLine()}? Colon value=expression {$entry = new ParserUtils.MapEntry($key.node, $value.node);}
+	: key=expression {!hasNewLine()}? Colon value=expression
+		{$entry = new ParserUtils.MapEntry($key.node, $value.node);}
 	;
 
 pairLiteral returns [Node.ExprNode node]
-	: LeftParenthese left=expression {!hasNewLine()}? Comma right=expression RightParenthese
+	: LeftParenthese left=expression comma right=expression RightParenthese
 		{
 			$node = new Node.PairNode($LeftParenthese, $left.node, $right.node);
 		}
@@ -487,7 +622,7 @@ arguments returns [ParserUtils.Arguments args]
 	;
 
 argumentList returns [ParserUtils.Arguments args]
-	: a+= expression (Comma a+=expression)* 
+	: a+= expression (comma a+=expression)* 
 		{
 			$args = new ParserUtils.Arguments();
 			for(int i = 0; i < $a.size(); i++) {

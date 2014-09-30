@@ -54,27 +54,34 @@ public class SourceStream extends ANTLRInputStream {
 		}
 
 		// look up line start pos
-		int startIndex = tokenStartPos;	// include
-		while(startIndex > 0 && startIndex < size) {
+		int startIndex;	// include
+		for(startIndex = tokenStartPos; startIndex > -1; startIndex--) {
 			char ch = this.getCharAt(startIndex);
 			if(ch == '\n' || ch == '\r') {
 				++startIndex;
 				break;
 			}
-			startIndex--;
+		}
+		if(startIndex < 0) {
+			startIndex = 0;
+		}
+		if(startIndex >= size) {
+			startIndex = size - 1;
 		}
 
 		// look up line end pos
-		int stopIndex = tokenStartPos;	//include
-		while(stopIndex < this.bufferSize() - 1 && stopIndex > -1) {
+		int stopIndex;
+		for(stopIndex = tokenStartPos; stopIndex < size; stopIndex++) {
 			char ch = this.getCharAt(stopIndex);
 			if(ch == '\n' || ch == '\r') {
-				--stopIndex;
 				break;
 			}
-			stopIndex++;
 		}
-		return new String(this.getBuffer(), startIndex, stopIndex - startIndex + 1);
+		int lineSize = stopIndex - startIndex;
+		if(lineSize < 0) {
+			lineSize = 0;
+		}
+		return new String(this.getBuffer(), startIndex, lineSize);
 	}
 
 	public int getOffset() {

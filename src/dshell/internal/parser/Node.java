@@ -581,14 +581,14 @@ public abstract class Node {
 		private final ExprNode exprNode;
 		private int castOp = NOP;
 
-		public CastNode(TypeSymbol targetTypeSymbol, ExprNode exprNode) {
+		public CastNode(ExprNode exprNode, TypeSymbol targetTypeSymbol) {
 			super(targetTypeSymbol != null ? targetTypeSymbol.getToken() : null);
 			this.targetTypeSymbol = targetTypeSymbol;
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 		}
 
 		private CastNode(ExprNode exprNode) {
-			this(null, exprNode);
+			this(exprNode, null);
 		}
 
 		public DSType resolveTargetType(TypePool pool) {
