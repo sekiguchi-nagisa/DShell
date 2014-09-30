@@ -1,5 +1,5 @@
-function func(num : int): boolean {
-	if (num > 2) {
+function func($num : int): boolean {
+	if ($num > 2) {
 		return true
 	}
 	else {
@@ -7,6 +7,6 @@ function func(num : int): boolean {
 	}
 }
 
-assert(!func(1))
-assert(!func(2))
-assert(func(3))
+assert(not $func(1))
+assert(not $func(2))
+assert($func(3))

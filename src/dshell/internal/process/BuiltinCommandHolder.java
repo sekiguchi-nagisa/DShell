@@ -1,6 +1,6 @@
 package dshell.internal.process;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,14 +15,14 @@ import dshell.internal.lib.RuntimeContext;
  *
  */
 public class BuiltinCommandHolder {
-	private final Map<BuiltinSymbol, ExecutableAsCommand> builtinCommandMap;
+	private final Map<String, ExecutableAsCommand> builtinCommandMap;
 
 	public BuiltinCommandHolder() {
-		this.builtinCommandMap = new EnumMap<>(BuiltinSymbol.class);
-		this.builtinCommandMap.put(BuiltinSymbol.cd, new Command_cd());
-		this.builtinCommandMap.put(BuiltinSymbol.exit, new Command_exit());
-		this.builtinCommandMap.put(BuiltinSymbol.help, new Command_help());
-		this.builtinCommandMap.put(BuiltinSymbol.log, new Command_log());
+		this.builtinCommandMap = new HashMap<>();
+		this.builtinCommandMap.put(BuiltinSymbol.cd.name(), new Command_cd());
+		this.builtinCommandMap.put(BuiltinSymbol.exit.name(), new Command_exit());
+		this.builtinCommandMap.put(BuiltinSymbol.help.name(), new Command_help());
+		this.builtinCommandMap.put(BuiltinSymbol.log.name(), new Command_log());
 	}
 
 	/**
@@ -32,10 +32,9 @@ public class BuiltinCommandHolder {
 	 * throw exception, if has no builtin command.
 	 */
 	public CommandRunner getCommand(String commandName) {
-		BuiltinSymbol symbol = BuiltinSymbol.valueOf(commandName);
-		ExecutableAsCommand executor = this.builtinCommandMap.get(symbol);
+		ExecutableAsCommand executor = this.builtinCommandMap.get(commandName);
 		if(executor == null) {
-			throw new RuntimeException("unefined builtin command: " + commandName);
+			return null;
 		}
 		CommandRunner runner = new CommandRunner(commandName, executor);
 		return runner;

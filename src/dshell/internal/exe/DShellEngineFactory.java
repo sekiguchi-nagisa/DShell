@@ -2,7 +2,6 @@ package dshell.internal.exe;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.TreeSet;
 
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -11,7 +10,6 @@ import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.ASTDumper;
-import dshell.internal.parser.CommandScope;
 import dshell.internal.parser.Node;
 import dshell.internal.parser.SourceStream;
 import dshell.internal.parser.TypeChecker;
@@ -115,17 +113,6 @@ public class DShellEngineFactory implements EngineFactory {
 		public void loadDShellRC() {
 			String dshellrcPath = Utils.getEnv("HOME") + "/.dshellrc";
 			this.eval(new SourceStream(dshellrcPath), 1, false);
-		}
-
-		@Override
-		public void importCommandsFromPath() {
-			TreeSet<String> commandSet = Utils.getCommandSetFromPath();
-			CommandScope scope = this.parser.getCmdScope();
-			for(String command : commandSet) {
-				if(scope.setCommandPath(command) && RuntimeContext.getInstance().isDebugMode()) {
-					System.err.println("duplicated command: " + command);
-				}
-			}
 		}
 
 		/**

@@ -20,7 +20,6 @@ public class DShellTest extends DShell {
 
 	@Override
 	protected void resolveOption(String[] args) {
-		this.autoImportCommand = false;
 		this.mode = ExecutionMode.scriptingMode;
 		for(int i = 0; i < args.length; i++) {
 			String optionSymbol = args[i];

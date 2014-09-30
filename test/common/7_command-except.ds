@@ -1,15 +1,13 @@
-import-command ls grep
-
 function f() {
 	try {
 		ls -la | grep hfiru
 	}
-	catch(e : MultipleException) {
-		var a = e.getExceptions()
-		assert(a[0] instanceof NullException)
-		assert(a[1] instanceof DShellException)
-		assert(!(a[1] instanceof NullException))
+	catch($e : MultipleException) {
+		var a = $e.getExceptions()
+		assert($a[0] instanceof NullException)
+		assert($a[1] instanceof DShellException)
+		assert(not ($a[1] instanceof NullException))
 	}
 }
 
-f()
+$f()

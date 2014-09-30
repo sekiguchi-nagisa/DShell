@@ -1,11 +1,11 @@
 function f1() {
-	STDOUT.writeLine("hello")
+	$STDOUT.writeLine("hello")
 }
 
-function f2(a : int, b : int) : boolean {
-	return a == b
+function f2($a : int, $b : int) : boolean {
+	return $a == $b
 }
 
-f1()
-assert(!f2(1, 2))
-assert(f2(23, 23))
+$f1()
+assert(not $f2(1, 2))
+assert($f2(23, 23))

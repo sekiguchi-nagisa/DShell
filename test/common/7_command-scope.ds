@@ -1,9 +1,0 @@
-function f() {
-	import-command ls;
-	ls -la
-}
-
-f()
-
-import-command ls
-ls

@@ -25,11 +25,9 @@ public class Operator {
 	@Shared @OpType(OpName.SUB) public static long   minus(long right)   { return -right; }
 	@Shared @OpType(OpName.SUB) public static double minus(double right) { return -right; }
 
-	// NOT
+	// NOT or BIT_NOT
 	@Shared @OpType(OpName.NOT) public static boolean not(boolean right) { return !right; }
-
-	// BIT_NOT
-	@Shared @OpType(OpName.BIT_NOT) public static long bitnot(long right) { return ~right; }
+	@Shared @OpType(OpName.NOT) public static long    not(long right)    { return ~right; }
 
 	// binary op
 	// ADD

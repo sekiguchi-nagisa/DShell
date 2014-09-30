@@ -2,9 +2,6 @@ lexer grammar dshellLexer;
 
 @header {
 package dshell.internal.parser;
-import dshell.internal.parser.Node;
-import dshell.internal.parser.ParserUtils;
-import dshell.internal.parser.TypeSymbol;
 }
 
 @members {
@@ -16,120 +13,93 @@ public Token nextToken() {
 	if(this.trace) {
 		System.err.println("@nextToken: " + token);
 	}
+	this.stmtMode = this.enterStmt;
+	this.enterStmt = false;
 	return token;
 }
 
 public void setTrace(boolean trace) {
 	this.trace = trace;
 }
+
+private boolean stmtMode = true;
+private boolean enterStmt = false;
+
+private boolean isStmt() {
+	return this.stmtMode;
 }
 
-// ######################
-// #        lexer       #
-// ######################
+@Override
+public void reset() {
+	super.reset();
+	this.stmtMode = true;
+	this.enterStmt = false;
+}
+}
 
-// reserved keyword
-As          : 'as';
+
+// ##########################
+// ##     default mode     ##
+// ##########################
+
+// reserved key word
+As          : {!isStmt()}? 'as';
 Assert      : 'assert';
+Boolean     : {!isStmt()}? 'boolean';
 Break       : 'break';
-Boolean     : 'boolean';
 Catch       : 'catch';
-Continue    : 'continue';
 Class       : 'class';
+Continue    : 'continue';
 Constructor : 'constructor';
 Do          : 'do';
 Else        : 'else';
 Extends     : 'extends';
-ExportEnv   : 'export-env';
-Func        : 'Func';
-Function    : 'function';
+ExportEnv   :  {isStmt()}? 'export-env' -> pushMode(NameMode);
 Finally     : 'finally';
-Float       : 'float';
+Float       : {!isStmt()}? 'float';
 For         : 'for';
+Func        : {!isStmt()}? 'Func';
+Function    :  {isStmt()}? 'function' -> pushMode(NameMode);
 If          : 'if';
-ImportCmd   : 'import-command';
-ImportEnv   : 'import-env';
-In          : 'in';
-Int         : 'int';
-Instanceof  : 'instanceof';
-Let         : 'let';
+ImportEnv   :  {isStmt()}? 'import-env' -> pushMode(NameMode);
+In          : {!isStmt()}? 'in';
+Instanceof  : {!isStmt()}? 'instanceof';
+Int         : {!isStmt()}? 'int';
+Let         :  {isStmt()}? 'let' -> pushMode(NameMode);
 New         : 'new';
+Not         : 'not';
 Return      : 'return';
-Super       : 'super';
 Try         : 'try';
 Throw       : 'throw';
-Var         : 'var';
-Void        : 'void';
+Var         :  {isStmt()}? 'var' -> pushMode(NameMode);
+Void        : {!isStmt()}? 'void';
 While       : 'while';
 
-LeftParenthese  : '(';
-RightParenthese : ')';
-LeftBracket     : '[';
-RightBracket    : ']';
-LeftBrace       : '{';
-RightBrace      : '}';
+PLUS        : '+';
+MINUS       : '-';
 
-Colon           : ':';
-Semicolon       : ';';
-Comma           : ',';
-Period          : '.';
-BackSlash       : '\\';
-Dollar          : '$';
-At              : '@';
-Question        : '?';
 
-SingleQuote     : '\'';
-DoubleQuote     : '"' -> pushMode(InString);
-BackQuote       : '`';
+// variable or function name
+AppliedName
+	: '$' PermittedName
+	;
 
-// operator
-// binary op
-ADD           : '+';
-SUB           : '-';
-MUL           : '*';
-DIV           : '/';
-MOD           : '%';
-LT            : '<';
-GT            : '>';
-LE            : '<=';
-GE            : '>=';
-EQ            : '==';
-NE            : '!=';
-AND           : '&';
-OR            : '|';
-XOR           : '^';
-COND_AND      : '&&';
-COND_OR       : '||';
-REGEX_MATCH   : '=~';
-REGEX_UNMATCH : '!~';
-
-// prefix op
-BIT_NOT       : '~';
-NOT           : '!';
-
-// suffix op
-INC           : '++';
-DEC           : '--';
-
-// assign op
-ASSIGN        : '=';
-ADD_ASSIGN    : '+=';
-SUB_ASSIGN    : '-=';
-MUL_ASSIGN    : '*=';
-DIV_ASSIGN    : '/=';
-MOD_ASSIGN    : '%=';
-
+SpecialName
+	: '$$'
+	| '$@'
+	| '$*'
+	;
 
 // literal
-// int literal	//TODO: hex, oct number
+// integer literal //TODO: hex. oct number
+IntLiteral
+	: Number
+	;
+
 fragment
 Number
 	: '0'
 	| [1-9] [0-9]*
-	;
-
-IntLiteral
-	: Number
 	;
 
 // float literal
@@ -142,7 +112,6 @@ FloatSuffix
 	: [eE] [+-]? Number
 	;
 
-
 // boolean literal
 BooleanLiteral
 	: 'true'
@@ -152,6 +121,10 @@ BooleanLiteral
 // String literal
 StringLiteral
 	: '\'' SingleQuoteStringChar* '\''
+	;
+
+OpenDoubleQuote
+	: '"' -> pushMode(DoubleQuoteStringMode)
 	;
 
 fragment
@@ -165,79 +138,159 @@ SingleEscapeSequence	// TODO: unicode escape
 	: '\\' [btnfr'\\]
 	;
 
-
-// symbol , class and command name
-Identifier
-	: [_a-zA-Z] [_0-9a-zA-Z]*
-	;
-
-// back quoted command
-BackquotedLiteral
-	: '`' BackquotedChar+ '`'
+// command literal
+BackquoteLiteral
+	: '`' BackquoteChar+ '`'
 	;
 
 fragment
-BackquotedChar
+BackquoteChar
 	: '\\' '`'
 	| ~[`\n\r]
 	;
 
-Dollar_At
-	: '$@'
+StartSubCmd
+	: '$(' {this.enterStmt = true;} -> pushMode(DEFAULT_MODE)
 	;
 
-// unicode character
-UTF8Chars
-	: UTF8Char+
+
+// command
+Command
+	: {isStmt()}? CommandStartChar CommandChar* -> pushMode(CommandMode) 
 	;
 
 fragment
-UTF8Char
-	: [\u0080-\u07FF]
-	| [\u0800-\uFFFF]
+CommandChar
+	: '\\' .
+	| ~[ \t\r\n;'"`|&<>(){}$#![\]]
 	;
 
-// comment & space
+fragment
+CommandStartChar
+	: '\\' .
+	| ~[ \t\r\n;'"`|&<>(){}$#![\]0-9+\-]
+	;
+
+// bracket
+LeftParenthese    : '(' {this.enterStmt = true;} -> pushMode(DEFAULT_MODE);
+RightParenthese   : ')' -> popMode;
+LeftBracket       : '[';
+RightBracket      : ']';
+LeftBrace         : '{' {this.enterStmt = true;} -> pushMode(DEFAULT_MODE);
+RightBrace        : '}' -> popMode;
+LeftAngleBracket  : '<';
+RightAngleBracket : '>';
+
+// separator
+Colon             : ':';
+Comma             : ',';
+
+// operator
+// binary op
+//ADD           : '+'; -> PLUS
+//SUB           : '-'; -> MINUS
+MUL           : '*';
+DIV           : '/';
+MOD           : '%';
+//LT            : '<'; -> LeftAngleBracket
+//GT            : '>'; -> RightAngleBracket
+LE            : '<=';
+GE            : '>=';
+EQ            : '==';
+NE            : '!=';
+AND           : '&';
+OR            : '|';
+XOR           : '^';
+COND_AND      : '&&';
+COND_OR       : '||';
+REGEX_MATCH   : '=~';
+REGEX_UNMATCH : '!~';
+
+// suffix op
+INC           : '++';
+DEC           : '--';
+
+// assign op
+ASSIGN        : '='  {this.enterStmt = true;};
+ADD_ASSIGN    : '+=' {this.enterStmt = true;};
+SUB_ASSIGN    : '-=' {this.enterStmt = true;};
+MUL_ASSIGN    : '*=' {this.enterStmt = true;};
+DIV_ASSIGN    : '/=' {this.enterStmt = true;};
+MOD_ASSIGN    : '%=' {this.enterStmt = true;};
+
+
+// identifier
+Identifier
+	: PermittedName
+	;
+
+// field accessor
+Accessor
+	: '.' -> pushMode(NameMode);
+
+// line end
+LineEnd
+	: ';' [ \t\r\n]* {this.enterStmt = true;}
+	;
+
+NewLine
+	: [\n\r] [ \t\r\n]* {this.enterStmt = true;}
+	;
+
+// comment and space
 Comment
 	: '#' ~[\r\n]* -> skip
 	;
 
+WhiteSpace
+	: WhiteSpaceFragment+ -> skip
+	;
+
 fragment
 WhiteSpaceFragment
-	: [\t\u000B\u000C\u0020\u00A0]
+	: '\\' [\r\n]
+	| [ \t]
 	;
 
-WhiteSpace
-	: WhiteSpaceFragment+
+Other: .;
+
+// #################################################
+// ##     variable name or function name mode     ##
+// #################################################
+
+mode NameMode;
+ReseredName
+	: 'this'
+	| 'super'
+	;
+
+VarName
+	: PermittedName -> popMode
 	;
 
 fragment
-LineEndFragment
-	: [\r\n]
+PermittedName
+	: [a-zA-Z] [_0-9a-zA-Z]*
+	| '_' [_0-9a-zA-Z]+
 	;
 
-LineEnd
-	: LineEndFragment+
+SkipChars
+	: SkipChar+ -> skip;
+
+fragment
+SkipChar
+	: '\\' [\r\n]
+	| [ \t]
 	;
 
-EscapedSymbol
-	: '\\' '#'
-	| '\\' LineEndFragment
-	| '\\' WhiteSpaceFragment
-	| '\\' '`'
-	| '\\' '$'
-	;
+Name_Other: . ;
 
-StartSubCmd
-	: '$('
-	;
+// ######################################
+// ##     double quote string mode     ##
+// ######################################
 
-StartInterp
-	: '${'
-	;
-
-mode InString;
-CloseString : '"' -> popMode;
+mode DoubleQuoteStringMode;
+CloseDoubleQuote : '"' -> popMode;
 
 StringElement
 	: DoubleQuoteStringChar+
@@ -254,25 +307,94 @@ DoubleEscapeSequence	// TODO: unicode escape
 	: '\\' [$btnfr"`\\]
 	;
 
-InnerCmd
-	: '$' InnerCmdBody
+StartInterp
+	: '${' -> pushMode(DEFAULT_MODE)
 	;
 
-fragment
-InnerCmdBody
-	: '(' ( ~[()] | InnerCmdBody)+ ')'
-	;
-
-InnerExpr
-	: '$' InnerExprBody
-	;
-
-fragment
-InnerExprBody
-	: '{' ( ~[{}] | InnerExprBody)+ '}'
+String_StartSubCmd
+	: StartSubCmd {this.enterStmt = true;} -> pushMode(DEFAULT_MODE), type(StartSubCmd)
 	;
 
 InnerCmdBackQuote
-	: BackquotedLiteral
+	: BackquoteLiteral -> type(BackquoteLiteral)
 	;
 
+InnerName
+	: AppliedName -> type(AppliedName)
+	;
+
+String_Other: .;
+
+// ##########################
+// ##     command mode     ##
+// ##########################
+
+mode CommandMode;
+// part of command argument
+CmdArgPart
+	: CommandChar+
+	;
+
+CmdArgPart_String
+	: StringLiteral -> type(StringLiteral)
+	;
+
+CmdArgPart_OpenDoubleQuote
+	: '"' -> type(OpenDoubleQuote), pushMode(DoubleQuoteStringMode)
+	;
+
+CmdArgPart_StartInterp
+	: StartInterp -> type(StartInterp), pushMode(DEFAULT_MODE)
+	;
+
+CmdArgPArt_StartSubCmd
+	: StartSubCmd {this.enterStmt = true;} -> pushMode(DEFAULT_MODE), type(StartSubCmd)
+	;
+
+CmdArgPart_BackquoteLiteral
+	: BackquoteLiteral -> type(BackquoteLiteral)
+	;
+
+CmdArgPart_InnerName
+	: InnerName -> type(AppliedName)
+	;
+
+CmdSep
+	: [ \t]+
+	;
+
+RedirectOp
+	: '<'
+	| '>'
+	| '1>'
+	| '1>>'
+	| '>>'
+	| '2>'
+	| '2>>'
+	| '>&'
+	| '&>'
+	| '&>>'
+	;
+
+RedirectOpNoArg
+	: '2>&1'
+	;
+
+Pipe       : '|' {this.enterStmt = true;} -> popMode;
+Background : '&';
+OrList     : '||' {this.enterStmt = true;} -> popMode;
+AndList    : '&&' {this.enterStmt = true;} -> popMode;
+
+Cmd_LineEnd
+	: LineEnd {this.enterStmt = true;} -> type(LineEnd), popMode
+	;
+
+Cmd_NewLine
+	: NewLine {this.enterStmt = true;} -> type(NewLine), popMode
+	;
+
+Cmd_RightParenthese
+	: RightParenthese -> type(RightParenthese), popMode, popMode
+	;
+
+Cmd_Other: .;

@@ -6,6 +6,7 @@ import java.util.List;
 import org.antlr.v4.runtime.Token;
 
 import dshell.annotation.ObjectReference;
+import dshell.internal.lib.Utils;
 import dshell.internal.parser.ParserUtils.ArgDecl;
 import dshell.internal.parser.ParserUtils.ArgsDecl;
 import dshell.internal.parser.ParserUtils.Arguments;
@@ -437,7 +438,7 @@ public abstract class Node {
 
 		public SymbolNode(Token token) {
 			super(token);
-			this.symbolName = this.token.getText();
+			this.symbolName = resolveName(token);
 		}
 
 		public String getSymbolName() {
@@ -914,10 +915,10 @@ public abstract class Node {
 		private final List<ArgumentNode> argNodeList;
 		private final List<GenericPair<Integer, ExprNode>> redirOptionList;
 
-		protected ProcessNode(Token token, String commandPath) {
+		protected ProcessNode(Token token) {
 			super(token);
 			this.argNodeList = new ArrayList<>();
-			this.commandPath = commandPath;
+			this.commandPath = Utils.resolveHome(ArgumentNode.unescapeCommandString(token));
 			this.redirOptionList = new ArrayList<>(5);
 		}
 
@@ -969,8 +970,8 @@ public abstract class Node {
 			this.addArgSegment(node);
 		}
 
-		public void addTokenAsArgSegment(Token segmentToken) {
-			String tokenText = segmentToken.getText();
+		public static String unescapeCommandString(Token token) {
+			String tokenText = token.getText();
 			StringBuilder sBuilder = new StringBuilder();
 			final int size = tokenText.length();
 			for(int i = 0; i < size; i++) {
@@ -984,7 +985,16 @@ public abstract class Node {
 				}
 				sBuilder.append(ch);
 			}
-			this.addArgSegment(new StringValueNode(sBuilder.toString()));
+			return sBuilder.toString();
+		}
+
+		/**
+		 * create string value node for command argument
+		 * @param segmentToken
+		 * @return
+		 */
+		public static StringValueNode createStringValueNode(Token token) {
+			return new StringValueNode(unescapeCommandString(token));
 		}
 
 		/**
@@ -1401,7 +1411,7 @@ public abstract class Node {
 
 		public ForInNode(Token token, Token nameToken, ExprNode exprNode, Node blockNode) {
 			super(token);
-			this.initName = nameToken.getText();
+			this.initName = resolveName(nameToken);
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 			this.blockNode = (BlockNode) this.setNodeAsChild(blockNode);
 		}
@@ -2095,5 +2105,11 @@ public abstract class Node {
 		public <T> T accept(NodeVisitor<T> visitor) { // do not call it
 			throw new RuntimeException("RootNode do not support NodeVisitor");
 		}
+	}
+
+	// helper utilities
+	public static String resolveName(Token token) {
+		String name = token.getText();
+		return name.startsWith("$") ? name.substring(1) : name;
 	}
 }

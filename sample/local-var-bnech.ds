@@ -1,14 +1,14 @@
 var a = 0
 
-function f() {
+function f(): int {
 	var a = 0
 	let count = 100000
-	for(var i = 0; i < count; i = i + 1) {
-		for(var j = 0; j < count; j = j + 1) {
-			a = a + 1
+	for(var i = 0; $i < count; $i++) {
+		for(var j = 0; $j < $count; $j++) {
+			$a = $a + 1
 		}
 	}
-	return a
+	return $a
 }
 
-log ${f()}
+log ${$f()}

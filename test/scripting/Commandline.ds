@@ -1,10 +1,8 @@
-import-command basename
-
 function func() {
-  for(arg in ARGV) {
-	var a = "$(basename $arg)"
-	assert(a == "Commandline.ds")
-  }
+	for($arg in $ARGV) {
+		var a = "$(basename $arg)"
+		assert($a == "Commandline.ds")
+	}
 }
 
-func()
+$func()

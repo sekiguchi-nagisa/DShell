@@ -53,8 +53,6 @@ public interface ExecutionEngine {
 	 */
 	public void loadDShellRC();
 
-	public void importCommandsFromPath();
-
 	public static class EngineConfig {
 		private EnumSet<EngineConfigRule> ruleSet;
 

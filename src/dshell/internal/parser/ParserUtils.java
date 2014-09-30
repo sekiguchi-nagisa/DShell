@@ -5,14 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Pair;
 
-import dshell.internal.parser.Node.ArgumentNode;
 import dshell.internal.parser.Node.BlockNode;
-import dshell.internal.parser.Node.CastNode;
 import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
 import dshell.internal.parser.Node.SymbolNode;
@@ -98,7 +94,7 @@ public class ParserUtils {
 		private final String name;
 
 		public CatchedException(Token token) {
-			this.name = token.getText();
+			this.name = Node.resolveName(token);
 			this.typeSymbol = null;
 		}
 
@@ -193,18 +189,6 @@ public class ParserUtils {
 		}
 	}
 
-	public static class JoinedToken extends CommonToken {
-		private static final long serialVersionUID = 1L;
-
-		public JoinedToken(Token startToken, Token stopToken) {
-			super(new Pair<>(startToken.getTokenSource(), startToken.getInputStream()), 
-					0, 
-					startToken.getChannel(), 
-					startToken.getStartIndex(), 
-					stopToken.getStopIndex());
-		}
-	}
-
 	public static class RedirOption extends GenericPair<Integer, ExprNode> {
 		// definition of redirect option.
 		public final static int FromFile        = 0; // <
@@ -220,28 +204,24 @@ public class ParserUtils {
 
 		static {
 			optionMap.put("<",    FromFile);
-			optionMap.put("1>",   To1File);
 			optionMap.put(">",    To1File);
+			optionMap.put("1>",   To1File);
 			optionMap.put("1>>",  To1FileAppend);
 			optionMap.put(">>",   To1FileAppend);
 			optionMap.put("2>",   To2File);
 			optionMap.put("2>>",  To2FileAppend);
-			optionMap.put("2>&1", Merge2To1);
+			optionMap.put("2>&1", Merge2To1);	//has no argument
 			optionMap.put(">&",   ToFileAnd);
 			optionMap.put("&>",   ToFileAnd);
 			optionMap.put("&>>",  AndToFileAppend);
 		}
 
-		public RedirOption(Token startToken, Token stopToken) {
-			this(startToken, stopToken, new Node.StringValueNode(""));
-		}
-
-		public RedirOption(Token startToken, Token stopToken, ExprNode targetNode) {
-			this(new JoinedToken(startToken, stopToken), targetNode);
-		}
-
 		public RedirOption(Token token, ExprNode targetNode) {
 			super(optionMap.get(token.getText()), targetNode);
+		}
+
+		public RedirOption(Token token) {
+			this(token, new Node.StringValueNode(""));
 		}
 	}
 
@@ -253,7 +233,6 @@ public class ParserUtils {
 		dshellParser childParser = new dshellParser(null);
 		childParser.removeErrorListeners();
 		childParser.addErrorListener(ParserErrorListener.getInstance());
-		childParser.setCmdScope(parser.getCmdScope());
 
 		// start parsing
 		ChildStream input = new ChildStream(token, 1, 1);
@@ -262,85 +241,5 @@ public class ParserUtils {
 		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
 		childParser.setTokenStream(tokenStream);
 		return new Node.InnerTaskNode(childParser.commandListExpression().node);
-	}
-
-	public static ExprNode resolveInterpolation(Token token, dshellParser parser) {
-		// init child parser
-		dshellLexer childLexer = new dshellLexer(null);
-		childLexer.removeErrorListeners();
-		childLexer.addErrorListener(ParserErrorListener.getInstance());
-		dshellParser childParser = new dshellParser(null);
-		childParser.removeErrorListeners();
-		childParser.addErrorListener(ParserErrorListener.getInstance());
-		childParser.setCmdScope(parser.getCmdScope());
-
-		// prepare lexer, parser
-		ChildStream input = new ChildStream(token, 0, 0);
-		childLexer.setLine(token.getLine());
-		childLexer.setInputStream(input);
-		CommonTokenStream tokenStream = new CommonTokenStream(childLexer);
-		childParser.setTokenStream(tokenStream);
-
-		// start parsing
-		String tokenText = token.getText();
-		if(tokenText.startsWith("$(")) {
-			return childParser.substitutedCommand().node;
-		}
-		else if(tokenText.startsWith("${")) {
-			return childParser.interpolation().node;
-		}
-		throw new RuntimeException("unsupported interpolation: " + tokenText);
-	}
-
-	/**
-	 * connect tokens and create argument node
-	 * @param tokenList
-	 * @return
-	 */
-	public static ArgumentNode toCommandArg(List<Token> tokenList, dshellParser parser) {
-		ArgumentNode node = new ArgumentNode(tokenList.get(0));
-		final int size = tokenList.size();
-		List<Token> tokenBuffer = new ArrayList<>();
-		for(int i = 0; i < size; i++) {
-			Token curToken = tokenList.get(i);
-			switch(curToken.getType()) {
-			case dshellParser.Dollar:
-				int nextIndex = i + 1;
-				if(nextIndex < size && tokenList.get(nextIndex).getType() == dshellParser.Identifier) {
-					flushTokenBuffer(node, tokenBuffer);
-					Token nextToken = tokenList.get(++i);
-					node.addArgSegment(CastNode.toString(new SymbolNode(nextToken)));
-				} else {
-					tokenBuffer.add(curToken);
-				}
-				break;
-			case dshellParser.StringLiteral:
-				flushTokenBuffer(node, tokenBuffer);
-				node.addArgSegment(new Node.StringValueNode(curToken));
-				break;
-			case dshellParser.BackquotedLiteral:
-				flushTokenBuffer(node, tokenBuffer);
-				node.addArgSegment(parseBackquotedLiteral(curToken, parser));
-				break;
-			case dshellParser.Dollar_At:
-				flushTokenBuffer(node, tokenBuffer);
-				node.addArgSegment(new Node.SpecialCharNode(curToken));
-				break;
-			default:
-				tokenBuffer.add(curToken);
-				break;
-			}
-		}
-		flushTokenBuffer(node, tokenBuffer);
-		return node;
-	}
-
-	private static void flushTokenBuffer(ArgumentNode node, List<Token> tokenBuffer) {
-		final int bufferSize = tokenBuffer.size();
-		if(bufferSize > 0) {
-			Token joinedToken = new JoinedToken(tokenBuffer.get(0), tokenBuffer.get(bufferSize - 1));
-			node.addTokenAsArgSegment(joinedToken);
-		}
-		tokenBuffer.clear();
 	}
 }

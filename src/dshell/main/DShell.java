@@ -35,7 +35,6 @@ public class DShell {
 	}
 
 	protected ExecutionMode mode;
-	protected boolean autoImportCommand = true;
 	private final boolean enablePseudoTerminal;
 	private final EngineConfig config;
 	private String specificArg = null;
@@ -72,11 +71,6 @@ public class DShell {
 		.addOption("--debug", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().setDebugMode(true);
-			}
-		})
-		.addOption("--disable-auto-import", new OptionListener() {
-			@Override public void invoke(String arg) {
-				autoImportCommand = false;
 			}
 		})
 		.addOption("--inspect-parser", new OptionListener() {
@@ -164,9 +158,6 @@ public class DShell {
 	protected void runInteractiveMode(ExecutionEngine engine, AbstractConsole console) {
 		String line = null;
 		this.showVersionInfo();
-		if(this.autoImportCommand) {
-			engine.importCommandsFromPath();
-		}
 		engine.loadDShellRC();
 		while((line = console.readLine()) != null) {
 			if(line.equals("")) {
