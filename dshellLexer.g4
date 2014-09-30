@@ -234,7 +234,7 @@ LineEnd
 	;
 
 NewLine
-	: [\n\r] [ \t\r\n]* {this.enterStmt = true;}
+	: [\n\r] [ \t\r\n]* {this.enterStmt = true;} -> channel(HIDDEN)
 	;
 
 // comment and space
