@@ -78,6 +78,10 @@ public interface ExecutionEngine {
 			this.ruleSet.add(EngineConfigRule.bytecodeDump);
 		}
 
+		public void enableOnlyParsing() {
+			this.ruleSet.add(EngineConfigRule.onlyParsing);
+		}
+
 		public boolean is(EngineConfigRule rule) {
 			return this.ruleSet.contains(rule);
 		}
@@ -87,6 +91,8 @@ public interface ExecutionEngine {
 		parserInspect,
 		parserTrace,
 		astDump,
-		bytecodeDump;
+		bytecodeDump,
+		onlyParsing,
+		;
 	}
 }

@@ -183,6 +183,10 @@ public class DShellEngineFactory implements EngineFactory {
 			if(this.config.is(EngineConfigRule.astDump)) {
 				ASTDumper.getInstance().convertToJson(checkedNode);
 			}
+			if(this.config.is(EngineConfigRule.onlyParsing)) {
+				System.out.println("=== only parsing ===");
+				return true;
+			}
 
 			/**
 			 * code generation

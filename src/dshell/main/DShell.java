@@ -99,6 +99,11 @@ public class DShell {
 				config.enableByteCodeDump();
 			}
 		})
+		.addOption("--only-parsing", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.enableOnlyParsing();
+			}
+		})
 		.addOption("--logging:file", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.file, arg);
