@@ -323,6 +323,10 @@ InnerName
 	: AppliedName -> type(AppliedName)
 	;
 
+InnerSpecialName
+	: SpecialName -> type(SpecialName)
+	;
+
 String_Other: .;
 
 // ##########################
@@ -355,8 +359,12 @@ CmdArgPart_BackquoteLiteral
 	: BackquoteLiteral -> type(BackquoteLiteral)
 	;
 
-CmdArgPart_InnerName
-	: InnerName -> type(AppliedName)
+CmdArgPart_AppliedName
+	: AppliedName -> type(AppliedName)
+	;
+
+CmdArgPart_SpecialName
+	: SpecialName -> type(SpecialName)
 	;
 
 CmdSep

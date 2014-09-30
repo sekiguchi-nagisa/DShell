@@ -378,7 +378,6 @@ commandArg returns [Node.ArgumentNode node]
 commandArgSeg returns [Node.ExprNode node]
 	: CmdArgPart {$node = Node.ArgumentNode.createStringValueNode($CmdArgPart);}
 	| StringLiteral { $node = new Node.StringValueNode($StringLiteral);}
-	| symbol {$node = $symbol.node;}
 	| substitutedCommand {$node = $substitutedCommand.node;}
 	| interpolation {$node = $interpolation.node;}
 	| stringExpr {$node = $stringExpr.node;}
@@ -425,7 +424,7 @@ primaryExpression returns [Node.ExprNode node]
 	;
 
 symbol returns [Node.ExprNode node]
-	: AppliedName {$node = new Node.SymbolNode($AppliedName);}
+	: AppliedName { $node = new Node.SymbolNode($AppliedName);}
 	;
 
 literal returns [Node.ExprNode node]
@@ -433,6 +432,7 @@ literal returns [Node.ExprNode node]
 	| FloatLiteral {$node = new Node.FloatValueNode($FloatLiteral);}
 	| BooleanLiteral {$node = new Node.BooleanValueNode($BooleanLiteral);}
 	| StringLiteral {$node = new Node.StringValueNode($StringLiteral);}
+	| SpecialName {$node = new Node.SpecialCharNode($SpecialName);}
 	| arrayLiteral {$node = $arrayLiteral.node;}
 	| mapLiteral {$node = $mapLiteral.node;}
 	| pairLiteral {$node = $pairLiteral.node;}
@@ -496,7 +496,9 @@ argumentList returns [ParserUtils.Arguments args]
 	;
 
 interpolation returns [Node.ExprNode node]
-	: StartInterp expression RightBrace { $node = Node.CastNode.toString($expression.node); }
+	: symbol { $node = Node.CastNode.toString($symbol.node); }
+	| SpecialName { $node = new Node.SpecialCharNode($SpecialName);}
+	| StartInterp expression RightBrace { $node = Node.CastNode.toString($expression.node); }
 	;
 
 stringExpr returns [Node.StringExprNode node]
