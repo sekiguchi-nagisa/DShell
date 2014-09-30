@@ -3,7 +3,7 @@ var a = 0
 function f(): int {
 	var a = 0
 	let count = 100000
-	for(var i = 0; $i < count; $i++) {
+	for(var i = 0; $i < $count; $i++) {
 		for(var j = 0; $j < $count; $j++) {
 			$a = $a + 1
 		}
