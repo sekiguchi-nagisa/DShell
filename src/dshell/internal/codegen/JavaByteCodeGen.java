@@ -35,12 +35,12 @@ import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
 import dshell.internal.parser.Node.ConstructorNode;
 import dshell.internal.parser.Node.ContinueNode;
-import dshell.internal.parser.Node.ElementGetterNode;
+import dshell.internal.parser.Node.IndexNode;
 import dshell.internal.parser.Node.EmptyBlockNode;
 import dshell.internal.parser.Node.EmptyNode;
 import dshell.internal.parser.Node.ExportEnvNode;
 import dshell.internal.parser.Node.ExprNode;
-import dshell.internal.parser.Node.FieldGetterNode;
+import dshell.internal.parser.Node.AccessNode;
 import dshell.internal.parser.Node.FloatValueNode;
 import dshell.internal.parser.Node.ForInNode;
 import dshell.internal.parser.Node.ForNode;
@@ -326,7 +326,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(ElementGetterNode node) {
+	public Void visit(IndexNode node) {
 		this.generateCode(node.getRecvNode());
 		this.generateCode(node.getIndexNode());
 		node.getGetterHandle().call(this.getCurrentMethodBuilder());
@@ -334,7 +334,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	@Override
-	public Void visit(FieldGetterNode node) {
+	public Void visit(AccessNode node) {
 		this.generateCode(node.getRecvNode());
 		node.getHandle().callGetter(this.getCurrentMethodBuilder());
 		return null;
@@ -416,7 +416,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	}
 
 	protected void generateAsMethodCall(ApplyNode node) {
-		FieldGetterNode getterNode = (FieldGetterNode) node.getRecvNode();
+		AccessNode getterNode = (AccessNode) node.getRecvNode();
 		this.generateCode(getterNode.getRecvNode());
 		for(Node paramNode : node.getArgList()) {
 			this.generateCode(paramNode);
@@ -930,7 +930,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		/**
 		 * assign to element
 		 */
-		if(leftNode instanceof ElementGetterNode) {
+		if(leftNode instanceof IndexNode) {
 			this.generateAssignToElement(node);
 			return null;
 		}
@@ -947,8 +947,8 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		/**
 		 * assign to field
 		 */
-		} else if(leftNode instanceof FieldGetterNode) {
-			FieldGetterNode getterNode = (FieldGetterNode) leftNode;
+		} else if(leftNode instanceof AccessNode) {
+			AccessNode getterNode = (AccessNode) leftNode;
 			this.generateCode(getterNode.getRecvNode());
 			this.generateRightValue(node);
 			getterNode.getHandle().callSetter(mBuilder);
@@ -958,7 +958,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	private void generateAssignToElement(AssignNode node) {
 		MethodBuilder mBuilder = this.getCurrentMethodBuilder();
-		ElementGetterNode leftNode = (ElementGetterNode) node.getLeftNode();
+		IndexNode leftNode = (IndexNode) node.getLeftNode();
 		MethodHandle handle = node.getHandle();
 		if(handle == null) {
 			this.generateCode(leftNode.getRecvNode());

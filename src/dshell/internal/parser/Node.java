@@ -472,7 +472,7 @@ public abstract class Node {
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	public static class ElementGetterNode extends AssignableNode {
+	public static class IndexNode extends AssignableNode {
 		private final ExprNode recvNode;
 		private final ExprNode indexNode;
 
@@ -486,7 +486,7 @@ public abstract class Node {
 		 */
 		private MethodHandle setterHandle;
 
-		public ElementGetterNode(Token token, ExprNode recvNode, ExprNode indexNode) {
+		public IndexNode(Token token, ExprNode recvNode, ExprNode indexNode) {
 			super(token);
 			this.recvNode = this.setExprNodeAsChild(recvNode);
 			this.indexNode = this.setExprNodeAsChild(indexNode);
@@ -527,12 +527,12 @@ public abstract class Node {
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	public static class FieldGetterNode extends AssignableNode {
+	public static class AccessNode extends AssignableNode {
 		private final ExprNode recvNode;
 		private final String fieldName;
 		private FieldHandle handle;
 
-		public FieldGetterNode(ExprNode recvNode, Token token) {
+		public AccessNode(ExprNode recvNode, Token token) {
 			super(token);
 			this.recvNode = this.setExprNodeAsChild(recvNode);
 			this.fieldName = this.token.getText();
@@ -565,7 +565,7 @@ public abstract class Node {
 	 * @author skgchxngsxyz-osx
 	 *
 	 */
-	public static class CastNode extends ExprNode {	//FIXME:
+	public static class CastNode extends ExprNode {
 		/**
 		 * cast op definition.
 		 */
@@ -581,14 +581,22 @@ public abstract class Node {
 		private final ExprNode exprNode;
 		private int castOp = NOP;
 
-		public CastNode(ExprNode exprNode, TypeSymbol targetTypeSymbol) {
-			super(targetTypeSymbol != null ? targetTypeSymbol.getToken() : null);
+		/**
+		 * 
+		 * @param exprNode
+		 * @param token
+		 * may be null
+		 * @param targetTypeSymbol
+		 * may be null
+		 */
+		public CastNode(ExprNode exprNode, Token token, TypeSymbol targetTypeSymbol) {
+			super(token);
 			this.targetTypeSymbol = targetTypeSymbol;
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 		}
 
 		private CastNode(ExprNode exprNode) {
-			this(exprNode, null);
+			this(exprNode, null, null);
 		}
 
 		public DSType resolveTargetType(TypePool pool) {
@@ -677,7 +685,7 @@ public abstract class Node {
 		private DSType targetType;
 		private int opType;
 
-		public InstanceofNode(Token token, ExprNode exprNode, TypeSymbol targetTypeSymbol) {
+		public InstanceofNode(ExprNode exprNode, Token token, TypeSymbol targetTypeSymbol) {
 			super(token);
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 			this.typeSymbol = targetTypeSymbol;
@@ -720,7 +728,7 @@ public abstract class Node {
 		private OperatorHandle handle;
 
 		/**
-		 * For prefix op
+		 * For unary op
 		 * @param token
 		 * - operator token
 		 * @param node
@@ -742,17 +750,9 @@ public abstract class Node {
 		 * @param rightNode
 		 * - binary right
 		 */
-		public OperatorCallNode(Token token, ExprNode leftNode, ExprNode rightNode) {
+		public OperatorCallNode(ExprNode leftNode, Token token, ExprNode rightNode) {
 			super(token);
 			this.funcName = this.token.getText();
-			this.argNodeList = new ArrayList<>(2);
-			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
-			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
-		}
-
-		private OperatorCallNode(String funcName, ExprNode leftNode, ExprNode rightNode) {
-			super(null);
-			this.funcName = funcName;
 			this.argNodeList = new ArrayList<>(2);
 			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
 			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
@@ -880,7 +880,7 @@ public abstract class Node {
 		private final ExprNode leftNode;
 		private final ExprNode rightNode;
 
-		public CondOpNode(Token token, ExprNode leftNode, ExprNode rightNode) {
+		public CondOpNode(ExprNode leftNode, Token token, ExprNode rightNode) {
 			super(token);
 			this.condOp = this.token.getText();
 			this.leftNode = this.setExprNodeAsChild(leftNode);
@@ -1769,7 +1769,7 @@ public abstract class Node {
 		 */
 		private ExprNode rightNode;
 
-		public AssignNode(Token token, ExprNode leftNode, ExprNode rightNode) {
+		public AssignNode(ExprNode leftNode, Token token, ExprNode rightNode) {
 			super(token);
 			this.assignOp = this.token.getText();
 			this.leftNode = this.setExprNodeAsChild(leftNode);
@@ -1782,7 +1782,7 @@ public abstract class Node {
 		 * @param leftNode
 		 */
 		public AssignNode(ExprNode leftNode, Token token) {
-			this(token, leftNode, new IntValueNode(1));
+			this(leftNode, token, new IntValueNode(1));
 		}
 
 		public String getAssignOp() {

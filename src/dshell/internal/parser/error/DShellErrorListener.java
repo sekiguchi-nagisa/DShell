@@ -41,7 +41,7 @@ public class DShellErrorListener implements ErrorListener {
 	protected ErrorMessage formatParseError(ParserException cause) {
 		RecognitionException e = cause.getCause();
 		dshellParser parser = cause.getParser();
-
+		
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append("invalid syntax");
 		if(e instanceof NoViableAltException) {
@@ -58,7 +58,7 @@ public class DShellErrorListener implements ErrorListener {
 		} else if(e instanceof InputMismatchException) {
 			IntervalSet expectedTokens = e.getExpectedTokens();
 			if(expectedTokens != null) {
-				sBuilder.append(", expect for: ");
+				sBuilder.append(", mismatch input. expect for: ");
 				sBuilder.append(expectedTokens.toString(parser.getTokenNames()));
 			}
 		}

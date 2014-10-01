@@ -24,12 +24,12 @@ import dshell.internal.parser.Node.CondOpNode;
 import dshell.internal.parser.Node.ConstructorCallNode;
 import dshell.internal.parser.Node.ConstructorNode;
 import dshell.internal.parser.Node.ContinueNode;
-import dshell.internal.parser.Node.ElementGetterNode;
+import dshell.internal.parser.Node.IndexNode;
 import dshell.internal.parser.Node.EmptyBlockNode;
 import dshell.internal.parser.Node.EmptyNode;
 import dshell.internal.parser.Node.ExportEnvNode;
 import dshell.internal.parser.Node.ExprNode;
-import dshell.internal.parser.Node.FieldGetterNode;
+import dshell.internal.parser.Node.AccessNode;
 import dshell.internal.parser.Node.FloatValueNode;
 import dshell.internal.parser.Node.ForInNode;
 import dshell.internal.parser.Node.ForNode;
@@ -451,7 +451,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	@Override
-	public Node visit(ElementGetterNode node) {	//FIXME: adhoc implementation.
+	public Node visit(IndexNode node) {	//FIXME: adhoc implementation.
 		this.checkType(node.getRecvNode());
 		DSType recvType = node.getRecvNode().getType();
 		String typeName = recvType.getTypeName();
@@ -470,7 +470,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	@Override
-	public Node visit(FieldGetterNode node) {
+	public Node visit(AccessNode node) {
 		ClassType recvType = this.checkAndGetClassType(node.getRecvNode());
 		FieldHandle handle = recvType.lookupFieldHandle(node.getFieldName());
 		if(handle == null) {
@@ -600,7 +600,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	 * @return
 	 */
 	protected Node checkTypeAsMethodCall(ApplyNode node) {
-		FieldGetterNode getterNode = (FieldGetterNode) node.getRecvNode();
+		AccessNode getterNode = (AccessNode) node.getRecvNode();
 		String methodName = getterNode.getFieldName();
 		ClassType recvType = this.checkAndGetClassType(getterNode.getRecvNode());
 		MethodHandle handle = recvType.lookupMethodHandle(methodName);
@@ -621,7 +621,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	@Override
 	public Node visit(ApplyNode node) {
-		if(node.getRecvNode() instanceof FieldGetterNode) {
+		if(node.getRecvNode() instanceof AccessNode) {
 			return this.checkTypeAsMethodCall(node);
 		}
 		return this.checkTypeAsFuncCall(node);
@@ -1000,7 +1000,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	}
 
 	private Node checkTypeAsAssignToElement(AssignNode node) {
-		ElementGetterNode getterNode = (ElementGetterNode) node.getLeftNode();
+		IndexNode getterNode = (IndexNode) node.getLeftNode();
 		this.checkIsAssignable(getterNode);
 
 		this.checkType(getterNode);
@@ -1055,7 +1055,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		/**
 		 * assign to element
 		 */
-		if(leftNode instanceof ElementGetterNode) {
+		if(leftNode instanceof IndexNode) {
 			return this.checkTypeAsAssignToElement(node);
 		}
 

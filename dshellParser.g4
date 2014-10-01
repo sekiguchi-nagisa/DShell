@@ -337,7 +337,7 @@ assignStatement returns [Node node]
 	: left=assignLeftExpression
 		({!hasNewLine()}? (
 			op=('=' | '+=' | '-=' | '*=' | '/=' | '%=') right=assingRightExpression
-				{$node = new Node.AssignNode($op, $left.node, $right.node);}
+				{$node = new Node.AssignNode($left.node, $op, $right.node);}
 		|	op=('++' | '--')
 				{$node = new Node.AssignNode($left.node, $op);}
 		))
@@ -347,15 +347,33 @@ assignLeftExpression returns [Node.ExprNode node]
 	: symbol {$node = $symbol.node;}
 		({!hasNewLine()}? (
 			Accessor VarName 
-				{$node = new Node.FieldGetterNode($node, $VarName);}
+				{$node = new Node.AccessNode($node, $VarName);}
 		|	LeftBracket i=expression RightBracket
-				{$node = new Node.ElementGetterNode($LeftBracket, $node, $i.node);}
+				{$node = new Node.IndexNode($LeftBracket, $node, $i.node);}
 		))*
 	;
 
 
 // expression definition.
 // command expression
+commandListExpression returns [Node.ExprNode node]
+	: orListCommand {$node = $orListCommand.node;}
+	;
+
+orListCommand returns [Node.ExprNode node]
+	: l=andListCommand {$node = $l.node;}
+		(CmdSep? op=OrList r=andListCommand
+			{$node = new Node.CondOpNode($node, $op, $r.node);}
+		)*
+	;
+
+andListCommand returns [Node.ExprNode node]
+	: l=commandExpression {$node = $l.node;}
+		(CmdSep? op=AndList r=commandListExpression
+			{$node = new Node.CondOpNode($node, $op, $r.node);}
+		)*
+	;
+
 commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> procList]
 	: a+=singleCommandExpr (CmdSep? Pipe a+=singleCommandExpr)* CmdSep? b+=Background?
 		{
@@ -381,13 +399,10 @@ singleCommandExpr returns [Node.ProcessNode node]	//FIXME:
 	;
 
 commandArg returns [Node.ArgumentNode node]
-	: a+=commandArgSeg+
-		{
-			$node = new Node.ArgumentNode($a.get(0).node);
-			for(int i = 1; i < $a.size(); i++) {
-				$node.addArgSegment($a.get(i).node);
-			}
-		}
+	: a=commandArgSeg {$node = new Node.ArgumentNode($a.node);}
+		(e=commandArgSeg
+			{$node.addArgSegment($e.node);}
+		)*
 	;
 
 commandArgSeg returns [Node.ExprNode node]
@@ -404,13 +419,6 @@ redirOption returns [ParserUtils.RedirOption option]
 	| CmdSep? RedirectOpNoArg { $option = new ParserUtils.RedirOption($RedirectOpNoArg); }
 	;
 
-commandListExpression returns [Node.ExprNode node]
-	: commandExpression { $node = $commandExpression.node; }
-	| left=commandListExpression CmdSep? AndList right=commandListExpression
-		{ $node = new Node.CondOpNode($AndList, $left.node, $right.node); }
-	| left=commandListExpression CmdSep? OrList right=commandListExpression
-		{ $node = new Node.CondOpNode($OrList, $left.node, $right.node); }
-	;
 
 // normal expression
 expression returns [Node.ExprNode node]
@@ -418,107 +426,78 @@ expression returns [Node.ExprNode node]
 	;
 
 condOrExpression returns [Node.ExprNode node]
-	: l=condAndExpression ({!hasNewLine()}? op+=COND_OR e+=condAndExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.CondOpNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=condAndExpression {$node = $l.node;}
+		({!hasNewLine()}? op=COND_OR e=condAndExpression
+			{$node = new Node.CondOpNode($node, $op, $e.node);}
+		)*
 	;
 
 condAndExpression returns [Node.ExprNode node]
-	: l=orExpression ({!hasNewLine()}? op+=COND_AND e+=orExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.CondOpNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=orExpression {$node = $l.node;}
+		({!hasNewLine()}? op=COND_AND e=orExpression
+			{$node = new Node.CondOpNode($node, $op, $e.node);}
+		)*
 	;
 
 orExpression returns [Node.ExprNode node]
-	: l=xorExpression ({!hasNewLine()}? op+=OR e+=xorExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=xorExpression {$node = $l.node;}
+		({!hasNewLine()}? op=OR e=xorExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 xorExpression returns [Node.ExprNode node]
-	: l=andExpression ({!hasNewLine()}? op+=XOR e+=andExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=andExpression {$node = $l.node;}
+		({!hasNewLine()}? op=XOR e=andExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 andExpression returns [Node.ExprNode node]
-	: l=equalityExpression ({!hasNewLine()}? op+=AND e+=equalityExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=equalityExpression {$node = $l.node;}
+		({!hasNewLine()}? op=AND e=equalityExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 equalityExpression returns [Node.ExprNode node]
-	: l=instanceofExpression ({!hasNewLine()}? op+=('==' | '!=' | '=~' | '!~') e+=instanceofExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=typeExpression {$node = $l.node;}
+		({!hasNewLine()}? op=('==' | '!=' | '=~' | '!~') e=typeExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
-	
-instanceofExpression returns [Node.ExprNode node]
-	: l=relationalExpression ({!hasNewLine()}? op+=Instanceof t+=typeName)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $t.size(); i++) {
-				$node = new Node.InstanceofNode($op.get(i), $node, $t.get(i).type);
-			}
-		}
+
+typeExpression returns [Node.ExprNode node]
+	: l=relationalExpression {$node = $l.node;}
+		({!hasNewLine()}? (
+			Instanceof typeName {$node = new Node.InstanceofNode($node, $Instanceof, $typeName.type);}
+		|	As typeName {$node = new Node.CastNode($node, $As, $typeName.type);}
+		))*
 	;
 
 relationalExpression returns [Node.ExprNode node]
-	: l=addExpression ({!hasNewLine()}? op+=(LeftAngleBracket | RightAngleBracket | LE | GE) e+=addExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=addExpression {$node = $l.node;}
+		({!hasNewLine()}? op=(LeftAngleBracket | RightAngleBracket | LE | GE) e=addExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 addExpression returns [Node.ExprNode node]
-	: l=mulExpression ({!hasNewLine()}? op+=(PLUS | MINUS) e+=mulExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=mulExpression {$node = $l.node;}
+		({!hasNewLine()}? op=(PLUS | MINUS) e=mulExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 mulExpression returns [Node.ExprNode node]
-	: l=unaryExpression ({!hasNewLine()}? op+=(MUL | DIV | MOD) e+=unaryExpression)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $e.size(); i++) {
-				$node = new Node.OperatorCallNode($op.get(i), $node, $e.get(i).node);
-			}
-		}
+	: l=unaryExpression {$node = $l.node;}
+		({!hasNewLine()}? op=(MUL | DIV | MOD) e=unaryExpression
+			{$node = new Node.OperatorCallNode($node, $op, $e.node);}
+		)*
 	;
 
 unaryExpression returns [Node.ExprNode node]
-	: (op+=(PLUS | MINUS | Not) {!hasNewLine()}?)* r=castExpression
+	: (op+=(PLUS | MINUS | Not) {!hasNewLine()}?)* r=applyOrGetExpression
 		{
 			$node = $r.node;
 			for(int i = $op.size() - 1; i > -1; i--) {
@@ -527,22 +506,12 @@ unaryExpression returns [Node.ExprNode node]
 		}
 	;
 
-castExpression returns [Node.ExprNode node]
-	: l=applyOrGetExpression ({!hasNewLine()}? As t+=typeName)*
-		{
-			$node = $l.node;
-			for(int i = 0; i < $t.size(); i++) {
-				$node = new Node.CastNode($node, $t.get(i).type);
-			}
-		}
-	;
-
 applyOrGetExpression returns [Node.ExprNode node]
 	: l=primaryExpression {$node = $l.node;}
 		({!hasNewLine()}? (
-			Accessor VarName {$node = new Node.FieldGetterNode($node, $VarName);}
+			Accessor VarName {$node = new Node.AccessNode($node, $VarName);}
 		|	LeftBracket i=expression RightBracket
-				{$node = new Node.ElementGetterNode($LeftBracket, $node, $i.node);}
+				{$node = new Node.IndexNode($LeftBracket, $node, $i.node);}
 		|	arguments {$node = new Node.ApplyNode($node, $arguments.args);}
 		))*
 	;
