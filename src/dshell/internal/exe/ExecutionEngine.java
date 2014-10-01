@@ -94,6 +94,10 @@ public interface ExecutionEngine {
 			this.ruleSet.add(EngineConfigRule.onlyParsing);
 		}
 
+		public void disableAssertion() {
+			this.ruleSet.add(EngineConfigRule.skipAssertion);
+		}
+
 		public boolean is(EngineConfigRule rule) {
 			return this.ruleSet.contains(rule);
 		}
@@ -105,6 +109,7 @@ public interface ExecutionEngine {
 		astDump,
 		bytecodeDump,
 		onlyParsing,
+		skipAssertion,
 		;
 	}
 }

@@ -98,22 +98,27 @@ public class DShell {
 				config.enableOnlyParsing();
 			}
 		})
-		.addOption("--logging:file", true, new OptionListener() {
+		.addOption("--disable-assertion", new OptionListener() {
+			@Override public void invoke(String arg) {
+				config.disableAssertion();
+			}
+		})
+		.addOption("--logging=file", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.file, arg);
 			}
 		})
-		.addOption("--logging:stdout", new OptionListener() {
+		.addOption("--logging=stdout", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.stdout);
 			}
 		})
-		.addOption("--logging:stderr", new OptionListener() {
+		.addOption("--logging=stderr", new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.stderr);
 			}
 		})
-		.addOption("--logging:syslog", true, new OptionListener() {
+		.addOption("--logging=syslog", true, new OptionListener() {
 			@Override public void invoke(String arg) {
 				RuntimeContext.getInstance().changeAppender(AppenderType.syslog, arg);
 			}

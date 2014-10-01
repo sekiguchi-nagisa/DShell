@@ -91,6 +91,11 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	protected final DShellClassLoader classLoader;
 	protected final Deque<MethodBuilder> methodBuilders;
 
+	/**
+	 * if false, not generate assert statement
+	 */
+	protected boolean enableAssert = true;
+
 	public JavaByteCodeGen(DShellClassLoader classLoader) {
 		this.classLoader = classLoader;
 		this.methodBuilders = new ArrayDeque<>();
@@ -179,6 +184,15 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		this.methodBuilders.peek().returnValue();
 		this.methodBuilders.pop().endMethod();
 		return classBuilder.generateClass(this.classLoader.createChild());
+	}
+
+	/**
+	 * enable or disable assertion
+	 * @param enableAssert
+	 * if true, enable assertion
+	 */
+	public void setAssertion(boolean enableAssert) {
+		this.enableAssert = enableAssert;
 	}
 
 	// visit api
@@ -639,8 +653,10 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 	@Override
 	public Void visit(AssertNode node) {
-		this.generateCode(node.getExprNode());
-		node.getHandle().call(this.getCurrentMethodBuilder());
+		if(this.enableAssert) {
+			this.generateCode(node.getExprNode());
+			node.getHandle().call(this.getCurrentMethodBuilder());
+		}
 		return null;
 	}
 
