@@ -7,7 +7,7 @@ options { tokenVocab=dshellLexer; }
 package dshell.internal.parser;
 import dshell.internal.parser.Node;
 import dshell.internal.parser.ParserUtils;
-import dshell.internal.parser.TypeSymbol;
+import dshell.internal.parser.TypeToken;
 }
 
 @members {
@@ -59,9 +59,9 @@ functionDeclaration returns [Node node]
 		{$node = new Node.FunctionNode($Function, $VarName, $returnType.type, $argumentsDeclaration.decl, $block.node);}
 	;
 
-returnType returns [TypeSymbol type]
+returnType returns [TypeToken type]
 	: typeAnnoPrefix typeNameWithVoid {$type = $typeNameWithVoid.type;}
-	| { $type = TypeSymbol.toVoid(); }
+	| { $type = TypeToken.toVoid(); }
 	;
 
 typeAnnoPrefix: {!hasNewLine()}? ':' {!hasNewLine()}?;
@@ -82,38 +82,27 @@ argumentDeclarationWithType returns [ParserUtils.ArgDecl arg]
 	: AppliedName typeAnnoPrefix typeName {$arg = new ParserUtils.ArgDecl($AppliedName, $typeName.type);}
 	;
 
-typeName returns [TypeSymbol type] locals [TypeSymbol[] types]
-	: Int        {$type = TypeSymbol.toPrimitive($Int);}
-	| Float      {$type = TypeSymbol.toPrimitive($Float);}
-	| Boolean    {$type = TypeSymbol.toPrimitive($Boolean);}
-	| Identifier {$type = TypeSymbol.toClass($Identifier);}
-	| Func openType aa=typeNameWithVoid paramTypes closeType
-	             {$type = TypeSymbol.toFunc($Func, $aa.type, $paramTypes.types);}
-	| Identifier openType a+=typeName (comma a+=typeName)* closeType
-		{
-			$types = new TypeSymbol[$a.size()];
-			for(int i = 0; i < $types.length; i++) {
-				$types[i] = $a.get(i).type;
-			}
-			$type = TypeSymbol.toGeneric($Identifier, $types);
-		}
+typeName returns [TypeToken type]
+	: Int        {$type = TypeToken.toPrimitive($Int);}
+	| Float      {$type = TypeToken.toPrimitive($Float);}
+	| Boolean    {$type = TypeToken.toPrimitive($Boolean);}
+	| Identifier {$type = TypeToken.toClass($Identifier);}
+	| Func openType r=typeNameWithVoid {$type = new TypeToken.FuncTypeToken($Func, $r.type);}
+		(typeSep openParamType a=typeName {((TypeToken.FuncTypeToken)$type).addParamTypeToken($a.type);}
+			( typeSep b=typeName 
+				{((TypeToken.FuncTypeToken)$type).addParamTypeToken($b.type);}
+			)* closeParamType
+		)? closeType
+	| Identifier openType {$type = new TypeToken.GenericTypeToken($Identifier);} 
+		a=typeName {((TypeToken.GenericTypeToken)$type).addElementTypeToken($a.type);}
+			(comma b=typeName
+				{((TypeToken.GenericTypeToken)$type).addElementTypeToken($b.type);}
+			)* closeType
 	;
 
-typeNameWithVoid returns [TypeSymbol type]
+typeNameWithVoid returns [TypeToken type]
 	: typeName {$type = $typeName.type;}
-	| Void {$type = TypeSymbol.toVoid($Void);}
-	;
-
-paramTypes returns [TypeSymbol[] types] locals [ParserUtils.ParamTypeResolver resolver]
-	: typeSep openParamType a+=typeName ( typeSep a+=typeName)* closeParamType
-		{
-			$resolver = new ParserUtils.ParamTypeResolver();
-			for(int i = 0; i < $a.size(); i++) {
-				$resolver.addTypeSymbol($a.get(i).type);
-			}
-			$types = $resolver.getTypeSymbols();
-		}
-	| { $resolver = new ParserUtils.ParamTypeResolver(); $types = $resolver.getTypeSymbols();}
+	| Void {$type = TypeToken.toVoid($Void);}
 	;
 
 openType       : {!hasNewLine()}? LeftAngleBracket  {!hasNewLine()}?;

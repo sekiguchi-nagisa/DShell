@@ -13,7 +13,6 @@ import dshell.internal.parser.Node.ExprNode;
 import dshell.internal.parser.Node.IfNode;
 import dshell.internal.parser.Node.SymbolNode;
 import dshell.internal.parser.SourceStream.ChildStream;
-import dshell.internal.parser.TypeSymbol.VoidTypeSymbol;
 import dshell.internal.parser.error.ParserErrorListener;
 import dshell.lang.GenericPair;
 
@@ -90,7 +89,7 @@ public class ParserUtils {
 	}
 
 	public static class CatchedException {
-		private TypeSymbol typeSymbol;
+		private TypeToken typeSymbol;
 		private final String name;
 
 		public CatchedException(Token token) {
@@ -98,7 +97,7 @@ public class ParserUtils {
 			this.typeSymbol = null;
 		}
 
-		public void setTypeSymbol(TypeSymbol typeSymbol) {
+		public void setTypeSymbol(TypeToken typeSymbol) {
 			this.typeSymbol = typeSymbol;
 		}
 
@@ -111,7 +110,7 @@ public class ParserUtils {
 		 * @return
 		 * - return null, if has no type annotation
 		 */
-		public TypeSymbol getTypeSymbol() {
+		public TypeToken getTypeSymbol() {
 			return this.typeSymbol;
 		}
 	}
@@ -134,9 +133,9 @@ public class ParserUtils {
 
 	public static class ArgDecl {
 		private final SymbolNode argDeclNode;
-		private final TypeSymbol typeSymbol;
+		private final TypeToken typeSymbol;
 
-		public ArgDecl(Token token, TypeSymbol typeSymbol) {
+		public ArgDecl(Token token, TypeToken typeSymbol) {
 			this.argDeclNode = new SymbolNode(token);
 			this.typeSymbol = typeSymbol;
 		}
@@ -145,7 +144,7 @@ public class ParserUtils {
 			return this.argDeclNode;
 		}
 
-		public TypeSymbol getTypeSymbol() {
+		public TypeToken getTypeSymbol() {
 			return this.typeSymbol;
 		}
 	}
@@ -163,29 +162,6 @@ public class ParserUtils {
 
 		public List<Node> getNodeList() {
 			return this.nodeList;
-		}
-	}
-
-	public static class ParamTypeResolver {
-		private final List<TypeSymbol> symbolList;
-
-		public ParamTypeResolver() {
-			this.symbolList = new ArrayList<>();
-		}
-
-		public void addTypeSymbol(TypeSymbol typeSymbol) {
-			if(!(typeSymbol instanceof VoidTypeSymbol)) {
-				this.symbolList.add(typeSymbol);
-			}
-		}
-
-		public TypeSymbol[] getTypeSymbols() {
-			int size = this.symbolList.size();
-			TypeSymbol[] symbols = new TypeSymbol[size];
-			for(int i = 0; i < size; i++) {
-				symbols[i] = this.symbolList.get(i);
-			}
-			return symbols;
 		}
 	}
 

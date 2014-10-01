@@ -576,7 +576,7 @@ public abstract class Node {
 		public final static int TO_STRING   = 4;
 		public final static int CHECK_CAST  = 5;
 
-		private final TypeSymbol targetTypeSymbol;
+		private final TypeToken targetTypeSymbol;
 		private String targetTypeName;	// used for string cast
 		private final ExprNode exprNode;
 		private int castOp = NOP;
@@ -589,7 +589,7 @@ public abstract class Node {
 		 * @param targetTypeSymbol
 		 * may be null
 		 */
-		public CastNode(ExprNode exprNode, Token token, TypeSymbol targetTypeSymbol) {
+		public CastNode(ExprNode exprNode, Token token, TypeToken targetTypeSymbol) {
 			super(token);
 			this.targetTypeSymbol = targetTypeSymbol;
 			this.exprNode = this.setExprNodeAsChild(exprNode);
@@ -681,11 +681,11 @@ public abstract class Node {
 		public static final int INSTANCEOF   = 2;
 
 		private final ExprNode exprNode;
-		private final TypeSymbol typeSymbol;
+		private final TypeToken typeSymbol;
 		private DSType targetType;
 		private int opType;
 
-		public InstanceofNode(ExprNode exprNode, Token token, TypeSymbol targetTypeSymbol) {
+		public InstanceofNode(ExprNode exprNode, Token token, TypeToken targetTypeSymbol) {
 			super(token);
 			this.exprNode = this.setExprNodeAsChild(exprNode);
 			this.typeSymbol = targetTypeSymbol;
@@ -835,11 +835,11 @@ public abstract class Node {
 	 *
 	 */
 	public static class ConstructorCallNode extends ExprNode {
-		private final TypeSymbol typeSymbol;
+		private final TypeToken typeSymbol;
 		private final List<ExprNode> argNodeList;
 		private ConstructorHandle handle;
 
-		public ConstructorCallNode(Token token, TypeSymbol typeSymbol, Arguments args) {
+		public ConstructorCallNode(Token token, TypeToken typeSymbol, Arguments args) {
 			super(token);
 			this.typeSymbol = typeSymbol;
 			this.argNodeList = new ArrayList<>();
@@ -848,7 +848,7 @@ public abstract class Node {
 			}
 		}
 
-		public TypeSymbol getTypeSymbol() {
+		public TypeToken getTypeSymbol() {
 			return this.typeSymbol;
 		}
 
@@ -1642,10 +1642,10 @@ public abstract class Node {
 	public static class CatchNode extends Node {
 		private ClassType exceptionType;
 		private final String exceptionName;
-		private final TypeSymbol exceptionTypeSymbol;
+		private final TypeToken exceptionTypeSymbol;
 		private final BlockNode catchBlockNode;
 
-		public CatchNode(Token token, String exceptionName, TypeSymbol typeSymbol, Node catchBlockNode) {
+		public CatchNode(Token token, String exceptionName, TypeToken typeSymbol, Node catchBlockNode) {
 			super(token);
 			this.exceptionName = exceptionName;
 			this.exceptionTypeSymbol = typeSymbol;
@@ -1657,7 +1657,7 @@ public abstract class Node {
 		 * @return
 		 * - return null, if has no type annotation.
 		 */
-		public TypeSymbol getTypeSymbol() {
+		public TypeToken getTypeSymbol() {
 			return this.exceptionTypeSymbol;
 		}
 
@@ -1827,13 +1827,13 @@ public abstract class Node {
 	 */
 	public static class FunctionNode extends Node {
 		private final String funcName;
-		private final List<TypeSymbol> paramTypeSymbolList;
+		private final List<TypeToken> paramTypeSymbolList;
 		private final List<SymbolNode> nodeList;
 		private final BlockNode blockNode;
-		private final TypeSymbol returnTypeSymbol;
+		private final TypeToken returnTypeSymbol;
 		private FuncHolderType holderType;
 
-		public FunctionNode(Token token, Token nameToken, TypeSymbol returnTypeSymbol, ArgsDecl decls, Node blockNode) {
+		public FunctionNode(Token token, Token nameToken, TypeToken returnTypeSymbol, ArgsDecl decls, Node blockNode) {
 			super(token);
 			this.funcName = nameToken.getText();
 			this.returnTypeSymbol = returnTypeSymbol;
@@ -1854,7 +1854,7 @@ public abstract class Node {
 			return this.nodeList;
 		}
 
-		public List<TypeSymbol> getParamTypeSymbolList() {
+		public List<TypeToken> getParamTypeSymbolList() {
 			return this.paramTypeSymbolList;
 		}
 
@@ -1862,7 +1862,7 @@ public abstract class Node {
 			return this.blockNode;
 		}
 
-		public TypeSymbol getReturnTypeSymbol() {
+		public TypeToken getReturnTypeSymbol() {
 			return this.returnTypeSymbol;
 		}
 
@@ -1953,7 +1953,7 @@ public abstract class Node {
 	 */
 	public static class ConstructorNode extends Node {
 		private DSType recvType;
-		private final List<TypeSymbol> typeSymbolList;
+		private final List<TypeToken> typeSymbolList;
 		private final List<SymbolNode> nodeList;
 		private final BlockNode blockNode;
 

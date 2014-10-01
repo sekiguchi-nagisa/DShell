@@ -14,13 +14,13 @@ import dshell.internal.type.DSType;
  * @author skgchxngsxyz-opensuse
  *
  */
-public abstract class TypeSymbol {
+public abstract class TypeToken {
 	/**
 	 * represent type token.
 	 */
 	protected final Token token;
 
-	protected TypeSymbol(Token token) {
+	protected TypeToken(Token token) {
 		this.token = token;
 	}
 
@@ -42,32 +42,24 @@ public abstract class TypeSymbol {
 	 */
 	public abstract DSType toType(TypePool pool);
 
-	public static TypeSymbol toPrimitive(Token token) {
-		return new PrimitiveTypeSymbol(token);
+	public static TypeToken toPrimitive(Token token) {
+		return new PrimitiveTypeToken(token);
 	}
 
-	public static TypeSymbol toVoid(Token token) {
-		return new VoidTypeSymbol(token);
+	public static TypeToken toVoid(Token token) {
+		return new VoidTypeToken(token);
 	}
 
-	public static TypeSymbol toVoid() {
-		return new VoidTypeSymbol(null);
+	public static TypeToken toVoid() {
+		return new VoidTypeToken(null);
 	}
 
-	public static TypeSymbol toClass(Token token) {
-		return new ClassTypeSymbol(token);
+	public static TypeToken toClass(Token token) {
+		return new ClassTypeToken(token);
 	}
 
-	public static TypeSymbol toFunc(Token token, TypeSymbol returnTypeSymbol, TypeSymbol[] paramTypeSymbols) {
-		return new FuncTypeSymbol(token, returnTypeSymbol, paramTypeSymbols);
-	}
-
-	public static TypeSymbol toGeneric(Token token, TypeSymbol[] typeSymbols) {
-		return new GenericTypeSymbol(token, typeSymbols);
-	}
-
-	public static class PrimitiveTypeSymbol extends TypeSymbol {
-		private PrimitiveTypeSymbol(Token token) {
+	public static class PrimitiveTypeToken extends TypeToken {
+		public PrimitiveTypeToken(Token token) {
 			super(token);
 		}
 
@@ -82,8 +74,8 @@ public abstract class TypeSymbol {
 		}
 	}
 
-	public static class VoidTypeSymbol extends TypeSymbol {
-		private VoidTypeSymbol(Token token) {
+	public static class VoidTypeToken extends TypeToken {
+		public VoidTypeToken(Token token) {
 			super(token);
 		}
 
@@ -98,8 +90,8 @@ public abstract class TypeSymbol {
 		}
 	}
 
-	public static class ClassTypeSymbol extends TypeSymbol {
-		private ClassTypeSymbol(Token token) {
+	public static class ClassTypeToken extends TypeToken {
+		public ClassTypeToken(Token token) {
 			super(token);
 		}
 
@@ -114,21 +106,25 @@ public abstract class TypeSymbol {
 		}
 	}
 
-	public static class FuncTypeSymbol extends TypeSymbol {
-		private final TypeSymbol returnTypeSymbol;
-		private final TypeSymbol[] paramtypeSymbols;
+	public static class FuncTypeToken extends TypeToken {
+		private final TypeToken returnTypeToken;
+		private final List<TypeToken> paramtypeTokenList;
 
-		private FuncTypeSymbol(Token token, TypeSymbol returnTypeSymbol, TypeSymbol[] paramTypeSymbols) {
+		public FuncTypeToken(Token token, TypeToken returnTypeSymbol) {
 			super(token);
-			this.returnTypeSymbol = returnTypeSymbol;
-			this.paramtypeSymbols = paramTypeSymbols;
+			this.returnTypeToken = returnTypeSymbol;
+			this.paramtypeTokenList = new ArrayList<>();
+		}
+
+		public void addParamTypeToken(TypeToken typeToken) {
+			this.paramtypeTokenList.add(typeToken);
 		}
 
 		@Override
 		public DSType toType(TypePool pool) {
-			DSType returnType = this.returnTypeSymbol.toType(pool);
-			List<DSType> paramTypeList = new ArrayList<>(this.paramtypeSymbols.length);
-			for(TypeSymbol typeSymbol : this.paramtypeSymbols) {
+			DSType returnType = this.returnTypeToken.toType(pool);
+			List<DSType> paramTypeList = new ArrayList<>(this.paramtypeTokenList.size());
+			for(TypeToken typeSymbol : this.paramtypeTokenList) {
 				paramTypeList.add(typeSymbol.toType(pool));
 			}
 			try {
@@ -144,14 +140,15 @@ public abstract class TypeSymbol {
 			StringBuilder sBuilder = new StringBuilder();
 			sBuilder.append(this.token.toString());
 			sBuilder.append('<');
-			sBuilder.append(returnTypeSymbol.toString());
-			if(this.paramtypeSymbols.length > 0) {
+			sBuilder.append(returnTypeToken.toString());
+			final int size = this.paramtypeTokenList.size();
+			if(size > 0) {
 				sBuilder.append(",[");
-				for(int i = 0; i < this.paramtypeSymbols.length; i++) {
+				for(int i = 0; i < size; i++) {
 					if(i > 0) {
 						sBuilder.append(',');
 					}
-					sBuilder.append(this.paramtypeSymbols[i].toString());
+					sBuilder.append(this.paramtypeTokenList.get(i).toString());
 				}
 				sBuilder.append(']');
 			}
@@ -160,18 +157,22 @@ public abstract class TypeSymbol {
 		}
 	}
 
-	public static class GenericTypeSymbol extends TypeSymbol {
-		private final TypeSymbol[] typeSymbols;
+	public static class GenericTypeToken extends TypeToken {
+		private final List<TypeToken> elementTypeTokenList;
 
-		private GenericTypeSymbol(Token token, TypeSymbol[] typeSymbols) {
+		public GenericTypeToken(Token token) {
 			super(token);
-			this.typeSymbols = typeSymbols;
+			this.elementTypeTokenList = new ArrayList<>();
+		}
+
+		public void addElementTypeToken(TypeToken typeToken) {
+			this.elementTypeTokenList.add(typeToken);
 		}
 
 		@Override
 		public DSType toType(TypePool pool) {
-			List<DSType> elementTypeList = new ArrayList<>(this.typeSymbols.length);
-			for(TypeSymbol typeSymbol : this.typeSymbols) {
+			List<DSType> elementTypeList = new ArrayList<>(this.elementTypeTokenList.size());
+			for(TypeToken typeSymbol : this.elementTypeTokenList) {
 				elementTypeList.add(typeSymbol.toType(pool));
 			}
 			try {
@@ -187,11 +188,12 @@ public abstract class TypeSymbol {
 			StringBuilder sBuilder = new StringBuilder();
 			sBuilder.append(this.token.toString());
 			sBuilder.append('<');
-			for(int i = 0; i < this.typeSymbols.length; i++) {
+			final int size = this.elementTypeTokenList.size();
+			for(int i = 0; i < size; i++) {
 				if(i > 0) {
 					sBuilder.append(',');
 				}
-				sBuilder.append(this.typeSymbols[i].toString());
+				sBuilder.append(this.elementTypeTokenList.get(i).toString());
 			}
 			sBuilder.append('>');
 			return sBuilder.toString();

@@ -954,7 +954,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 		/**
 		 * resolve exception type.
 		 */
-		TypeSymbol typeSymbol = node.getTypeSymbol();
+		TypeToken typeSymbol = node.getTypeSymbol();
 		DSType exceptionType = this.typePool.exceptionType;
 		if(typeSymbol != null) {
 			exceptionType = typeSymbol.toType(this.typePool);
@@ -1086,9 +1086,9 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(FunctionNode node) {
 		// create function type and holder type
-		List<TypeSymbol> paramTypeSymbols = node.getParamTypeSymbolList();
+		List<TypeToken> paramTypeSymbols = node.getParamTypeSymbolList();
 		List<DSType> paramTypeList = new ArrayList<>(paramTypeSymbols.size());
-		for(TypeSymbol typeSymbol : paramTypeSymbols) {
+		for(TypeToken typeSymbol : paramTypeSymbols) {
 			paramTypeList.add(typeSymbol.toType(this.typePool));
 		}
 		String funcName = node.getFuncName();
