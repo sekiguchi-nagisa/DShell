@@ -23,3 +23,13 @@ assert($b < $c)
 assert($b <= $c)
 assert(not($b > $c))
 assert(not($b >= $c))
+
+# string interpolation
+$a = "西暦${1900 + 114}年"
+$b = "西暦\${1900 + 114}年"
+
+assert($a == "西暦2014年")
+assert($b == '西暦${1900 + 114}年')
+
+var d = $true
+assert("this is true" == "this is $d")

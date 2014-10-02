@@ -21,7 +21,9 @@ assert($a.pop() == 100)
 assert($a.isEmpty())
 
 # float array
-var a2 = [12.2, 3.14, 0.4, 2]
+var a2 = [12.2, 
+			3.14, 
+			0.4, 2]
 assert($a2.size() == 4)
 assert($a2[2] == 0.4)
 $a2.add(10.89)
@@ -42,15 +44,15 @@ $a2.clear()
 assert($a2.isEmpty())
 
 # boolean array
-var a3 = [true]
+var a3 = [$true]
 assert($a3.size() == 1)
 assert($a3[0])
-$a3.add(false)
+$a3.add($false)
 assert(not $a3[1])
 assert($a3.size() == 2)
-$a3.insert(1, true)
+$a3.insert(1, $true)
 assert($a3[1])
-$a3[0] = false
+$a3[0] = $false
 assert(not $a3[0])
 
 $a3 = new Array<boolean>()

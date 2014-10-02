@@ -1,10 +1,10 @@
 # primitive type
 var a = 1
-assert($a instanceof int)
-var b = true
-assert($b instanceof boolean)
+assert($a is int)
+var b = $true
+assert($b is boolean)
 var c = 3.23
-assert($c instanceof float)
+assert($c is float)
 
 # class tyep
 #class Hoge {
@@ -13,15 +13,15 @@ assert($c instanceof float)
 #}
 
 #class Huga extends Hoge {
-#	var isMan = false
+#	var isMan = $false
 #}
 
 #var d = new Hoge()
-#assert($d instanceof Hoge)
-#assert(not ($d instanceof Huga))
+#assert($d is Hoge)
+#assert(not ($d is Huga))
 #var e = new Huga()
-#assert($e instanceof Huga)
-#assert($e instanceof Hoge)
+#assert($e is Huga)
+#assert($e is Hoge)
 
 # func type
 function f($a : int, $b : Exception) {
@@ -30,41 +30,41 @@ function f($a : int, $b : Exception) {
 	throw $b
 }
 
-assert($f instanceof Func<void, [int, Exception]>)
+assert($f is Func<void, [int, Exception]>)
 
 # generic type
 var g1 = [1, 2, 3]
 var g2 = ["a", "b", "c"]
 #var g3 = [new Hoge(), new Huga()]
-assert($g1 instanceof Array<int>)
-assert($g2 instanceof Array<String>)
-#assert($g3 instanceof Array<Hoge>)
+assert($g1 is Array<int>)
+assert($g2 is Array<String>)
+#assert($g3 is Array<Hoge>)
 
 var g4 = {"a" : 1, "b" : 2}
 var g5 = {"a" : "aa", "b" : "bb"}
-assert($g4 instanceof Map<int>)
-assert($g5 instanceof Map<String>)
-assert(not($g5 instanceof Map<int>))
+assert($g4 is Map<int>)
+assert($g5 is Map<String>)
+assert(not($g5 is Map<int>))
 
 # Exception type
 var h1 = new Exception()
 var h2 = new DShellException()
 var h3 = new OutOfIndexException()
-assert($h1 instanceof Exception)
-assert(not($h1 instanceof DShellException))
-assert($h2 instanceof DShellException)
-assert($h2 instanceof Exception)
-assert($h3 instanceof OutOfIndexException)
-assert($h3 instanceof Exception)
+assert($h1 is Exception)
+assert(not($h1 is DShellException))
+assert($h2 is DShellException)
+assert($h2 is Exception)
+assert($h3 is OutOfIndexException)
+assert($h3 is Exception)
 
 try {
 	1 / 0
 } catch($e) {
-	assert($e instanceof ArithmeticException)
-	assert($e instanceof Exception)
+	assert($e is ArithmeticException)
+	assert($e is Exception)
 }
 
 # IOStream
-assert($STDIN instanceof InputStream)
-assert($STDOUT instanceof OutputStream)
-assert($STDERR instanceof OutputStream)
+assert($STDIN is InputStream)
+assert($STDOUT is OutputStream)
+assert($STDERR is OutputStream)

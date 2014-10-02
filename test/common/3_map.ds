@@ -14,3 +14,8 @@ $a.set("a", 12)
 assert($a.get("a") == 12)
 $a["a"] /= 4
 assert($a["a"] == 3)
+
+assert({"a" + "v" :
+		$true, 
+		"d" :
+		$false}["av"])

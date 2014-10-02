@@ -6,3 +6,6 @@ assert($a.getLeft() == 100)
 $a.setRight("world")
 assert($a.getRight() == "world")
 
+assert(not ($false, 
+		3.14).getLeft()
+		)

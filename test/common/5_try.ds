@@ -1,25 +1,25 @@
 try {
 	1 / 0
-	assert(false)
+	assert($false)
 } catch($e : OutOfIndexException) {
-	assert(false)
+	assert($false)
 } catch($e : ArithmeticException) {
-	assert(true)
+	assert($true)
 } catch($e : Exception) {
-	assert(false)
+	assert($false)
 }
 
 try {
 	[12][3]
 } catch($e : KeyNotFoundException) {
-	assert(false)
+	assert($false)
 } catch($e) {
-	assert(true)
+	assert($true)
 }
 
-var flag = false
+var flag = $false
 function f($a : boolean): int {
-	$flag = false
+	$flag = $false
 	try {
 		if($a) {
 			1 / 0
@@ -30,14 +30,14 @@ function f($a : boolean): int {
 		return -100
 	}
 	finally {
-		$flag = true
+		$flag = $true
 	}
 	return 0
 }
 
-assert($f(true) == -100)
+assert($f($true) == -100)
 assert($flag)
-assert($f(false) == 100)
+assert($f($false) == 100)
 assert($flag)
 
 # nested finally

@@ -1,9 +1,9 @@
 function func($num : int): boolean {
 	if ($num > 2) {
-		return true
+		return $true
 	}
 	else {
-		return false
+		return $false
 	}
 }
 

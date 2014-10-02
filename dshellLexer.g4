@@ -54,12 +54,12 @@ public void reset() {
 
 // reserved key word
 As          : {!isStmt()}? 'as';
-Assert      : 'assert';
+Assert      :  {isStmt()}? 'assert';
 Boolean     : {!isStmt()}? 'boolean';
-Break       : 'break';
+Break       :  {isStmt()}? 'break';
 Catch       : 'catch';
-Class       : 'class';
-Continue    : 'continue';
+Class       :  {isStmt()}? 'class';
+Continue    :  {isStmt()}? 'continue';
 Constructor : 'constructor';
 Do          : 'do';
 Else        : 'else';
@@ -67,38 +67,26 @@ Extends     : 'extends';
 ExportEnv   :  {isStmt()}? 'export-env' -> pushMode(NameMode);
 Finally     : 'finally';
 Float       : {!isStmt()}? 'float';
-For         : 'for';
+For         :  {isStmt()}? 'for';
 Func        : {!isStmt()}? 'Func';
 Function    :  {isStmt()}? 'function' -> pushMode(NameMode);
 If          : 'if';
 ImportEnv   :  {isStmt()}? 'import-env' -> pushMode(NameMode);
 In          : {!isStmt()}? 'in';
-Instanceof  : {!isStmt()}? 'instanceof';
 Int         : {!isStmt()}? 'int';
+Is          : {!isStmt()}? 'is';
 Let         :  {isStmt()}? 'let' -> pushMode(NameMode);
 New         : 'new';
 Not         : 'not';
-Return      : 'return';
-Try         : 'try';
-Throw       : 'throw';
+Return      :  {isStmt()}? 'return';
+Try         :  {isStmt()}? 'try';
+Throw       :  {isStmt()}? 'throw';
 Var         :  {isStmt()}? 'var' -> pushMode(NameMode);
 Void        : {!isStmt()}? 'void';
 While       : 'while';
 
 PLUS        : '+';
 MINUS       : '-';
-
-
-// variable or function name
-AppliedName
-	: '$' PermittedName
-	;
-
-SpecialName
-	: '$$'
-	| '$@'
-	| '$*'
-	;
 
 // literal
 // integer literal //TODO: hex. oct number
@@ -124,8 +112,8 @@ FloatSuffix
 
 // boolean literal
 BooleanLiteral
-	: 'true'
-	| 'false'
+	: '$true'
+	| '$false'
 	;
 
 // String literal
@@ -146,6 +134,17 @@ SingleQuoteStringChar
 fragment
 SingleEscapeSequence	// TODO: unicode escape
 	: '\\' [btnfr'\\]
+	;
+
+// variable or function name
+AppliedName
+	: '$' PermittedName
+	;
+
+SpecialName
+	: '$$'
+	| '$@'
+	| '$*'
 	;
 
 // command literal
@@ -272,6 +271,8 @@ mode NameMode;
 ReseredName
 	: 'this'
 	| 'super'
+	| 'true'
+	| 'false'
 	;
 
 VarName
@@ -405,6 +406,10 @@ AndList    : '&&' {this.enterStmt = true;} -> popMode;
 
 Cmd_LineEnd
 	: LineEnd {this.enterStmt = true;} -> type(LineEnd), popMode
+	;
+
+Cmd_Comment
+	: Comment -> skip
 	;
 
 Cmd_NewLine

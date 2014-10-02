@@ -1,7 +1,7 @@
-var a = false
+var a = $false
 try {
 	throw new Exception()
 } catch($e : Exception) {
-	$a = true
+	$a = $true
 }
 assert($a)

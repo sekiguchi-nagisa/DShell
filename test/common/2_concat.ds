@@ -1,6 +1,6 @@
 var a = 100
 var b = 3.14
-var c = true
+var c = $true
 var d = "hello"
 var e = "world"
 

@@ -323,23 +323,13 @@ assingRightExpression returns [Node.ExprNode node]
 	;
 
 assignStatement returns [Node node]
-	: left=assignLeftExpression
+	: left=applyOrGetExpression
 		({!hasNewLine()}? (
 			op=('=' | '+=' | '-=' | '*=' | '/=' | '%=') right=assingRightExpression
 				{$node = new Node.AssignNode($left.node, $op, $right.node);}
 		|	op=('++' | '--')
 				{$node = new Node.AssignNode($left.node, $op);}
 		))
-	;
-
-assignLeftExpression returns [Node.ExprNode node]
-	: symbol {$node = $symbol.node;}
-		({!hasNewLine()}? (
-			Accessor VarName 
-				{$node = new Node.AccessNode($node, $VarName);}
-		|	LeftBracket i=expression RightBracket
-				{$node = new Node.IndexNode($LeftBracket, $node, $i.node);}
-		))*
 	;
 
 
@@ -459,7 +449,7 @@ equalityExpression returns [Node.ExprNode node]
 typeExpression returns [Node.ExprNode node]
 	: l=relationalExpression {$node = $l.node;}
 		({!hasNewLine()}? (
-			Instanceof typeName {$node = new Node.InstanceofNode($node, $Instanceof, $typeName.type);}
+			Is typeName {$node = new Node.InstanceofNode($node, $As, $typeName.type);}
 		|	As typeName {$node = new Node.CastNode($node, $As, $typeName.type);}
 		))*
 	;
@@ -580,13 +570,8 @@ arguments returns [ParserUtils.Arguments args]
 	;
 
 argumentList returns [ParserUtils.Arguments args]
-	: a+= expression (comma a+=expression)* 
-		{
-			$args = new ParserUtils.Arguments();
-			for(int i = 0; i < $a.size(); i++) {
-				$args.addNode($a.get(i).node);
-			}
-		}
+	: a= expression {$args = new ParserUtils.Arguments(); $args.addNode($a.node);}
+		(comma b=expression {$args.addNode($b.node);})*
 	;
 
 interpolation returns [Node.ExprNode node]
@@ -596,15 +581,10 @@ interpolation returns [Node.ExprNode node]
 	;
 
 stringExpr returns [Node.StringExprNode node]
-	: OpenDoubleQuote a+=stringElement* CloseDoubleQuote
-		{
-			$node = new Node.StringExprNode($OpenDoubleQuote);
-			if($a.size() > 0) {
-				for(int i = 0; i < $a.size(); i++) {
-					$node.addElementNode($a.get(i).node);
-				}
-			}
-		}
+	: OpenDoubleQuote {$node = new Node.StringExprNode($OpenDoubleQuote);}
+		(a=stringElement
+			{$node.addElementNode($a.node);}
+		)* CloseDoubleQuote
 	;
 
 stringElement returns [Node.ExprNode node]

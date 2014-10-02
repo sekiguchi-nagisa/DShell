@@ -1,11 +1,5 @@
-# string interpolation
-var a = "西暦${1900 + 114}年"
-var b = "西暦\${1900 + 114}年"
-
-assert($a == "西暦2014年")
-assert($b == '西暦${1900 + 114}年')
-
 # variable expand
+var a = "`echo hello world`"
 var c1 = "`echo $a`"
 assert($a == $c1)
 

@@ -219,7 +219,7 @@ public abstract class Node {
 
 		public BooleanValueNode(Token token) {
 			super(token);
-			this.value = Boolean.parseBoolean(token.getText());
+			this.value = Boolean.parseBoolean(resolveName(token));
 		}
 
 		public boolean getValue() {

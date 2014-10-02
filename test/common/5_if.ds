@@ -1,8 +1,8 @@
 function func($num: int) : boolean {
 	if ($num == 2) {
-		return true
+		return $true
 	}
-	return false
+	return $false
 }
 
 assert(not $func(1))
