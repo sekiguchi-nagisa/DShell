@@ -35,7 +35,7 @@ var r = echo hello
 assert($r == 0)
 
 $r = ls huirfh
-assert($r == 1)
+assert($r != 0)
 
 # conditional
 assert(echo hello && log hey)
