@@ -14,7 +14,6 @@ import dshell.internal.exe.DShellEngineFactory;
 import dshell.internal.lib.RuntimeContext;
 import dshell.internal.lib.Utils;
 import dshell.main.ArgsParser.OptionListener;
-//import dshell.internal.remote.RequestReceiver;
 import static dshell.internal.lib.RuntimeContext.AppenderType;
 
 public class DShell {
@@ -132,7 +131,7 @@ public class DShell {
 
 		try {
 			this.scriptArgs = parser.parse(args).getRestArgs();
-			if(!this.enablePseudoTerminal && System.console() == null) {
+			if(!this.enablePseudoTerminal && !RuntimeContext.getInstance().isatty(0)) {
 				this.mode = ExecutionMode.inputEvalMode;
 			}
 			if(this.mode == ExecutionMode.scriptingMode && this.scriptArgs.length == 0) {

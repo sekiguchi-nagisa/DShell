@@ -179,6 +179,17 @@ public class RuntimeContext implements Serializable {
 		return CLibraryWrapper.INSTANCE.getenv(key);
 	}
 
+	/**
+	 * check terminal
+	 * @param fileDescriptor
+	 * 0: stdin, 1: stdout, 2: stderr
+	 * @return
+	 * if file descriptor represents terminal, return true
+	 */
+	public boolean isatty(int fileDescriptor) {
+		return CLibraryWrapper.INSTANCE.isatty(fileDescriptor) == 1;
+	}
+
 	public CommandRunner getBuiltinCommand(String commandName) {
 		return this.commandHolder.getCommand(commandName);
 	}
@@ -205,4 +216,5 @@ interface CLibraryWrapper extends com.sun.jna.Library {
 	void perror(String s);
 	int setenv(String key, String env, int override);
 	String getenv(String key);
+	int isatty(int fd);
 }
