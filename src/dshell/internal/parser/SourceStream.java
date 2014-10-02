@@ -2,6 +2,7 @@ package dshell.internal.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -98,9 +99,11 @@ public class SourceStream extends ANTLRInputStream {
 				buffer = Arrays.copyOf(buffer, readSize);
 			}
 			return buffer;
+		} catch (FileNotFoundException e) {
+			System.err.println("file not found: " + fileName);
+			System.exit(1);
 		} catch (IOException e) {
-			e.printStackTrace();
-			Utils.fatal(1, "io problem");
+			Utils.fatal(1, e.getMessage());
 		}
 		return null;
 	}

@@ -79,9 +79,17 @@ public abstract class AbstractProcessContext {
 		this.cmdBuilder.append(commandPath);
 	}
 
+	/**
+	 * add argument string. if argument string is empty string, skip it.
+	 * @param argBuilder
+	 * @return
+	 */
 	public AbstractProcessContext addArg(ArgumentBuilder argBuilder) {
 		LinkedList<String> argList = argBuilder.getArgList();
 		for(String arg : argList) {
+			if(arg.equals("")) {	// skip empty string
+				continue;
+			}
 			String resolvedArg = Utils.resolveHome(arg);
 			this.argList.add(resolvedArg);
 			this.cmdBuilder.append(' ');
