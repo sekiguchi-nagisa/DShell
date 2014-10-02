@@ -330,6 +330,10 @@ InnerCmdBackQuote
 	: BackquoteLiteral -> type(BackquoteLiteral)
 	;
 
+InnerBoolean
+	: BooleanLiteral -> type(BooleanLiteral)
+	;
+
 InnerName
 	: AppliedName -> type(AppliedName)
 	;
@@ -368,6 +372,10 @@ CmdArgPArt_StartSubCmd
 
 CmdArgPart_BackquoteLiteral
 	: BackquoteLiteral -> type(BackquoteLiteral)
+	;
+
+CmdPart_Boolean
+	: BooleanLiteral -> type(BooleanLiteral)
 	;
 
 CmdArgPart_AppliedName

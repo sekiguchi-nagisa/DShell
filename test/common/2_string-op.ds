@@ -33,3 +33,4 @@ assert($b == '西暦${1900 + 114}年')
 
 var d = $true
 assert("this is true" == "this is $d")
+assert("this is true" == "this is $true")
