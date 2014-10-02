@@ -39,8 +39,14 @@ public class TaskContext {
 	}
 
 	public static AbstractProcessContext createProcessContext(String commandName) {
+		if(commandName.indexOf('/') != -1) {	// qualify name
+			return new ProcessContext(commandName);
+		}
 		AbstractProcessContext context = RuntimeContext.getInstance().getBuiltinCommand(commandName);
-		return context != null ? context : new ProcessContext(commandName);
+		if(context != null) {
+			return context;
+		}
+		return new ProcessContext(Utils.getCommandFromPath(commandName));	// get qualify name from path
 	}
 
 	private static boolean checkTraceRequirements() {
