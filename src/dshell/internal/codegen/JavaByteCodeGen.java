@@ -520,11 +520,17 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 		// set redirect options
 		Method redirDesc = new Method("setRedirOption", procCtxDesc, 
-				new Type[]{Type.getType(int.class), argDesc});
+				new Type[]{Type.INT_TYPE, argDesc});
 		for(GenericPair<Integer, ExprNode> pair : node.getRedirOptionList()) {
 			mBuilder.push(pair.getLeft());
 			this.generateCode(pair.getRight());
 			mBuilder.invokeVirtual(procCtxDesc, redirDesc);
+		}
+
+		// enable system call trace
+		if(node.isTracable()) {
+			Method traceDesc = new Method("enableTrace", procCtxDesc, new Type[]{});
+			mBuilder.invokeVirtual(procCtxDesc, traceDesc);
 		}
 
 		methodDesc = new Method("addContext", taskCtxDesc, new Type[]{procCtxDesc});

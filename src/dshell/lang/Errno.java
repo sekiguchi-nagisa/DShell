@@ -7,8 +7,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import dshell.annotation.Shared;
+import dshell.annotation.SharedClass;
 import dshell.internal.lib.Utils;
 
 @Target(ElementType.TYPE)
@@ -18,139 +23,139 @@ import dshell.internal.lib.Utils;
 }
 
 public enum Errno {
-	SUCCESS			,
-	EPERM			,
-	ENOENT			,
-	ESRCH			,
-	EINTR			,
-	EIO				,
-	ENXIO			,
-	E2BIG			,
-	ENOEXEC			,
-	EBADF			,
-	ECHILD			,
-	EAGAIN			,
-	ENOMEM			,
-	EACCES			,
-	EFAULT			,
-	ENOTBLK			,
-	EBUSY			,
-	EEXIST			,
-	EXDEV			,
-	ENODEV			,
-	ENOTDIR			,
-	EISDIR			,
-	EINVAL			,
-	ENFILE			,
-	EMFILE			,
-	ENOTTY			,
-	ETXTBSY			,
-	EFBIG			,
-	ENOSPC			,
-	ESPIPE			,
-	EROFS			,
-	EMLINK			,
-	EPIPE			,
-	EDOM			,
-	ERANGE			,
-	EDEADLK			,
-	ENAMETOOLONG	,
-	ENOLCK			,
-	ENOSYS			,
-	ENOTEMPTY		,
-	ELOOP			,
-	EWOULDBLOCK		,//EAGAIN
-	ENOMSG			,
-	EIDRM			,
-	ECHRNG			,
-	EL2NSYNC		,
-	EL3HLT			,
-	EL3RST			,
-	ELNRNG			,
-	EUNATCH			,
-	ENOCSI			,
-	EL2HLT			,
-	EBADE			,
-	EBADR			,
-	EXFULL			,
-	ENOANO			,
-	EBADRQC			,
-	EBADSLT			,
-	EDEADLOCK		,//EDEADLK
-	EBFONT			,
-	ENOSTR			,
-	ENODATA			,
-	ETIME			,
-	ENOSR			,
-	ENONET			,
-	ENOPKG			,
-	EREMOTE			,
-	ENOLINK			,
-	EADV			,
-	ESRMNT			,
-	ECOMM			,
-	EPROTO			,
-	EMULTIHOP		,
-	EDOTDOT			,
-	EBADMSG			,
-	EOVERFLOW		,
-	ENOTUNIQ		,
-	EBADFD			,
-	EREMCHG			,
-	ELIBACC			,
-	ELIBBAD			,
-	ELIBSCN			,
-	ELIBMAX			,
-	ELIBEXEC		,
-	EILSEQ			,
-	ERESTART		,
-	ESTRPIPE		,
-	EUSERS			,
-	ENOTSOCK		,
-	EDESTADDRREQ	,
-	EMSGSIZE		,
-	EPROTOTYPE		,
-	ENOPROTOOPT		,
-	EPROTONOSUPPORT	,
-	ESOCKTNOSUPPORT	,
-	EOPNOTSUPP		,
-	EPFNOSUPPORT	,
-	EAFNOSUPPORT	,
-	EADDRINUSE		,
-	EADDRNOTAVAIL	,
-	ENETDOWN		,
-	ENETUNREACH		,
-	ENETRESET		,
-	ECONNABORTED	,
-	ECONNRESET		,
-	ENOBUFS			,
-	EISCONN			,
-	ENOTCONN		,
-	ESHUTDOWN		,
-	ETOOMANYREFS	,
-	ETIMEDOUT		,
-	ECONNREFUSED	,
-	EHOSTDOWN		,
-	EHOSTUNREACH	,
-	EALREADY		,
-	EINPROGRESS		,
-	ESTALE			,
-	EUCLEAN			,
-	ENOTNAM			,
-	ENAVAIL			,
-	EISNAM			,
-	EREMOTEIO		,
-	EDQUOT			,
-	ENOMEDIUM		,
-	EMEDIUMTYPE		,
-	ECANCELED		,
-	ENOKEY			,
-	EKEYEXPIRED		,
-	EKEYREVOKED		,
-	EKEYREJECTED	,
-	LAST_ELEMENT	;
+	SUCCESS         ,
+	EPERM           ,
+	ENOENT          ,
+	ESRCH           ,
+	EINTR           ,
+	EIO             ,
+	ENXIO           ,
+	E2BIG           ,
+	ENOEXEC         ,
+	EBADF           ,
+	ECHILD          ,
+	EAGAIN          ,
+	ENOMEM          ,
+	EACCES          ,
+	EFAULT          ,
+	ENOTBLK         ,
+	EBUSY           ,
+	EEXIST          ,
+	EXDEV           ,
+	ENODEV          ,
+	ENOTDIR         ,
+	EISDIR          ,
+	EINVAL          ,
+	ENFILE          ,
+	EMFILE          ,
+	ENOTTY          ,
+	ETXTBSY         ,
+	EFBIG           ,
+	ENOSPC          ,
+	ESPIPE          ,
+	EROFS           ,
+	EMLINK          ,
+	EPIPE           ,
+	EDOM            ,
+	ERANGE          ,
+	EDEADLK         ,
+	ENAMETOOLONG    ,
+	ENOLCK          ,
+	ENOSYS          ,
+	ENOTEMPTY       ,
+	ELOOP           ,
+	EWOULDBLOCK     ,//EAGAIN
+	ENOMSG          ,
+	EIDRM           ,
+	ECHRNG          ,
+	EL2NSYNC        ,
+	EL3HLT          ,
+	EL3RST          ,
+	ELNRNG          ,
+	EUNATCH         ,
+	ENOCSI          ,
+	EL2HLT          ,
+	EBADE           ,
+	EBADR           ,
+	EXFULL          ,
+	ENOANO          ,
+	EBADRQC         ,
+	EBADSLT         ,
+	EDEADLOCK       ,//EDEADLK
+	EBFONT          ,
+	ENOSTR          ,
+	ENODATA         ,
+	ETIME           ,
+	ENOSR           ,
+	ENONET          ,
+	ENOPKG          ,
+	EREMOTE         ,
+	ENOLINK         ,
+	EADV            ,
+	ESRMNT          ,
+	ECOMM           ,
+	EPROTO          ,
+	EMULTIHOP       ,
+	EDOTDOT         ,
+	EBADMSG         ,
+	EOVERFLOW       ,
+	ENOTUNIQ        ,
+	EBADFD          ,
+	EREMCHG         ,
+	ELIBACC         ,
+	ELIBBAD         ,
+	ELIBSCN         ,
+	ELIBMAX         ,
+	ELIBEXEC        ,
+	EILSEQ          ,
+	ERESTART        ,
+	ESTRPIPE        ,
+	EUSERS          ,
+	ENOTSOCK        ,
+	EDESTADDRREQ    ,
+	EMSGSIZE        ,
+	EPROTOTYPE      ,
+	ENOPROTOOPT     ,
+	EPROTONOSUPPORT ,
+	ESOCKTNOSUPPORT ,
+	EOPNOTSUPP      ,
+	EPFNOSUPPORT    ,
+	EAFNOSUPPORT    ,
+	EADDRINUSE      ,
+	EADDRNOTAVAIL   ,
+	ENETDOWN        ,
+	ENETUNREACH     ,
+	ENETRESET       ,
+	ECONNABORTED    ,
+	ECONNRESET      ,
+	ENOBUFS         ,
+	EISCONN         ,
+	ENOTCONN        ,
+	ESHUTDOWN       ,
+	ETOOMANYREFS    ,
+	ETIMEDOUT       ,
+	ECONNREFUSED    ,
+	EHOSTDOWN       ,
+	EHOSTUNREACH    ,
+	EALREADY        ,
+	EINPROGRESS     ,
+	ESTALE          ,
+	EUCLEAN         ,
+	ENOTNAM         ,
+	ENAVAIL         ,
+	EISNAM          ,
+	EREMOTEIO       ,
+	EDQUOT          ,
+	ENOMEDIUM       ,
+	EMEDIUMTYPE     ,
+	ECANCELED       ,
+	ENOKEY          ,
+	EKEYEXPIRED     ,
+	EKEYREVOKED     ,
+	EKEYREJECTED    ,
+	LAST_ELEMENT    ;
 
-	private final static EnumMap<Errno, Class<?>> exceptClassMap = initClassMap();
+	private final static EnumMap<Errno, Class<? extends DerivedFromErrnoException>> exceptClassMap = initClassMap();
 
 	public static Errno toErrno(int errno) {
 		if(errno <= 0 || errno >= Errno.LAST_ELEMENT.ordinal()) {
@@ -167,15 +172,16 @@ public enum Errno {
 		return this.ordinal() == errno;
 	}
 
-	private static EnumMap<Errno, Class<?>> initClassMap() {
-		EnumMap<Errno, Class<?>> exceptMap = new EnumMap<Errno, Class<?>>(Errno.class);
+	@SuppressWarnings("unchecked")
+	private static EnumMap<Errno, Class<? extends DerivedFromErrnoException>> initClassMap() {
+		EnumMap<Errno, Class<? extends DerivedFromErrnoException>> exceptMap = new EnumMap<>(Errno.class);
 		Class<?>[] classes = Errno.class.getClasses();
 		for(Class<?> exceptionClass : classes) {
 			Annotation[] anos = exceptionClass.getDeclaredAnnotations();
 			if(anos.length == 1 && anos[0] instanceof DerivedFromErrno) {
 				Errno key = ((DerivedFromErrno)anos[0]).value();
 				if(!exceptMap.containsKey(key)) {
-					exceptMap.put(key, exceptionClass);
+					exceptMap.put(key, (Class<? extends DerivedFromErrnoException>) exceptionClass);
 					continue;
 				}
 			}
@@ -185,7 +191,8 @@ public enum Errno {
 		return exceptMap;
 	}
 
-	private static Class<?> getFromMap(EnumMap<Errno, Class<?>> excepClassMap, Errno key) {
+	private static Class<? extends DerivedFromErrnoException> 
+	getFromMap(EnumMap<Errno, Class<? extends DerivedFromErrnoException>> excepClassMap, Errno key) {
 		if(key == Errno.SUCCESS || key == Errno.LAST_ELEMENT) {
 			Utils.fatal(1, "inavlid errno: " + key.name());
 		}
@@ -198,28 +205,28 @@ public enum Errno {
 		return Errno.UnimplementedErrnoException.class;
 	}
 
-	public static Class<?> getExceptionClass(int errno) {
+	public static Class<? extends DerivedFromErrnoException> getExceptionClass(int errno) {
 		return getFromMap(exceptClassMap, Errno.toErrno(errno));
 	}
 
-	public static Class<?> getExceptionClass(String errnoString) {
+	public static Class<? extends DerivedFromErrnoException> getExceptionClass(String errnoString) {
 		return getFromMap(exceptClassMap, Errno.valueOf(errnoString));
 	}
 
-	public static Class<?> getExceptionClass(Errno key) {
+	public static Class<? extends DerivedFromErrnoException> getExceptionClass(Errno key) {
 		return getFromMap(exceptClassMap, key);
 	}
 
-	public static ArrayList<Class<?>> getExceptionClassList() {
-		ArrayList<Class<?>> classList = new ArrayList<Class<?>>();
-		for(Map.Entry<Errno, Class<?>> entry : exceptClassMap.entrySet()) {
-			classList.add(entry.getValue());
+	public static Set<Class<? extends DerivedFromErrnoException>> getExceptionClassSet() {
+		Set<Class<? extends DerivedFromErrnoException>> classSet = new HashSet<>();
+		for(Map.Entry<Errno, Class<? extends DerivedFromErrnoException>> entry : exceptClassMap.entrySet()) {
+			classSet.add(entry.getValue());
 		}
-		return classList;
+		return classSet;
 	}
 
-	public static ArrayList<String> getUnsupportedErrnoList() {
-		ArrayList<String> errnoList = new ArrayList<String>();
+	public static List<String> getUnsupportedErrnoList() {
+		List<String> errnoList = new ArrayList<String>();
 		Errno[] values = Errno.values();
 		for(Errno value : values) {
 			if(value == Errno.SUCCESS || value == Errno.LAST_ELEMENT) {
@@ -233,13 +240,14 @@ public enum Errno {
 	}
 
 	public static void main(String[] args) {
-		ArrayList<String> errnoList = Errno.getUnsupportedErrnoList();
+		List<String> errnoList = Errno.getUnsupportedErrnoList();
 		for(String errnoString : errnoList) {
 			System.err.println(errnoString + " is not supported");
 		}
 	}
 
 	// base class
+	@SharedClass("DShellException")
 	public static class DerivedFromErrnoException extends DShellException {
 		private static final long serialVersionUID = -2322285443658141171L;
 
@@ -247,25 +255,28 @@ public enum Errno {
 		private String param;
 		protected String errno;
 
-		public DerivedFromErrnoException() {
+		protected DerivedFromErrnoException() {
 			super();
 		}
 
-		public DerivedFromErrnoException(String message) {
+		protected DerivedFromErrnoException(String message) {
 			super(message);
 			this.syscallName = "";
 			this.param = "";
 			this.errno = "";
 		}
 
+		@Shared
 		public String getSyscallName() {
 			return this.syscallName;
 		}
 
+		@Shared
 		public String getParam() {
 			return this.param;
 		}
 
+		@Shared
 		public String getErrno() {
 			if(this.errno.equals("")) {
 				Annotation[] anos = this.getClass().getDeclaredAnnotations();

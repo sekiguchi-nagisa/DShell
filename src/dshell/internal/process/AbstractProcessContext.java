@@ -165,6 +165,15 @@ public abstract class AbstractProcessContext {
 	}
 
 	/**
+	 * enable system call trace.
+	 * @return
+	 * - this.
+	 */
+	public AbstractProcessContext enableTrace() {
+		return this;
+	}
+
+	/**
 	 * create and start new process.
 	 * must call it only once.
 	 * @return
@@ -256,15 +265,6 @@ public abstract class AbstractProcessContext {
 	@Override
 	public String toString() {
 		return this.cmdBuilder.toString();
-	}
-
-	/**
-	 * enable system call trace.
-	 * @return
-	 * - this.
-	 */
-	public AbstractProcessContext enableTrace() {
-		return this;
 	}
 
 	/**

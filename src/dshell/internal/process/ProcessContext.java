@@ -33,36 +33,43 @@ public class ProcessContext extends AbstractProcessContext {
 		return logNameHeader.toString();
 	}
 
+	private static boolean checkTraceRequirements() {
+		boolean tracable = false;
+		if(System.getProperty("os.name").equals("Linux")) {
+			ProcessContext.traceBackendType = ProcessContext.traceBackend_ltrace;
+			tracable = Utils.getCommandFromPath("ltrace") != null;
+		}
+		if(!tracable) {
+			System.err.println("Systemcall Trace is Not Supported");
+		}
+		return tracable;
+	}
+
 	public ProcessContext(String commandPath) {
 		super(commandPath);
 		this.procBuilder = new ProcessBuilder(this.argList);
 		this.procBuilder.redirectError(Redirect.INHERIT);
 	}
 
-	public void initTrace(boolean tracable) {
-		if(!tracable) {
-			this.enableTrace = false;
-			return;
-		}
-		logFilePath = logDirPath + "/" + createLogNameHeader() + ".log";
-		new File(logDirPath).mkdir();
-		String[] traceCmds;
-		if(traceBackendType == traceBackend_ltrace) {
-			traceCmds = new String[] {"ltrace", "-f", "-S", "-o", logFilePath};
-		}
-		else {
-			Utils.fatal(1, "invalid trace backend type");
-			return;
-		}
-		final int size = traceCmds.length;
-		for(int i = 0 ; i < size; i++) {
-			this.argList.add(i, traceCmds[i]);
-		}
-	}
-
 	@Override
 	public AbstractProcessContext enableTrace() {
-		this.enableTrace = true;
+		this.enableTrace = checkTraceRequirements();
+		if(this.enableTrace) {
+			logFilePath = logDirPath + "/" + createLogNameHeader() + ".log";
+			new File(logDirPath).mkdir();
+			String[] traceCmds;
+			if(traceBackendType == traceBackend_ltrace) {
+				traceCmds = new String[] {"ltrace", "-f", "-S", "-o", logFilePath};
+			}
+			else {
+				Utils.fatal(1, "invalid trace backend type");
+				return null;	// unreachable
+			}
+			final int size = traceCmds.length;
+			for(int i = 0 ; i < size; i++) {
+				this.argList.add(i, traceCmds[i]);
+			}
+		}
 		return this;
 	}
 

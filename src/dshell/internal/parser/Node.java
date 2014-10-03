@@ -915,11 +915,17 @@ public abstract class Node {
 		private final List<ArgumentNode> argNodeList;
 		private final List<GenericPair<Integer, ExprNode>> redirOptionList;
 
-		protected ProcessNode(Token token) {
+		/**
+		 * if true, enable system call trace
+		 */
+		private final boolean trace;
+
+		protected ProcessNode(Token token, boolean trace) {
 			super(token);
 			this.argNodeList = new ArrayList<>();
 			this.commandPath = Utils.resolveHome(ArgumentNode.unescapeCommandString(token));
 			this.redirOptionList = new ArrayList<>(5);
+			this.trace = trace;
 		}
 
 		public void setArg(ArgumentNode argNode) {
@@ -940,6 +946,10 @@ public abstract class Node {
 
 		public List<GenericPair<Integer, ExprNode>> getRedirOptionList() {
 			return this.redirOptionList;
+		}
+
+		public boolean isTracable() {
+			return this.trace;
 		}
 
 		@Override

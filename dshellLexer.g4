@@ -79,6 +79,7 @@ Let         :  {isStmt()}? 'let' -> pushMode(NameMode);
 New         : 'new';
 Not         : 'not';
 Return      :  {isStmt()}? 'return';
+Trace       :  {isStmt()}? 'trace' {this.enterStmt = true;};
 Try         :  {isStmt()}? 'try';
 Throw       :  {isStmt()}? 'throw';
 Var         :  {isStmt()}? 'var' -> pushMode(NameMode);

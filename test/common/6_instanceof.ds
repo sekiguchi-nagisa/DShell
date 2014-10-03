@@ -50,12 +50,16 @@ assert(not($g5 is Map<int>))
 var h1 = new Exception()
 var h2 = new DShellException()
 var h3 = new OutOfIndexException()
+
 assert($h1 is Exception)
 assert(not($h1 is DShellException))
 assert($h2 is DShellException)
 assert($h2 is Exception)
 assert($h3 is OutOfIndexException)
 assert($h3 is Exception)
+
+$h2 = new FileNotFoundException();
+assert($h2 is FileNotFoundException);
 
 try {
 	1 / 0

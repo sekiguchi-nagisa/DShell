@@ -18,7 +18,6 @@ import dshell.lang.Task;
 public class TaskContext {
 	private final List<AbstractProcessContext> procContexts;
 	private final TaskConfig config;
-	private boolean enableTrace = false;
 
 	public TaskContext(boolean isBackGround) {
 		this.procContexts = new ArrayList<>();
@@ -27,9 +26,6 @@ public class TaskContext {
 
 	public TaskContext addContext(AbstractProcessContext context) {
 		this.procContexts.add(context);
-		if(context.hasTraced()) {
-			this.enableTrace = true;
-		}
 		return this;
 	}
 
@@ -49,30 +45,7 @@ public class TaskContext {
 		return new ProcessContext(Utils.getCommandFromPath(commandName));	// get qualify name from path
 	}
 
-	private static boolean checkTraceRequirements() {
-		if(System.getProperty("os.name").equals("Linux")) {
-			ProcessContext.traceBackendType = ProcessContext.traceBackend_ltrace;
-			return Utils.getCommandFromPath("ltrace") != null;
-		}
-		return false;
-	}
-
 	private Object execTask() {
-		/**
-		 * init system call trace.
-		 */
-		if(this.enableTrace) {
-			boolean tracable = checkTraceRequirements();
-			for(AbstractProcessContext context : this.procContexts) {
-				if(context instanceof ProcessContext) {
-					((ProcessContext) context).initTrace(tracable);
-				}
-			}
-			if(!tracable) {
-				System.err.println("Systemcall Trace is Not Supported");
-			}
-		}
-
 		/**
 		 * launch task.
 		 */

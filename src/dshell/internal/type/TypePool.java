@@ -3,6 +3,7 @@ package dshell.internal.type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
@@ -19,6 +20,8 @@ import dshell.internal.type.DSType.UnresolvedType;
 import dshell.internal.type.DSType.VoidType;
 import dshell.internal.type.DSType.RootClassType;
 import dshell.internal.type.ParametricType.ParametricGenericType;
+import dshell.lang.Errno;
+import dshell.lang.Errno.DerivedFromErrnoException;
 
 /**
  * It contains builtin types ant user defined types.
@@ -140,6 +143,7 @@ public class TypePool {
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_DShellException(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_NullException(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_MultipleException(this));
+		this.setTypeAndThrowIfDefined(TypeInitializer.init_DerivedFromErrnoException(this));
 
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_InputStream(this));
 		this.setTypeAndThrowIfDefined(TypeInitializer.init_OutputStream(this));
@@ -147,6 +151,8 @@ public class TypePool {
 		this.boxedIntType     = new BoxedPrimitiveType(this.intType);
 		this.boxedFloaType    = new BoxedPrimitiveType(this.floatType);
 		this.boxedBooleanType = new BoxedPrimitiveType(this.booleanType);
+
+		this.loadAndSetErrnoClass();
 	}
 
 	private DSType setTypeAndThrowIfDefined(DSType type) {
@@ -155,6 +161,29 @@ public class TypePool {
 		}
 		this.typeMap.put(type.getTypeName(), type);
 		return type;
+	}
+
+	/**
+	 * import Errno Exception class
+	 */
+	private void loadAndSetErrnoClass() {
+		Set<Class<? extends DerivedFromErrnoException>> classSet = Errno.getExceptionClassSet();
+		for(Class<? extends DerivedFromErrnoException> clazz : classSet) {
+			String[][] ce = {
+					{},
+					{"String"},
+			};
+
+			String[][] fe = null;
+
+			String[][] me = null;
+
+			String op = null;
+			DSType superType = this.getType(DerivedFromErrnoException.class.getSimpleName());
+			DSType type = BuiltinClassType.createType(0, this, clazz.getSimpleName(), 
+					clazz.getName().replace('.', '/'), superType, true, ce, fe, me, op);
+			this.setTypeAndThrowIfDefined(type);
+		}
 	}
 
 	// type getter api

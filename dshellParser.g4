@@ -365,9 +365,9 @@ commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> pr
 	;
 
 singleCommandExpr returns [Node.ProcessNode node]	//FIXME:
-	: Command (CmdSep a+=commandArg)* (CmdSep b+=redirOption)*
+	: t+=Trace? Command (CmdSep a+=commandArg)* (CmdSep b+=redirOption)*
 		{
-			$node = new Node.ProcessNode($Command);
+			$node = new Node.ProcessNode($Command, $t.size() == 1);
 			for(int i = 0; i < $a.size(); i++) {
 				$node.setArg($a.get(i).node);
 			}
