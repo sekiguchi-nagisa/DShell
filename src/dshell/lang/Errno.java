@@ -257,6 +257,9 @@ public enum Errno {
 
 		protected DerivedFromErrnoException() {
 			super();
+			this.syscallName = "";
+			this.param = "";
+			this.errno = "";
 		}
 
 		protected DerivedFromErrnoException(String message) {

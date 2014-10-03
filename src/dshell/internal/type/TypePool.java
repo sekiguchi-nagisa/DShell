@@ -167,6 +167,7 @@ public class TypePool {
 	 * import Errno Exception class
 	 */
 	private void loadAndSetErrnoClass() {
+		DSType superType = this.getType(DerivedFromErrnoException.class.getSimpleName());
 		Set<Class<? extends DerivedFromErrnoException>> classSet = Errno.getExceptionClassSet();
 		for(Class<? extends DerivedFromErrnoException> clazz : classSet) {
 			String[][] ce = {
@@ -179,7 +180,6 @@ public class TypePool {
 			String[][] me = null;
 
 			String op = null;
-			DSType superType = this.getType(DerivedFromErrnoException.class.getSimpleName());
 			DSType type = BuiltinClassType.createType(0, this, clazz.getSimpleName(), 
 					clazz.getName().replace('.', '/'), superType, true, ce, fe, me, op);
 			this.setTypeAndThrowIfDefined(type);

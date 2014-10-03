@@ -5,3 +5,9 @@ try {
 	$a = $true
 }
 assert($a)
+
+try {
+	throw new NotPermittedException()
+} catch($e : DerivedFromErrnoException) {
+	assert($e.getErrno() == "EACCES")
+}
