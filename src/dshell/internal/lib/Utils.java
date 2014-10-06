@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 import java.util.TreeSet;
 
+import dshell.lang.Errno;
 import dshell.lang.GenericArray;
 
 /**
@@ -24,15 +25,35 @@ public class Utils {
 	 * - return null, if has no executable command.
 	 */
 	public final static String getCommandFromPath(String cmd) {
+		return getCommandFromPath(cmd, false);
+	}
+
+	/**
+	 * get full path of command.
+	 * @param cmd
+	 * @param throwable
+	 * @return
+	 * if throwable true and command not found or not executable, throw exception.
+	 */
+	public final static String getCommandFromPath(String cmd, boolean throwable) {
 		if(cmd.equals("")) {
+			Utils.fatal(1, "empty command name");
 			return null;
 		}
 		String[] paths = getEnv("PATH").split(":");
 		for(String path : paths) {
 			String fullPath = resolveHome(path + "/" + cmd);
-			if(new File(fullPath).canExecute()) {
-				return fullPath;
+			File file = new File(fullPath);
+			if(file.isFile()) {
+				if(new File(fullPath).canExecute()) {
+					return fullPath;
+				} else if(throwable){
+					throw new Errno.NotPermittedException(fullPath);
+				}
 			}
+		}
+		if(throwable) {
+			throw new Errno.FileNotFoundException(cmd);
 		}
 		return null;
 	}

@@ -42,7 +42,7 @@ public class TaskContext {
 		if(context != null) {
 			return context;
 		}
-		return new ProcessContext(Utils.getCommandFromPath(commandName));	// get qualify name from path
+		return new ProcessContext(Utils.getCommandFromPath(commandName, true));	// get qualify name from path
 	}
 
 	private Object execTask() {

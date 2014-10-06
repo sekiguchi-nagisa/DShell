@@ -11,3 +11,10 @@ function f() {
 }
 
 $f()
+
+
+try {
+	/bin/hogefrehufr
+} catch($e) {
+	assert($e is FileNotFoundException)
+}

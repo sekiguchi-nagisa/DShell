@@ -6,6 +6,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.Calendar;
 
 import dshell.internal.lib.Utils;
+import dshell.lang.Errno;
 
 public class ProcessContext extends AbstractProcessContext {
 	public final static int traceBackend_ltrace = 0;
@@ -82,7 +83,10 @@ public class ProcessContext extends AbstractProcessContext {
 			this.stderr = this.proc.getErrorStream();
 		}
 		catch(IOException e) {
-			throw dshell.lang.Exception.wrapException(e);
+			String errnoString = e.getMessage().split(":")[1].trim().split(", ")[0].split("=")[1];
+			String errnoName = Errno.toErrno(Integer.parseInt(errnoString)).name();
+			String cmdName = this.procBuilder.command().get(0);
+			throw ShellExceptionBuilder.createException(cmdName, new String[]{"", "", errnoName});
 		}
 		return this;
 	}

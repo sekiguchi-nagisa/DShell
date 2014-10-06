@@ -70,7 +70,15 @@ public class ShellExceptionBuilder {
 		}
 	}
 
-	private static DShellException createException(String message, String[] causeInfo) {
+	/**
+	 * create exception from errno
+	 * @param message
+	 * error meaasge
+	 * @param causeInfo
+	 * syscallName: 0, param: 1, errno: 2
+	 * @return
+	 */
+	public static DShellException createException(String message, String[] causeInfo) {
 		// syscall: syscallName: 0, param: 1, errno: 2
 		Class<?>[] types = {String.class};
 		Object[] args = {message};
