@@ -14,9 +14,9 @@ public class ArgumentBuilder {	//TODO:
 		return new ArgumentBuilder();
 	}
 
-	public ArgumentBuilder append(String value) {
+	public ArgumentBuilder append(Object value) {
 		if(this.argList.size() == 0) {
-			this.argList.add(value);
+			this.argList.add(value.toString());
 		} else {
 			String argSeg = this.argList.removeLast();
 			this.argList.add(argSeg + value);

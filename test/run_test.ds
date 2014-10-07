@@ -1,60 +1,56 @@
-import env TEST_DIR
-import command echo
-
 let LOG = "./test-result.log"
 let jar = "./dshell.jar"
-let JVM_OPTION = "-Xbootclasspath/a:${jar} -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.main.DShellTest"
+let JVM_OPTION = "-Xbootclasspath/a:$jar -XX:+TieredCompilation -XX:TieredStopAtLevel=1 dshell.main.DShellTest"
 
-function test(test_dir : String, test_file : String, option : String) {
-	import command java
-
+function test($test_dir : String, $test_file : String, $option : String, $args : Array<String>): boolean {
 	var mode = "[s]"
-	if(option == "-i") {
-		mode = "[i]"
+	if($option == "-i") {
+		$mode = "[i]"
 	}
-	echo "====== Test: ${mode} ${test_file} ======" &>> $LOG
-	let result : boolean = java -ea $(echo $JVM_OPTION) $option $test_dir/$test_file &>> $LOG
+	echo "====== Test: $mode $test_file ======" &>> $LOG
+	let result = java -ea $(echo $JVM_OPTION) $option ${test_dir}/${test_file} $args &>> $LOG
 	var prefix = "[fail]:"
-	if(result) {
-		prefix = "[pass]:"
+	if($result == 0) {
+		$prefix = "[pass]:"
 	}
-	var msg = "${prefix} ${mode} ${test_dir}/${test_file}"
+	var msg = "$prefix $mode ${test_dir}/${test_file}"
 	echo $msg
 	echo $msg &>> $LOG
 
-	return result
+	return $result == 0
 }
 
-function test_all(dir : String, option : int) {
-	import command ls
+function test_all($dir : String, $option : int) {
 	var count = 0
 	var pass_count = 0
-	for(test_file in $(ls $dir)) {
-		if(option == 0) {
-			count++
-			if(test(dir, test_file, "")) {
-				pass_count++
+	let args = ["a", "b", "c"]
+	for($test_file in $(ls $dir)) {
+		if($option == 0) {
+			$count++
+			if($test($dir, $test_file, "", $args)) {
+				$pass_count++
 			}
-			count++
-			if(test(dir, test_file, "-i")) {
-				pass_count++
+			$count++
+			if($test($dir, $test_file, "-i", $args)) {
+				$pass_count++
 			}
-		} else if(option == 1) {
-			count++
-			if(test(dir, test_file, "")) {
-				pass_count++
+		} else if($option == 1) {
+			$count++
+			if($test($dir, $test_file, "", $args)) {
+				$pass_count++
 			}
 		} else {
-			count++
-			if(test(dir, test_file, "-i")) {
-				pass_count++
+			$count++
+			if($test($dir, $test_file, "-i", $args)) {
+				$pass_count++
 			}
 		}
 	}
-	log "result:${dir} ${pass_count}/${count}"
+	log "result:$dir ${pass_count}/${count}"
 }
 
+import-env TEST_DIR
 echo > $LOG
-test_all("${TEST_DIR}/common", 0)
-test_all("${TEST_DIR}/scripting", 1)
+$test_all("$TEST_DIR/common", 0)
+$test_all("$TEST_DIR/scripting", 1)
 

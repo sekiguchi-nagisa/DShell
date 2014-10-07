@@ -548,9 +548,15 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 
 		// add argument segment, string or array
 		for(ExprNode exprNode : node.getSegmentNodeList()) {
-			methodDesc = new Method("append", bufferTypeDesc, 
-					new Type[]{TypeUtils.toTypeDescriptor(exprNode.getType())});
+			Type paramTypeDesc = TypeUtils.toTypeDescriptor(exprNode.getType());
 			this.generateCode(exprNode);
+
+			if(!exprNode.getType().getTypeName().startsWith("Array<")) {	// treat as object
+				mBuilder.box(paramTypeDesc);
+				paramTypeDesc = Type.getType(Object.class);
+			}
+			methodDesc = new Method("append", bufferTypeDesc, 
+					new Type[]{paramTypeDesc});
 			mBuilder.invokeVirtual(bufferTypeDesc, methodDesc);
 		}
 		return null;

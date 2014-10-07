@@ -35,7 +35,9 @@ public @interface OpType {
 		ASSERT ("assert"),
 		PRINT  ("printValue"),
 		GETENV ("getEnv"),
-		SETENV ("setEnv");
+		SETENV ("setEnv"),
+		INTERP("$"),
+		;
 
 		private final String opSymbol;
 		private OpName(String opSymbol) {

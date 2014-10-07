@@ -575,10 +575,10 @@ argumentList returns [ParserUtils.Arguments args]
 	;
 
 interpolation returns [Node.ExprNode node]
-	: symbol { $node = Node.CastNode.toString($symbol.node); }
-	| BooleanLiteral { $node = Node.CastNode.toString(new Node.BooleanValueNode($BooleanLiteral)); }
+	: symbol { $node = $symbol.node; }
+	| BooleanLiteral { $node = new Node.BooleanValueNode($BooleanLiteral); }
 	| SpecialName { $node = new Node.SpecialCharNode($SpecialName);}
-	| StartInterp expression RightBrace { $node = Node.CastNode.toString($expression.node); }
+	| StartInterp expression RightBrace { $node = $expression.node; }
 	;
 
 stringExpr returns [Node.StringExprNode node]

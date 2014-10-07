@@ -308,7 +308,12 @@ public abstract class Node {
 		}
 
 		public void addElementNode(ExprNode exprNode) {
-			this.elementList.add(this.setExprNodeAsChild(exprNode));
+			ExprNode elementNode = exprNode;
+			if(!(exprNode instanceof StringValueNode) && !(exprNode instanceof StringExprNode) 
+					&& !(exprNode instanceof InnerTaskNode)) {
+				elementNode = new OperatorCallNode("$", elementNode);
+			}
+			this.elementList.add(this.setExprNodeAsChild(elementNode));
 		}
 
 		public List<ExprNode> getElementList() {
@@ -756,6 +761,18 @@ public abstract class Node {
 			this.argNodeList = new ArrayList<>(2);
 			this.argNodeList.add(this.setExprNodeAsChild(leftNode));
 			this.argNodeList.add(this.setExprNodeAsChild(rightNode));
+		}
+
+		/**
+		 * for StringExprNode
+		 * @param opName
+		 * @param node
+		 */
+		public OperatorCallNode(String opName, ExprNode node) {
+			super(null);
+			this.funcName = opName;
+			this.argNodeList = new ArrayList<>(1);
+			this.argNodeList.add(this.setExprNodeAsChild(node));
 		}
 
 		public String getFuncName() {

@@ -8,6 +8,10 @@ import dshell.annotation.OpType;
 import dshell.annotation.Shared;
 import dshell.annotation.OpType.OpName;
 import dshell.lang.ArithmeticException;
+import dshell.lang.BooleanArray;
+import dshell.lang.FloatArray;
+import dshell.lang.GenericArray;
+import dshell.lang.IntArray;
 
 /**
  * D-Shell basic operator definition.
@@ -188,5 +192,41 @@ public class Operator {
 	@Shared @OpType(OpName.SETENV) public static String setEnv(String key, String env) {
 		int ret = RuntimeContext.getInstance().setenv(key, env, true);
 		return ret == 0 ? env : "";
+	}
+
+	// INTERP
+	@Shared @OpType(OpName.INTERP) public static String toStringOrFlat(long value) {
+		return Long.toString(value);
+	}
+
+	@Shared @OpType(OpName.INTERP) public static String toStringOrFlat(double value) {
+		return Double.toString(value);
+	}
+
+	@Shared @OpType(OpName.INTERP) public static String toStringOrFlat(boolean value) {
+		return Boolean.toString(value);
+	}
+
+	/**
+	 * for StringExprNode
+	 * @param value
+	 * @return
+	 * if value is array type, return Array#flat().
+	 * otherwise Object#toString()
+	 */
+	@Shared @OpType(OpName.INTERP) public static String toStringOrFlat(Object value) {
+		if(value instanceof GenericArray) {
+			return ((GenericArray) value).flat();
+		}
+		if(value instanceof IntArray) {
+			return ((IntArray) value).flat();
+		}
+		if(value instanceof FloatArray) {
+			return ((FloatArray) value).flat();
+		}
+		if(value instanceof BooleanArray) {
+			return ((BooleanArray) value).flat();
+		}
+		return value.toString();
 	}
 }
