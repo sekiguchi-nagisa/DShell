@@ -1,9 +1,0 @@
-##FIXME
-
-import command echo
-
-let a : String = echo "西暦${1900 + 114}年"
-let b : String = echo "西暦\${1900 + 114}年"
-
-assert(a == "西暦2014年")
-assert(b == "西暦\${1900 + 114}年")

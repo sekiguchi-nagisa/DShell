@@ -16,7 +16,7 @@ preprocess:
 	python ./tools/gen-array.py ./src/dshell/lang/GenericArray.java
 	java -jar ./lib/antlr-4.3-complete.jar ./dshellLexer.g4 ./dshellParser.g4 -o ${PARSER_OUTDIR} -no-listener -no-visitor -encoding UTF-8
 
-clean: clean-launcher
+clean:
 	rm -rf ./gensrc
 	rm -rf ./generated-array
 	ant clean
@@ -24,7 +24,7 @@ clean: clean-launcher
 clean-launcher:
 	make -C $(TOOLS_DIR)/launcher clean
 
-install:
+install: clean-launcher
 	echo "install dshell to $(INSTALL_PREFIX)/bin"
 	install -d $(INSTALL_PREFIX)/bin
 	make -C $(TOOLS_DIR)/launcher JAR_PREFIX=$(INSTALL_PREFIX)/bin
@@ -32,9 +32,6 @@ install:
 	install -m 775 $(TOOLS_DIR)/launcher/$(BIN_NAME) $(INSTALL_PREFIX)/bin/
 
 test:
-	TEST_DIR=./test ./test/test_all.sh
-
-self-test:
 	TEST_DIR=./test dshell ./test/run_test.ds
 
-.PHONY: all build clean install test self-test
+.PHONY: all build clean install test

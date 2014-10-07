@@ -1,5 +1,0 @@
-function sub() {
-  return "sub call"
-}
-
-assert(sub() == "sub call")

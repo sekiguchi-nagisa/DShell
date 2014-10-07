@@ -1,7 +1,0 @@
-##FIXME
-
-function func() {
-  log "logging test"
-  assert(true)
-}
-func()

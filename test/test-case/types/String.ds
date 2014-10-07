@@ -1,8 +1,0 @@
-function func() {
-
-  var str = "うずまきナルト"
-  assert(str == "うずまきナルト")
-  assert(str instanceof String)
-}
-
-func()

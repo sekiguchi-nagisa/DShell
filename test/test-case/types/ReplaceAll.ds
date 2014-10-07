@@ -1,8 +1,0 @@
-function func() {
-
-  var str:String = "はるのサクラ"
-  str = str.replaceAll("はるの", "うずまき")
-  assert(str == "うずまきサクラ")
-}
-
-func()

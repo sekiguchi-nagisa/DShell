@@ -1,6 +1,0 @@
-function func(a, b) {
-  return a + b
-}
-
-assert(func(1, 2) == 3)
-assert(func(3, 4) == 7)
