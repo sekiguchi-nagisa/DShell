@@ -1039,16 +1039,16 @@ public abstract class Node {
 	 *
 	 */
 	public static class SpecialCharNode extends ExprNode {
-		public final static int dollar_at = 1;	// $@
+		public final static int at = 1;	// $@
 
 		private final int expandType;
 
 		protected SpecialCharNode(Token token) {
 			super(token);
-			String tokenText = token.getText();
+			String tokenText = resolveName(token);
 			switch(tokenText) {
-			case "$@":
-				this.expandType = dollar_at;
+			case "@":
+				this.expandType = at;
 				break;
 			default:
 				throw new RuntimeException("unsupported special parameter: " + tokenText);
@@ -2120,6 +2120,9 @@ public abstract class Node {
 	// helper utilities
 	public static String resolveName(Token token) {
 		String name = token.getText();
+		if(name.startsWith("${")) {
+			return name.substring(2, name.length() - 1);
+		}
 		return name.startsWith("$") ? name.substring(1) : name;
 	}
 }

@@ -143,9 +143,13 @@ AppliedName
 	;
 
 SpecialName
-	: '$$'
-	| '$@'
-	| '$*'
+	: '$' SpecialNames
+	;
+
+fragment
+SpecialNames
+//	: [$@*]
+	: '@'
 	;
 
 // command literal
@@ -319,28 +323,47 @@ DoubleEscapeSequence	// TODO: unicode escape
 	: '\\' [$btnfr"`\\]
 	;
 
+InnerCmdBackQuote
+	: BackquoteLiteral -> type(BackquoteLiteral)
+	;
+
+InnerBoolean
+	: InnerBooleans -> type(BooleanLiteral)
+	;
+
+fragment
+InnerBooleans
+	: BooleanLiteral
+	| '${true}'
+	| '${false}'
+	;
+
+InnerName
+	: InnerNames -> type(AppliedName)
+	;
+
+fragment
+InnerNames
+	: AppliedName
+	| '${' PermittedName '}'
+	;
+
+InnerSpecialName
+	: InnerSpecialNames -> type(SpecialName)
+	;
+
+fragment
+InnerSpecialNames
+	: SpecialName
+	| '${' SpecialNames '}'
+	;
+
 StartInterp
 	: '${' -> pushMode(DEFAULT_MODE)
 	;
 
 String_StartSubCmd
 	: StartSubCmd {this.enterStmt = true;} -> pushMode(DEFAULT_MODE), type(StartSubCmd)
-	;
-
-InnerCmdBackQuote
-	: BackquoteLiteral -> type(BackquoteLiteral)
-	;
-
-InnerBoolean
-	: BooleanLiteral -> type(BooleanLiteral)
-	;
-
-InnerName
-	: AppliedName -> type(AppliedName)
-	;
-
-InnerSpecialName
-	: SpecialName -> type(SpecialName)
 	;
 
 String_Other: .;
@@ -363,28 +386,28 @@ CmdArgPart_OpenDoubleQuote
 	: '"' -> type(OpenDoubleQuote), pushMode(DoubleQuoteStringMode)
 	;
 
-CmdArgPart_StartInterp
-	: StartInterp -> type(StartInterp), pushMode(DEFAULT_MODE)
-	;
-
-CmdArgPArt_StartSubCmd
-	: StartSubCmd {this.enterStmt = true;} -> pushMode(DEFAULT_MODE), type(StartSubCmd)
-	;
-
 CmdArgPart_BackquoteLiteral
 	: BackquoteLiteral -> type(BackquoteLiteral)
 	;
 
 CmdPart_Boolean
-	: BooleanLiteral -> type(BooleanLiteral)
+	: InnerBoolean -> type(BooleanLiteral)
 	;
 
 CmdArgPart_AppliedName
-	: AppliedName -> type(AppliedName)
+	: InnerName -> type(AppliedName)
 	;
 
 CmdArgPart_SpecialName
-	: SpecialName -> type(SpecialName)
+	: InnerSpecialName -> type(SpecialName)
+	;
+
+CmdArgPart_StartInterp
+	: StartInterp -> type(StartInterp), pushMode(DEFAULT_MODE)
+	;
+
+CmdArgPart_StartSubCmd
+	: StartSubCmd {this.enterStmt = true;} -> pushMode(DEFAULT_MODE), type(StartSubCmd)
 	;
 
 CmdSep

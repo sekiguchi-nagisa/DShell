@@ -692,7 +692,7 @@ public class TypeChecker implements NodeVisitor<Node> {
 	@Override
 	public Node visit(SpecialCharNode node) {	//TODO:
 		switch(node.getExpandType()) {
-		case SpecialCharNode.dollar_at: {
+		case SpecialCharNode.at: {
 			List<DSType> typeList = new ArrayList<>(1);
 			typeList.add(this.typePool.stringType);
 			String baseTypeName = this.typePool.baseArrayType.getTypeName();

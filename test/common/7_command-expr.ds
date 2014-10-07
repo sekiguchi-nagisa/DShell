@@ -6,6 +6,12 @@ assert($a == $c1)
 assert("true" == "`echo $true`")
 assert("false" == "`echo $false`")
 
+$c1 = "`echo ${a}`"
+assert($a == $c1)
+
+assert("true" == "`echo ${true}`")
+assert("false" == "`echo ${false}`")
+
 var c2 = "$(echo "he${"ll" + "o"} world")"
 assert($c2 == "hello world")
 

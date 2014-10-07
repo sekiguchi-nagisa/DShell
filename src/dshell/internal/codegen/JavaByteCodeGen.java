@@ -559,7 +559,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	@Override
 	public Void visit(SpecialCharNode node) {	//TODO: refactoring
 		switch(node.getExpandType()) {
-		case SpecialCharNode.dollar_at: {
+		case SpecialCharNode.at: {
 			Method methodDesc = 
 					new Method("getArgs", TypeUtils.toTypeDescriptor(node.getType()), new Type[]{});
 			this.getCurrentMethodBuilder().invokeStatic(Type.getType(Utils.class), methodDesc);
