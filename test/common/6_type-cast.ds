@@ -17,3 +17,10 @@ assert($b3 == "12")
 var a4 = new Exception()
 $a4 = new OutOfIndexException()
 var b4 = $a4 as OutOfIndexException
+
+try {
+	"fhuri" as Exception
+	assert($false)
+} catch($e : TypeCastException) {
+	assert($true)
+}
