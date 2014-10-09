@@ -11,6 +11,7 @@ import java.util.TreeSet;
 
 import dshell.lang.Errno;
 import dshell.lang.GenericArray;
+import dshell.lang.TypeCastException;
 
 /**
  * some utilities.
@@ -246,5 +247,20 @@ public class Utils {
 			return new GenericArray();
 		}
 		return GlobalVariableTable.getObjectVar(varName, GenericArray.class);
+	}
+
+	/**
+	 * for CastNode
+	 * @param value
+	 * @param clazz
+	 * @return
+	 * casted object
+	 */
+	public static Object cast(Object value, Class<?> clazz) {
+		try {
+			return clazz.cast(value);
+		} catch(ClassCastException e) {
+			throw new TypeCastException(e);
+		}
 	}
 }

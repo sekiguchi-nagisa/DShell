@@ -19,9 +19,6 @@ public class Exception extends RuntimeException {
 		if(t instanceof Exception) {
 			return (Exception) t;
 		}
-		if(t instanceof ClassCastException) {
-			return new TypeCastException((ClassCastException) t);
-		}
 		return new NativeException(t);
 	}
 
