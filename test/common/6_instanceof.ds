@@ -31,6 +31,7 @@ function f($a : int, $b : Exception) {
 }
 
 assert($f is Func<void, [int, Exception]>)
+assert(not($f is Func<float, [int, int]>))
 
 # generic type
 var g1 = [1, 2, 3]

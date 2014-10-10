@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.Token;
 import org.objectweb.asm.ClassWriter;
@@ -101,19 +102,6 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		this.methodBuilders = new ArrayDeque<>();
 	}
 
-	public static byte[] generateFuncTypeInterface(FunctionType funcType) {
-		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-		writer.visit(V1_7, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, funcType.getInternalName(), null, "java/lang/Object", null);
-		// generate method stub
-		GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_ABSTRACT, funcType.getHandle().getMethodDesc(), null, null, writer);
-		adapter.endMethod();
-		// generate static field containing FuncType name
-		String fieldDesc = Type.getType(String.class).getDescriptor();
-		writer.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, "funcTypeName", fieldDesc, null, funcType.getTypeName());
-		writer.visitEnd();
-		return writer.toByteArray();
-	}
-
 	private MethodBuilder getCurrentMethodBuilder() {
 		return this.methodBuilders.peek();
 	}
@@ -163,7 +151,9 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 	 * - generated class.
 	 */
 	public Class<?> generateTopLevelClass(RootNode node, boolean enableResultPrint) {
-		ClassBuilder classBuilder = new ClassBuilder(this.getSourceName(node.getToken()));
+		generateFuncTypeInterface(node.getGenTargetFuncTypeSet(), this.classLoader);
+
+		ClassBuilder classBuilder = new ClassBuilder(node.getToplevelName(), this.getSourceName(node.getToken()));
 		this.methodBuilders.push(classBuilder.createNewMethodBuilder(null));
 		for(Node targetNode : node.getNodeList()) {
 			this.generateCode(targetNode);
@@ -184,6 +174,30 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 		this.methodBuilders.peek().returnValue();
 		this.methodBuilders.pop().endMethod();
 		return classBuilder.generateClass(this.classLoader.createChild());
+	}
+
+	/**
+	 * generate function type interface class. if funcTypeSet is null, not generate interface.
+	 * @param funcTypeSet
+	 * may be null
+	 */
+	protected static void generateFuncTypeInterface(Set<FunctionType> funcTypeSet, DShellClassLoader loader) {
+		if(funcTypeSet == null) {
+			return;
+		}
+		for(FunctionType funcType : funcTypeSet) {
+			ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			writer.visit(V1_7, ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT, funcType.getInternalName(), null, "java/lang/Object", null);
+			// generate method stub
+			GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_ABSTRACT, funcType.getHandle().getMethodDesc(), null, null, writer);
+			adapter.endMethod();
+			// generate static field containing FuncType name
+			String fieldDesc = Type.getType(String.class).getDescriptor();
+			writer.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, "funcTypeName", fieldDesc, null, funcType.getTypeName());
+			writer.visitEnd();
+			// load generated class
+			loader.definedAndLoadClass(funcType.getInternalName(), writer.toByteArray());
+		}
 	}
 
 	/**

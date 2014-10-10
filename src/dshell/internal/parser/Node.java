@@ -2,6 +2,7 @@ package dshell.internal.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.Token;
 
@@ -20,6 +21,7 @@ import dshell.internal.type.CalleeHandle.MethodHandle;
 import dshell.internal.type.CalleeHandle.OperatorHandle;
 import dshell.internal.type.CalleeHandle.StaticFieldHandle;
 import dshell.internal.type.DSType.FuncHolderType;
+import dshell.internal.type.DSType.FunctionType;
 import dshell.internal.type.DSType.PrimitiveType;
 import dshell.internal.type.TypePool;
 import dshell.internal.type.DSType;
@@ -2103,9 +2105,16 @@ public abstract class Node {
 		private final List<Node> nodeList;
 
 		/**
+		 * for top level class generation. must be fully qualified class name
+		 */
+		private String intrenalToplevelClassName;
+
+		/**
 		 * used for interactive mode.
 		 */
 		private OperatorHandle handle;
+
+		private Set<FunctionType> genTargetFuncTypeSet;
 
 		public RootNode(Token token) {
 			super(token);
@@ -2126,6 +2135,41 @@ public abstract class Node {
 
 		public OperatorHandle getHandle() {
 			return this.handle;
+		}
+
+		/**
+		 * 
+		 * @param name
+		 * fully qualidied class name
+		 */
+		public void setToplevelName(String name) {
+			this.intrenalToplevelClassName = name;
+		}
+
+		/**
+		 * get internal name of toplevel class
+		 * @return
+		 */
+		public String getToplevelName() {
+			return this.intrenalToplevelClassName;
+		}
+
+		/**
+		 * for func type generation
+		 * @param genTargetFuncTypeSet
+		 * may be null
+		 */
+		public void setGenTargetFuncTypeSet(Set<FunctionType> genTargetFuncTypeSet) {
+			this.genTargetFuncTypeSet = genTargetFuncTypeSet;
+		}
+
+		/**
+		 * 
+		 * @return
+		 * may be null
+		 */
+		public Set<FunctionType> getGenTargetFuncTypeSet() {
+			return this.genTargetFuncTypeSet;
 		}
 
 		@Override

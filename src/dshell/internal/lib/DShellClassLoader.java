@@ -2,9 +2,11 @@ package dshell.internal.lib;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * used for user defined class loading.
+ * used for user defined class loading. not thread safe.
  * @author skgchxngsxyz-osx
  *
  */
@@ -13,21 +15,27 @@ public class DShellClassLoader extends ClassLoader {
 	 * if true, dump byte code.
 	 */
 	private static boolean enableDump = false;
-	
-	
-	/**
-	 * fully qualified class name.
-	 */
-	private String className;
 
 	/**
-	 * require java class specification.
+	 * must be fully qualified binary name(contains . ).
 	 */
-	private byte[] byteCode;
-	private boolean initialized = false;
+	private final String allowedPackageName;
 
-	public DShellClassLoader() {
+	/**
+	 * contains byte code(require java class specification). 
+	 * key is fully qualified binary class name(contains . ).
+	 */
+	private final Map<String, byte[]> byteCodeMap;
+
+	/**
+	 * 
+	 * @param packageName
+	 * must be equivalent to TypePool#generatedPackage
+	 */
+	public DShellClassLoader(String packageName) {
 		super();
+		this.allowedPackageName = toBinaryName(packageName);
+		this.byteCodeMap = new HashMap<>();
 	}
 
 	/**
@@ -36,16 +44,37 @@ public class DShellClassLoader extends ClassLoader {
 	 */
 	protected DShellClassLoader(DShellClassLoader classLoader) {
 		super(classLoader);
+		this.allowedPackageName = classLoader.allowedPackageName;
+		this.byteCodeMap = new HashMap<>();
 	}
 
-	@Override protected Class<?> findClass(String name) {
-		if(!this.initialized) {
-			return null;
+	@Override protected Class<?> findClass(String name) throws ClassNotFoundException {
+		byte[] byteCode = this.byteCodeMap.remove(name);
+		if(byteCode == null) {
+			throw new ClassNotFoundException("not found class: " + name);
 		}
-		this.initialized = false;
-		Class<?>  generetedClass = this.defineClass(this.className, this.byteCode, 0, this.byteCode.length);
-		this.byteCode = null;
-		return generetedClass;
+		return this.defineClass(name, byteCode, 0, byteCode.length);
+	}
+
+	@Override
+	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+		Class<?> foundClass = this.findLoadedClass(name);
+		if(foundClass == null) {
+			ClassLoader parent = this.getParent();
+			if((parent instanceof DShellClassLoader) || !name.startsWith(this.allowedPackageName)) {
+				try {
+					foundClass = parent.loadClass(name);
+				} catch(ClassNotFoundException e) {
+				}
+			}
+		}
+		if(foundClass == null) {
+			foundClass = this.findClass(name);
+		}
+		if(resolve) {
+			this.resolveClass(foundClass);
+		}
+		return foundClass;
 	}
 
 	/**
@@ -55,10 +84,12 @@ public class DShellClassLoader extends ClassLoader {
 	 * - must be fully qualified class name.
 	 * @param byteCode
 	 */
-	public void setByteCode(String className, byte[] byteCode) {
-		this.initialized = true;
-		this.className = className;
-		this.byteCode = byteCode.clone();
+	public void addByteCode(String className, byte[] byteCode) {
+		String binaryName = toBinaryName(className);
+		if(this.byteCodeMap.put(binaryName, byteCode) != null) {
+			Utils.fatal(1, "already defined class: " + className);
+		}
+		dump(binaryName, byteCode);
 	}
 
 	/**
@@ -70,12 +101,8 @@ public class DShellClassLoader extends ClassLoader {
 	 * - if class loading failed, call System.exit(1).
 	 */
 	public Class<?> definedAndLoadClass(String className, byte[] byteCode) {
-		String binaryName = className;
-		if(className.indexOf(".") == -1) {
-			binaryName = className.replace('/', '.');
-		}
-		this.setByteCode(binaryName, byteCode);
-		this.dump();
+		String binaryName = toBinaryName(className);
+		this.addByteCode(binaryName, byteCode);
 		try {
 			return this.loadClass(binaryName);
 		} catch (Throwable e) {
@@ -96,15 +123,15 @@ public class DShellClassLoader extends ClassLoader {
 	/**
 	 * for debug purpose.
 	 */
-	private void dump() {
+	private static void dump(String binaryClassName, byte[] byteCode) {
 		if(!enableDump) {
 			return;
 		}
-		int index = this.className.lastIndexOf('.');
-		String classFileName = this.className.substring(index + 1) + ".class";
+		int index = binaryClassName.lastIndexOf('.');
+		String classFileName = binaryClassName.substring(index + 1) + ".class";
 		System.err.println("@@@@ Dump ByteCode: " + classFileName + " @@@@");
 		try(FileOutputStream stream = new FileOutputStream(classFileName)) {
-			stream.write(this.byteCode);
+			stream.write(byteCode);
 			stream.close();
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -113,5 +140,9 @@ public class DShellClassLoader extends ClassLoader {
 
 	public void setDump(boolean enableByteCodeDump) {
 		enableDump = enableByteCodeDump;
+	}
+
+	private final static String toBinaryName(String className) {
+		return className.replace('/', '.');
 	}
 }

@@ -51,8 +51,9 @@ public class DShellEngineFactory implements EngineFactory {
 			this.parser.removeErrorListeners();
 			this.parser.addErrorListener(ParserErrorListener.getInstance());
 
-			this.classLoader = new DShellClassLoader();
-			this.checker = new TypeChecker(new TypePool(this.classLoader));
+			TypePool pool = new TypePool();
+			this.classLoader = new DShellClassLoader(TypePool.generatedPackage);
+			this.checker = new TypeChecker(pool);
 			this.codeGen = new JavaByteCodeGen(this.classLoader);
 			this.listener = new DShellErrorListener();
 			this.config = new EngineConfig();
