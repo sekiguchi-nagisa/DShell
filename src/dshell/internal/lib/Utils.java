@@ -102,7 +102,7 @@ public class Utils {
 		System.exit(status);
 	}
 
-	public static void log(String value) {
+	public final static void log(String value) {
 		System.out.println(value);
 		RuntimeContext.getInstance().getLogger().warn(value);
 	}
@@ -113,12 +113,12 @@ public class Utils {
 	 * @return
 	 * - if has no env, return empty string.
 	 */
-	public static String getEnv(String key) {
+	public final static String getEnv(String key) {
 		String env = RuntimeContext.getInstance().getenv(key);
 		return env == null ? "" : env;
 	}
 
-	public static void setValue(Object targetObject, String fieldName, Object value) {
+	public final static void setValue(Object targetObject, String fieldName, Object value) {
 		try {
 			Field field = targetObject.getClass().getDeclaredField(fieldName);
 			field.setAccessible(true);
@@ -131,7 +131,7 @@ public class Utils {
 		}
 	}
 
-	public static Object getValue(Object targetObject, String fieldName) {
+	public final static Object getValue(Object targetObject, String fieldName) {
 		try {
 			Field field = targetObject.getClass().getDeclaredField(fieldName);
 			field.setAccessible(true);
@@ -152,7 +152,7 @@ public class Utils {
 	 * - no null string
 	 * @return
 	 */
-	public static String resolveHome(String path) {
+	public final static String resolveHome(String path) {
 		if(path.equals("~")) {
 			return Utils.getEnv("HOME");
 		}
@@ -162,19 +162,11 @@ public class Utils {
 		return path;
 	}
 
-	public static String[] splitWithDelim(String targetValue) {	//TODO: support IFS variable
+	public final static String[] splitWithDelim(String targetValue) {	//TODO: support IFS variable
 		return targetValue.replaceAll("^[\t\n ]+", "").split("[\t\n ]+");
 	}
 
-	public static long stringToLong(String value) {
-		return Long.parseLong(value);
-	}
-
-	public static double stringToDouble(String value) {
-		return Double.parseDouble(value);
-	}
-
-	public static String removeNewLine(String value) {
+	public final static String removeNewLine(String value) {
 		int size = value.length();
 		int endIndex = size;
 		for(int i = size - 1; i > -1; i--) {
@@ -187,7 +179,7 @@ public class Utils {
 		return endIndex == size ? value : value.substring(0, endIndex);
 	}
 
-	public static String getUserName() {
+	public final static String getUserName() {
 		return getEnv("USER");
 	}
 
@@ -195,11 +187,11 @@ public class Utils {
 	 * print dshell style stack trace message
 	 * @param e
 	 */
-	public static void printException(InvocationTargetException e) {
+	public final static void printException(InvocationTargetException e) {
 		dshell.lang.Exception.wrapException(e.getCause()).printStackTrace();
 	}
 
-	public static void appendStringifiedValue(StringBuilder sb, Object value) {
+	public final static void appendStringifiedValue(StringBuilder sb, Object value) {
 		if(value == null) {
 			sb.append("$null$");
 		}
@@ -232,16 +224,15 @@ public class Utils {
 
 	private final static Random rnd = new Random(System.currentTimeMillis());
 
-	public static String genUniqueClassName(String packageName, String name, int suffix) {
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append(packageName);
-		sBuilder.append(name);
-		sBuilder.append('_');
-		sBuilder.append(rnd.nextInt());
-		return sBuilder.toString();
+	/**
+	 * get integer random number
+	 * @return
+	 */
+	public final static int getRandomNum() {
+		return rnd.nextInt();
 	}
 
-	public static GenericArray getArgs() {
+	public final static GenericArray getArgs() {
 		String varName = "$ARGS";
 		if(!GlobalVariableTable.checkVarExistence(varName)) {
 			return new GenericArray();
@@ -256,7 +247,7 @@ public class Utils {
 	 * @return
 	 * casted object
 	 */
-	public static Object cast(Object value, Class<?> clazz) {
+	public final static Object cast(Object value, Class<?> clazz) {
 		try {
 			return clazz.cast(value);
 		} catch(ClassCastException e) {

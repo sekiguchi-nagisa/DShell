@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import dshell.annotation.Shared;
 import dshell.annotation.SharedClass;
 import dshell.internal.lib.RuntimeContext;
+import dshell.internal.type.TypePool;
 
 /**
  * D-shell basis exception class
@@ -85,7 +86,7 @@ public class Exception extends RuntimeException {
 				foundNativeMethod = true;
 				continue;
 			}
-			if(foundNativeMethod && element.getClassName().startsWith("dshell.defined.")) {
+			if(foundNativeMethod && element.getClassName().startsWith(TypePool.generatedPackage.replace('/', '.'))) {
 				elementStack.add(element);
 			}
 		}
@@ -107,13 +108,13 @@ public class Exception extends RuntimeException {
 		String fullyQualifiedClassName = element.getClassName();
 		int index = fullyQualifiedClassName.lastIndexOf('.');
 		String className = fullyQualifiedClassName.substring(index + 1);
-		if(fullyQualifiedClassName.startsWith("dshell.defined.toplevel")) {
+		if(fullyQualifiedClassName.replace('.', '/').startsWith(TypePool.toplevelClassName)) {
 			return "<toplevel>()";
 //		} else if(fullyQualifiedClassName.startsWith("dshell.defined.class")) { //TODO:
 			
-		} else if(fullyQualifiedClassName.startsWith("dshell.defined.func")) {
+		} else if(fullyQualifiedClassName.replace('.', '/').startsWith(TypePool.generatedFuncPackage)) {
 			int prefixIndex = className.indexOf('_');
-			return className.substring(prefixIndex + 1) + "()";
+			return "function " + className.substring(prefixIndex + 1) + "()";
 		}
 		return "unknown";
 	}

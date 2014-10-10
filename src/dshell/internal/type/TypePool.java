@@ -2,11 +2,10 @@ package dshell.internal.type;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import dshell.internal.codegen.JavaByteCodeGen;
-import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.error.TypeCheckException.TypeErrorKind_OneArg;
 import dshell.internal.parser.error.TypeCheckException.TypeErrorKind_ThreeArg;
@@ -32,19 +31,26 @@ public class TypePool {
 	/**
 	 * prefix of generated class.
 	 */
-	public final static String genClassPrefix = "dshell/defined/";
+	public final static String generatedPackage = "dshell/generated/";
 
 	/**
 	 * package name for generated class.
 	 */
-	private final static String generatedClassPackage = genClassPrefix + "class/";
+	public final static String generatedClassPackage = generatedPackage + "class/";
 
 	/**
 	 * package name for generated func interface.
 	 */
-	private final static String generatedFuncPackage = genClassPrefix + "func/";
+	public final static String generatedFuncPackage = generatedPackage + "func/";
 
 	private static int funcNameSuffix = -1;
+
+	/**
+	 * name prefix for top level class.
+	 */
+	public final static String toplevelClassName = generatedPackage + "toplevel";
+
+	private static int topLevelClassSuffix = -1;
 
 	/**
 	 * used for type checker.
@@ -110,14 +116,9 @@ public class TypePool {
 	 */
 	protected final HashMap<String, DSType> typeMap;
 
-	/**
-	 * class loader for FuncType generation.
-	 * do not use it for other purpose.
-	 */
-	protected final DShellClassLoader classLoader;
+	protected Set<FunctionType> ungeneratedFucnTypeSet;
 
-	public TypePool(DShellClassLoader classLoader) {
-		this.classLoader = classLoader;
+	public TypePool() {
 		this.typeMap = new HashMap<>();
 
 		this.setTypeAndThrowIfDefined(voidType);
@@ -299,8 +300,7 @@ public class TypePool {
 		if(!(this.getType(className) instanceof UnresolvedType)) {
 			throw new TypeLookupException(TypeErrorKind_OneArg.DefinedType, className);
 		}
-		ClassType classType = new UserDefinedClassType(className, 
-				Utils.genUniqueClassName(generatedClassPackage, className, 0), superType, true);
+		ClassType classType = new UserDefinedClassType(className, generatedClassPackage + className, superType, true);
 		this.typeMap.put(className, classType);
 		return classType;
 	}
@@ -327,17 +327,17 @@ public class TypePool {
 		String typeName = toFuncTypeName(returnType, paramTypeList);
 		DSType funcType = this.getType(typeName);
 		if(funcType instanceof UnresolvedType) {
-			String internalName = Utils.genUniqueClassName(generatedFuncPackage, "FuncType", ++funcNameSuffix);
+			String internalName = generatedFuncPackage + "FuncType" + ++funcNameSuffix;
 			funcType = new FunctionType(typeName, internalName, returnType, paramTypeList);
 			this.typeMap.put(typeName, funcType);
-			this.classLoader.definedAndLoadClass(internalName, JavaByteCodeGen.generateFuncTypeInterface((FunctionType) funcType));
+			this.addUngeneratedFuncType((FunctionType) funcType);
 		}
 		return (FunctionType) funcType;
 	}
 
 	public FuncHolderType createFuncHolderType(FunctionType funcType, String funcName) {
 		String typeName = "FuncHolder" + ++funcNameSuffix + "of" + funcType.getTypeName();
-		String internalName = Utils.genUniqueClassName(generatedFuncPackage, "FuncHolder_" + funcName, funcNameSuffix);
+		String internalName = generatedFuncPackage + "FuncHolder_" + funcName + funcNameSuffix;
 		return new FuncHolderType(typeName, internalName, funcType);
 	}
 
@@ -391,6 +391,27 @@ public class TypePool {
 		}
 		sBuilder.append(">");
 		return sBuilder.toString();
+	}
+
+	public String createToplevelClassName() {
+		return toplevelClassName + ++topLevelClassSuffix;
+	}
+
+	private void addUngeneratedFuncType(FunctionType funcType) {
+		if(this.ungeneratedFucnTypeSet == null) {
+			this.ungeneratedFucnTypeSet = new HashSet<>();
+		}
+		this.ungeneratedFucnTypeSet.add(funcType);
+	}
+
+	/**
+	 * for code generator
+	 * @return
+	 */
+	public Set<FunctionType> removeUngeneratedFuncTypeSet() {
+		Set<FunctionType> set = this.ungeneratedFucnTypeSet;
+		this.ungeneratedFucnTypeSet = null;
+		return set;
 	}
 
 	/**
@@ -529,7 +550,7 @@ public class TypePool {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		TypePool pool = new TypePool(new DShellClassLoader());
+		TypePool pool = new TypePool();
 		String source = "Array<Array<@T>>";
 		DSType parsedType = pool.parseTypeName(source);
 		System.out.println(parsedType);

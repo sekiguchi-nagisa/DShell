@@ -1150,6 +1150,8 @@ public class TypeChecker implements NodeVisitor<Node> {
 
 	public RootNode checkTypeRootNode(RootNode node) {
 		this.symbolTable.clearEntryCache();
+		this.typePool.removeUngeneratedFuncTypeSet();
+
 		for(Node targetNode : node.getNodeList()) {
 			this.checkTypeAcceptingVoidType(targetNode);
 		}
@@ -1158,6 +1160,8 @@ public class TypeChecker implements NodeVisitor<Node> {
 			Utils.fatal(1, "undefined operator: " + RootNode.opName + "(" + this.typePool.objectType + ", " + this.typePool.stringType + ")");
 		}
 		node.setHandle(handle);
+		node.setToplevelName(this.typePool.createToplevelClassName());
+		node.setGenTargetFuncTypeSet(this.typePool.removeUngeneratedFuncTypeSet());
 		return node;
 	}
 }

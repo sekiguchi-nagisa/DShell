@@ -20,7 +20,6 @@ import dshell.internal.lib.DShellClassLoader;
 import dshell.internal.lib.GlobalVariableTable;
 import dshell.internal.lib.Utils;
 import dshell.internal.parser.TypeUtils;
-import dshell.internal.type.TypePool;
 import dshell.internal.type.UserDefinedClassType;
 import dshell.internal.type.CalleeHandle.MethodHandle;
 import dshell.internal.type.CalleeHandle.StaticFunctionHandle;
@@ -35,13 +34,6 @@ import dshell.lang.GenericPair;
  *
  */
 public class ClassBuilder extends ClassWriter implements Opcodes {
-	/**
-	 * name prefix for top level class.
-	 */
-	private final static String className = "toplevel";
-
-	private static int topLevelClassPrefix = -1;
-
 	private final String internalClassName;
 
 	/**
@@ -60,10 +52,13 @@ public class ClassBuilder extends ClassWriter implements Opcodes {
 
 	/**
 	 * create new class builder for top level class generation.
+	 * @param internalToplevelClassName
+	 * unique and fully qualified class name
+	 * @param sourceName
 	 */
-	public ClassBuilder(String sourceName) {
+	public ClassBuilder(String internalToplevelClassName, String sourceName) {
 		super(ClassWriter.COMPUTE_FRAMES);
-		this.internalClassName = Utils.genUniqueClassName(TypePool.genClassPrefix, className, ++topLevelClassPrefix);
+		this.internalClassName = internalToplevelClassName;
 		this.visit(V1_7, ACC_PUBLIC | ACC_FINAL, this.internalClassName, null, "java/lang/Object", null);
 		this.visitSource(sourceName, null);
 	}
