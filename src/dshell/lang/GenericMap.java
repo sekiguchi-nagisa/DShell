@@ -19,7 +19,7 @@ import dshell.internal.lib.Utils;
  */
 @SharedClass
 @GenericClass(values = {"@T"})
-public class GenericMap {
+public class GenericMap implements Cloneable {
 	private final static int defaultMapSize = 12;
 
 	private LinkedHashMap<String, Object> valueMap;

@@ -76,8 +76,11 @@ public abstract class DSType {
 		return this.getTypeName().equals(targetType.getTypeName());
 	}
 
-	public boolean equals(DSType targetType) {
-		return this.getTypeName().equals(targetType.getTypeName());
+	public boolean equals(Object targetType) {
+		if(targetType instanceof DSType) {
+			return this.getTypeName().equals(((DSType)targetType).getTypeName());
+		}
+		return false;
 	}
 
 	/**

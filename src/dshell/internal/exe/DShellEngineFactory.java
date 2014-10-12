@@ -77,7 +77,7 @@ public class DShellEngineFactory implements EngineFactory {
 		@Override
 		public void setConfig(EngineConfig config) {
 			this.config = config;
-			this.classLoader.setDump(config.is(EngineConfigRule.bytecodeDump));
+			DShellClassLoader.setDump(config.is(EngineConfigRule.bytecodeDump));
 			this.codeGen.setAssertion(!this.config.is(EngineConfigRule.skipAssertion));
 		}
 
