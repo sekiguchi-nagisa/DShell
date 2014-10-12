@@ -31,6 +31,11 @@ public class ASTDumper {
 
 	private int currentIndentLevel = 0;
 
+	/**
+	 * for file name generation
+	 */
+	private Random rnd = new Random();
+
 	private int fileNamePrefix = -1;
 
 	private final Map<Class<?>, ObjectHandler> handlerMap;
@@ -79,7 +84,7 @@ public class ASTDumper {
 	 * - typed node
 	 */
 	public void convertToJson(RootNode node) {
-		String fileName = "ast" + ++this.fileNamePrefix + "_" + new Random().nextInt() + ".txt";
+		String fileName = "ast" + ++this.fileNamePrefix + "_" + this.rnd.nextInt() + ".txt";
 		try(FileOutputStream output = new FileOutputStream(fileName)) {
 			System.err.println("@@@ Dump AST " + fileName + " @@@");
 			this.convertToJson(node, output, true);

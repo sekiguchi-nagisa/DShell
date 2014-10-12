@@ -138,7 +138,7 @@ public class DShellClassLoader extends ClassLoader {
 		}
 	}
 
-	public void setDump(boolean enableByteCodeDump) {
+	public static void setDump(boolean enableByteCodeDump) {
 		enableDump = enableByteCodeDump;
 	}
 

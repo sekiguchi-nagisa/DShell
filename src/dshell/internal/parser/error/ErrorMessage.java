@@ -179,7 +179,15 @@ public class ErrorMessage implements Serializable {
 	 * not null
 	 * @return
 	 */
-	public boolean equals(ErrorMessage target) {
-		return this.toString().equals(target.toString());
+	public boolean equals(Object target) {
+		if(target instanceof ErrorMessage) {
+			return this.toString().equals(((ErrorMessage)target).toString());
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
 	}
 }

@@ -194,8 +194,7 @@ public class Utils {
 	public final static void appendStringifiedValue(StringBuilder sb, Object value) {
 		if(value == null) {
 			sb.append("$null$");
-		}
-		if(value instanceof String) {
+		} else if(value instanceof String) {
 			sb.append('"');
 			sb.append(value.toString());
 			sb.append('"');

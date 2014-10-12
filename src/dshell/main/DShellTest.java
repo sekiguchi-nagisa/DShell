@@ -51,7 +51,7 @@ public class DShellTest extends DShell {
 		case scriptingMode:
 			this.runScriptingMode(engine);	// never return
 		case inputEvalMode:
-			this.runInputEvalMode(null);	// never return
+			this.runInputEvalMode(engine);	// never return
 		}
 	}
 
