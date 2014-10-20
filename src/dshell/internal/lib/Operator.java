@@ -80,13 +80,13 @@ public class Operator {
 		ArithmeticException.throwIfZeroMod(right); return left % right;
 	}
 	@Shared @OpType(OpName.MOD) public static double mod(long left, double right) {
-		ArithmeticException.throwIfZeroDiv(right); return left % right;
+		ArithmeticException.throwIfZeroMod(right); return left % right;
 	}
 	@Shared @OpType(OpName.MOD) public static double mod(double left, long right) {
-		ArithmeticException.throwIfZeroDiv(right); return left % right;
+		ArithmeticException.throwIfZeroMod(right); return left % right;
 	}
 	@Shared @OpType(OpName.MOD) public static double mod(double left, double right) {
-		ArithmeticException.throwIfZeroDiv(right); return left % right;
+		ArithmeticException.throwIfZeroMod(right); return left % right;
 	}
 
 	// LT
