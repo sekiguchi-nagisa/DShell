@@ -12,8 +12,28 @@ import dshell.internal.parser.TypeToken;
 
 @members {
 // parser entry point.
-public ToplevelContext startParser() {
-	return this.toplevel();
+public Node.RootNode parseToplevel() {
+	ToplevelContext ctx = this.toplevel();
+	if(this.inspect) {
+		ctx.inspect(this);
+	}
+	return ctx.node;
+}
+
+// parser one statement
+public Node.RootNode parseStatement() {
+	ToplevelStatementContext ctx = this.toplevelStatement();
+		if(this.inspect) {
+		ctx.inspect(this);
+	}
+	Node.RootNode node = new Node.RootNode(ctx.node.getToken());
+	node.addNode(ctx.node);
+	return node;
+}
+
+private boolean inspect = false;
+public void setInspect(boolean enableInspect) {
+	this.inspect = enableInspect;
 }
 
 private boolean hasNewLine() {

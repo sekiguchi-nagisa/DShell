@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.TokenStream;
 
 import dshell.internal.codegen.JavaByteCodeGen;
 import dshell.internal.lib.DShellClassLoader;
@@ -16,7 +17,6 @@ import dshell.internal.parser.TypeChecker;
 import dshell.internal.parser.dshellLexer;
 import dshell.internal.parser.dshellParser;
 import dshell.internal.parser.Node.RootNode;
-import dshell.internal.parser.dshellParser.ToplevelContext;
 import dshell.internal.parser.error.DShellErrorListener;
 import dshell.internal.parser.error.ErrorListener;
 import dshell.internal.parser.error.TypeCheckException;
@@ -149,53 +149,63 @@ public class DShellEngineFactory implements EngineFactory {
 				this.lexer.setTrace(true);
 				this.parser.setTrace(true);
 			}
-			/**
-			 * parse source
-			 */
-			ToplevelContext tree;
-			try {
-				tree = this.parser.startParser();
-			} catch(LexerException e) {
-				this.listener.displayTokenError(e);
-				return false;
-			} catch(ParserException e) {
-				this.listener.displayParseError(e);
-				return false;
-			}
 			if(this.config.is(EngineConfigRule.parserInspect)) {
-				tree.inspect(this.parser);
+				this.parser.setInspect(true);
 			}
-			/**
-			 * check type
-			 */
-			RootNode checkedNode;
-			try {
-				checkedNode = this.checker.checkTypeRootNode(tree.node);
-			} catch(TypeCheckException e) {
-				this.checker.recover();
-				this.listener.displayTypeError(e, this.parser);
-				if(RuntimeContext.getInstance().isDebugMode()) {
-					e.printStackTrace();
+
+			// parse and execution
+			boolean result = true;
+			while(tokenStream.LA(1) != TokenStream.EOF) {
+				/**
+				 * parse source
+				 */
+				RootNode untypedNode;
+				try {
+					untypedNode = this.parser.parseToplevel();
+				} catch(LexerException e) {
+					this.listener.displayTokenError(e);
+					return false;
+				} catch(ParserException e) {
+					this.listener.displayParseError(e);
+					return false;
 				}
-				return false;
-			}
+				/**
+				 * check type
+				 */
+				RootNode checkedNode;
+				try {
+					checkedNode = this.checker.checkTypeRootNode(untypedNode);
+				} catch(TypeCheckException e) {
+					this.checker.recover();
+					this.listener.displayTypeError(e, this.parser);
+					if(RuntimeContext.getInstance().isDebugMode()) {
+						e.printStackTrace();
+					}
+					return false;
+				}
 
-			if(this.config.is(EngineConfigRule.astDump)) {
-				ASTDumper.getInstance().convertToJson(checkedNode);
-			}
-			if(this.config.is(EngineConfigRule.onlyParsing)) {
-				System.out.println("=== only parsing ===");
-				return true;
-			}
+				if(this.config.is(EngineConfigRule.astDump)) {
+					ASTDumper.getInstance().convertToJson(checkedNode);
+				}
+				if(this.config.is(EngineConfigRule.onlyParsing)) {
+					System.out.println("=== only parsing ===");
+					return true;
+				}
 
-			/**
-			 * code generation
-			 */
-			Class<?> entryClass = this.codeGen.generateTopLevelClass(checkedNode, enableResultPrint);
-			/**
-			 * invoke
-			 */
-			return startExecution(entryClass);
+				/**
+				 * code generation
+				 */
+				Class<?> entryClass = this.codeGen.generateTopLevelClass(checkedNode, enableResultPrint);
+				/**
+				 * invoke
+				 */
+				result = startExecution(entryClass);
+				if(!result) {
+					this.checker.recover();
+					return false;
+				}
+			}
+			return result;
 		}
 
 		/**

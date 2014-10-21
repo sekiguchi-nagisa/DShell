@@ -1,6 +1,8 @@
 package dshell.internal.lib;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +44,11 @@ public class GlobalVariableTable {
 
 	private static Map<String, GenericPair<Integer, Class<?>>> indexMap = new HashMap<>();
 
+	private static Deque<Integer> unusedLongIndexStack    = new ArrayDeque<>();
+	private static Deque<Integer> unusedDoubleIndexStack  = new ArrayDeque<>();
+	private static Deque<Integer> unusedBooleanIndexStack = new ArrayDeque<>();
+	private static Deque<Integer> unusedObjectIndexStack  = new ArrayDeque<>();
+
 	static {
 		longVarTable = new long[defaultTableSize];
 		doubleVarTable = new double[defaultTableSize];
@@ -51,7 +58,11 @@ public class GlobalVariableTable {
 
 	// create new global variable entry
 	public static int newLongVarEntry(String varName) {
-		checkEntryExistence(varName);
+		checkDuplicatedEntry(varName);
+		if(!unusedLongIndexStack.isEmpty()) {
+			return unusedLongIndexStack.pop();
+		}
+
 		final int size = longVarTable.length;
 		if(longVarIndexCount == size) {
 			checkIndexRange(size);
@@ -63,7 +74,11 @@ public class GlobalVariableTable {
 	}
 
 	public static int newDoubleVarEntry(String varName) {
-		checkEntryExistence(varName);
+		checkDuplicatedEntry(varName);
+		if(!unusedDoubleIndexStack.isEmpty()) {
+			return unusedDoubleIndexStack.pop();
+		}
+
 		final int size = doubleVarTable.length;
 		if(doubleVarIndexCount == size) {
 			checkIndexRange(size);
@@ -75,7 +90,11 @@ public class GlobalVariableTable {
 	}
 
 	public static int newBooleanVarEntry(String varName) {
-		checkEntryExistence(varName);
+		checkDuplicatedEntry(varName);
+		if(!unusedBooleanIndexStack.isEmpty()) {
+			return unusedBooleanIndexStack.pop();
+		}
+
 		final int size = booleanVarTable.length;
 		if(booleanVarIndexCount == size) {
 			checkIndexRange(size);
@@ -87,7 +106,11 @@ public class GlobalVariableTable {
 	}
 
 	public static int newObjectVarEntry(String varName) {
-		checkEntryExistence(varName);
+		checkDuplicatedEntry(varName);
+		if(!unusedObjectIndexStack.isEmpty()) {
+			return unusedObjectIndexStack.pop();
+		}
+
 		final int size = objectVarTable.length;
 		if(objectVarIndexCount == size) {
 			checkIndexRange(size);
@@ -98,13 +121,23 @@ public class GlobalVariableTable {
 		return varIndex;
 	}
 
-	/**
-	 * force terminate if found duplicated var name
-	 * @param varName
-	 */
-	private static void checkEntryExistence(String varName) {
-		if(indexMap.containsKey(varName)) {
-			Utils.fatal(1, "already defined global variable: " + varName);
+	private static void checkDuplicatedEntry(String varName) {
+		GenericPair<Integer, Class<?>> pair = indexMap.get(varName);
+		if(pair != null) {
+			// find duplicated entry and push to unused index stack
+			int index = pair.getLeft();
+			Class<?> clazz = pair.getRight();
+			if(clazz == long.class) {
+				unusedLongIndexStack.push(index);
+			} else if(clazz == double.class) {
+				unusedDoubleIndexStack.push(index);
+			} else if(clazz == boolean.class) {
+				unusedBooleanIndexStack.push(index);
+			} else if(clazz == Object.class) {
+				unusedObjectIndexStack.push(index);
+			} else {
+				Utils.fatal(1, "illegal class: " + clazz);
+			}
 		}
 	}
 
