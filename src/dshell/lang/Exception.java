@@ -16,9 +16,21 @@ import dshell.internal.type.TypePool;
 public class Exception extends RuntimeException {
 	private static final long serialVersionUID = -8494693504521057747L;
 
+	/**
+	 * wrap java.lang.Exception (except for NullPointerException)
+	 * @param t
+	 * @return
+	 * if t is dshell.lang.Exception, return it.
+	 * if t is java.lang.Throwable (except for NullPointerException), return NativeException.
+	 * if t is java.lang.NullPointerException, print stack trace and exit.
+	 */
 	public static Exception wrapException(Throwable t) {
 		if(t instanceof Exception) {
 			return (Exception) t;
+		}
+		if(t instanceof NullPointerException) {
+			t.printStackTrace();
+			System.exit(1);
 		}
 		return new NativeException(t);
 	}
