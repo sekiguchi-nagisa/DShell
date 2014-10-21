@@ -526,7 +526,7 @@ primaryExpression returns [Node.ExprNode node]
 	;
 
 literal returns [Node.ExprNode node]
-	: IntLiteral {$node = new Node.IntValueNode($IntLiteral);}
+	: intLiteral {$node = $intLiteral.node;}
 	| FloatLiteral {$node = new Node.FloatValueNode($FloatLiteral);}
 	| BooleanLiteral {$node = new Node.BooleanValueNode($BooleanLiteral);}
 	| StringLiteral {$node = new Node.StringValueNode($StringLiteral);}
@@ -534,6 +534,18 @@ literal returns [Node.ExprNode node]
 	| arrayLiteral {$node = $arrayLiteral.node;}
 	| mapLiteral {$node = $mapLiteral.node;}
 	| pairLiteral {$node = $pairLiteral.node;}
+	;
+
+intLiteral returns [Node.ExprNode node] locals [boolean failed = false;]
+	: IntLiteral 
+		{
+			try {
+				$node = new Node.IntValueNode($IntLiteral);
+			} catch(NumberFormatException e) {
+				$failed = true;
+			}
+		}
+		{!$failed}?
 	;
 
 symbol returns [Node.ExprNode node]
