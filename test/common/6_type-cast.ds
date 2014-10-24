@@ -16,7 +16,7 @@ assert($b3 == "12")
 # cast
 var a4 = new Exception()
 $a4 = new OutOfIndexException()
-var b4 = $a4 as OutOfIndexException
+($a4 as OutOfIndexException).printStackTrace()
 
 try {
 	"fhuri" as Exception

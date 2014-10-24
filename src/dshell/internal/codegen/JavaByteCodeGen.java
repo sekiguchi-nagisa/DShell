@@ -395,7 +395,7 @@ public class JavaByteCodeGen implements NodeVisitor<Void>, Opcodes {
 			mBuilder.invokeStatic(Type.getType(Utils.class), 
 					new Method("cast", Type.getType(Object.class), 
 							new Type[]{Type.getType(Object.class), Type.getType(Class.class)}));
-
+			mBuilder.checkCast(targetTypeDesc);
 			break;
 		default:
 			throw new RuntimeException("unsupported cast op: " + node.getCastOp());
