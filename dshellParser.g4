@@ -106,18 +106,35 @@ typeName returns [TypeToken type]
 	: Int        {$type = TypeToken.toPrimitive($Int);}
 	| Float      {$type = TypeToken.toPrimitive($Float);}
 	| Boolean    {$type = TypeToken.toPrimitive($Boolean);}
-	| Identifier {$type = TypeToken.toClass($Identifier);}
+	| identifier {$type = TypeToken.toClass($identifier.token);}
 	| Func openType r=typeNameWithVoid {$type = new TypeToken.FuncTypeToken($Func, $r.type);}
 		(typeSep openParamType a=typeName {((TypeToken.FuncTypeToken)$type).addParamTypeToken($a.type);}
 			( typeSep b=typeName 
 				{((TypeToken.FuncTypeToken)$type).addParamTypeToken($b.type);}
 			)* closeParamType
 		)? closeType
-	| Identifier openType {$type = new TypeToken.GenericTypeToken($Identifier);} 
+	| identifier openType {$type = new TypeToken.GenericTypeToken($identifier.token);} 
 		a=typeName {((TypeToken.GenericTypeToken)$type).addElementTypeToken($a.type);}
 			(comma b=typeName
 				{((TypeToken.GenericTypeToken)$type).addElementTypeToken($b.type);}
 			)* closeType
+	;
+
+identifier returns [Token token]
+	: Identifier  {$token = $Identifier;}
+	| As          {$token = $As;}
+	| Catch       {$token = $Catch;}
+	| Constructor {$token = $Constructor;}
+	| Do          {$token = $Do;}
+	| Else        {$token = $Else;}
+	| Extends     {$token = $Extends;}
+	| Finally     {$token = $Finally;}
+	| If          {$token = $If;}
+	| In          {$token = $In;}
+	| Is          {$token = $Is;}
+	| New         {$token = $New;}
+	| Not         {$token = $Not;}
+	| While       {$token = $While;}
 	;
 
 typeNameWithVoid returns [TypeToken type]
@@ -368,7 +385,7 @@ orListCommand returns [Node.ExprNode node]
 
 andListCommand returns [Node.ExprNode node]
 	: l=commandExpression {$node = $l.node;}
-		(CmdSep? op=AndList r=commandListExpression
+		(CmdSep? op=AndList r=commandExpression
 			{$node = new Node.CondOpNode($node, $op, $r.node);}
 		)*
 	;
@@ -385,7 +402,7 @@ commandExpression returns [Node.ExprNode node] locals [List<Node.ProcessNode> pr
 	;
 
 singleCommandExpr returns [Node.ProcessNode node]	//FIXME:
-	: t+=Trace? Command (CmdSep a+=commandArg)* (CmdSep b+=redirOption)*
+	: t+=trace? Command (CmdSep a+=commandArg)* (CmdSep b+=redirOption)*
 		{
 			$node = new Node.ProcessNode($Command, $t.size() == 1);
 			for(int i = 0; i < $a.size(); i++) {
@@ -395,6 +412,10 @@ singleCommandExpr returns [Node.ProcessNode node]	//FIXME:
 				$node.addRedirOption($b.get(i).option);
 			}
 		}
+	;
+
+trace returns [Token token]
+	: Trace {!hasNewLine()}? {$token = $Trace;}
 	;
 
 commandArg returns [Node.ArgumentNode node]
