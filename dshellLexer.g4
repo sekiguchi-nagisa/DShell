@@ -101,9 +101,14 @@ Number
 	| [1-9] [0-9]*
 	;
 
+fragment
+Digits
+	: [0-9]+
+	;
+
 // float literal
 FloatLiteral
-	: Number '.' Number FloatSuffix?
+	: Number '.' Digits FloatSuffix?
 	;
 
 fragment
