@@ -255,7 +255,7 @@ forInit returns [Node node]
 
 forCond returns [Node.ExprNode node]
 	: expression {$node = $expression.node;}
-	| {$node = new Node.EmptyNode();}
+	| {$node = new Node.BooleanValueNode(true);}
 	;
 
 forIter returns [Node node]

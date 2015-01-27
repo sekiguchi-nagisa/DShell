@@ -224,6 +224,15 @@ public abstract class Node {
 			this.value = Boolean.parseBoolean(resolveName(token));
 		}
 
+		/**
+		 * for ForNode condition
+		 * @param value
+		 */
+		public BooleanValueNode(boolean value) {
+			super(null);
+			this.value = value;
+		}
+
 		public boolean getValue() {
 			return this.value;
 		}
