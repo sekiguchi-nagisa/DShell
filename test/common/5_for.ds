@@ -14,3 +14,12 @@ for(var i = 0; $i < 5; $i++) {
 	}
 }
 assert($sum == 50)
+
+## empty condition
+var c = 0
+for(;;) {
+	if($c == 2) {
+		break
+	}
+	$c++
+}
