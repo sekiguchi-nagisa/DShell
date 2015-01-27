@@ -125,7 +125,10 @@ public class DShellEngineFactory implements EngineFactory {
 		@Override
 		public void loadDShellRC() {
 			String dshellrcPath = Utils.getEnv("HOME") + "/.dshellrc";
-			this.eval(new SourceStream(dshellrcPath), 1, false);
+			char[] buffer = Utils.load(dshellrcPath);
+			if(buffer != null) {
+				this.eval(new SourceStream(dshellrcPath, buffer), 1, false);
+			}
 		}
 
 		/**

@@ -1,11 +1,12 @@
 package dshell.internal.lib;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.TreeSet;
 
@@ -203,20 +204,24 @@ public class Utils {
 		}
 	}
 
-	public static String readFromFile(String fileName, boolean forceExit) {
-		try(FileInputStream input = new FileInputStream(fileName)){
-			ByteArrayOutputStream bufferStream = new ByteArrayOutputStream();
-			byte[] buffer = new byte[512];
-			int readSize = 0;
-			while((readSize = input.read(buffer, 0, buffer.length)) > -1) {
-				bufferStream.write(buffer, 0, readSize);
+	public static char[] loadAndExitIfNotRead(String fileName) {
+		char[] buffer = load(fileName);
+		if(buffer == null) {
+			Utils.fatal(1, "cannot read file: " + fileName);
+		}
+		return buffer;
+	}
+	public static char[] load(String fileName) {
+		File file = new File(fileName);
+		final int size = (int) file.length();
+		char[] buffer = new char[size];
+		try(InputStreamReader in = new InputStreamReader(new FileInputStream(file))){
+			int readSize = in.read(buffer);
+			if(readSize < size) {
+				buffer = Arrays.copyOf(buffer, readSize);
 			}
-			return bufferStream.toString();
+			return buffer;
 		} catch (IOException e) {
-			if(forceExit) {
-				System.err.println(e.getMessage());
-				Utils.fatal(1, "cannot read file: " + fileName);
-			}
 		}
 		return null;
 	}

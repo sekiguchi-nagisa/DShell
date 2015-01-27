@@ -1,12 +1,5 @@
 package dshell.internal.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.Token;
 
@@ -14,11 +7,12 @@ import dshell.internal.lib.Utils;
 
 public class SourceStream extends ANTLRInputStream {
 	/**
-	 * new stream from file
+	 * new stream from file.
+	 * if cannot read file, throw exception,
 	 * @param fileName
 	 */
 	public SourceStream(String fileName) {
-		this(fileName, load(fileName));
+		this(fileName, Utils.loadAndExitIfNotRead(fileName));
 	}
 
 	/**
@@ -30,7 +24,12 @@ public class SourceStream extends ANTLRInputStream {
 		this(sourceName, source.toCharArray());
 	}
 
-	protected SourceStream(String sourceName, char[] buffer) {
+	/**
+	 * new stream from char array.
+	 * @param sourceName
+	 * @param buffer
+	 */
+	public SourceStream(String sourceName, char[] buffer) {
 		super(buffer, buffer.length);
 		this.name = sourceName;
 	}
@@ -87,25 +86,6 @@ public class SourceStream extends ANTLRInputStream {
 
 	public int getOffset() {
 		return 0;
-	}
-
-	private static char[] load(String fileName) {
-		File file = new File(fileName);
-		final int size = (int) file.length();
-		char[] buffer = new char[size];
-		try(InputStreamReader in = new InputStreamReader(new FileInputStream(file))){
-			int readSize = in.read(buffer);
-			if(readSize < size) {
-				buffer = Arrays.copyOf(buffer, readSize);
-			}
-			return buffer;
-		} catch (FileNotFoundException e) {
-			System.err.println("file not found: " + fileName);
-			System.exit(1);
-		} catch (IOException e) {
-			Utils.fatal(1, e.getMessage());
-		}
-		return null;
 	}
 
 	/**
